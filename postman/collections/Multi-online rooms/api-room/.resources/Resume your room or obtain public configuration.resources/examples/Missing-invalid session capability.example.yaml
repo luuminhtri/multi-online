@@ -1,0 +1,28 @@
+$kind: http-example
+name: Missing/invalid session capability
+request:
+  url: "{{baseUrl}}/api/room?code=4FTOA9"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    code: 4FTOA9
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 401
+  statusText: Unauthorized
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "error": {
+          "code": "string",
+          "message": "string",
+          "retryable": false
+        }
+      }
+order: 3000

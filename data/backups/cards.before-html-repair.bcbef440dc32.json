@@ -1,0 +1,279 @@
+{
+    "Phe dân làng": {
+        "Summary": "Những nhân vật này có những chức năng giúp cho phe dân làng dành chiến thắng. Trong game, phe dân làng bao giờ cũng có số lượng lớn hơn phe sói nhiều lần nhưng rất khó để phân biệt giữa đâu là phe dân làng đâu là phe sói.",
+        "Deck of cards": {
+            "Apprentice Seer (Tiên tri tập sự)": {
+                "Description": "Nếu Tiên Tri chết, Tiên tri tập sự sẽ trở thành Tiên tri mới. Tiên tri tập sự được thông báo  bằng cách trong đêm, vào lượt gọi Tiên tri, quản trò đụng vào vai của Tiên tri thực tập để gọi dậy. Biến thể: Mỗi đêm, Tiên tri thực tập được quyền chỉ định 1 người, nếu người đó được chỉ định 2 lần, Quản trò sẽ cho Tiên tri thực tập biết người đó có phải là Sói hay không. Như vậy Tiên tri thực tập có vai trò hỗ trợ cho Tiên tri.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/Apprentice_Seer.png"
+            },
+            "Aura Seer (Tiên tri hào quang)": {
+                "Description": "Tiên tri hào quang thức dậy mỗi đêm để tìm kiếm người chơi có chức năng, không phải là Dân thường hay Sói.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/Aura-Seer.png"
+            },
+            "Bodyguard (Bảo vệ)": {
+                "Description": "Mỗi đêm, Bảo vệ chọn một người khác nhau để bảo vệ. Người chơi này sẽ bất tử vào đêm đó. Biến thể: Người chơi đó sẽ không chết vào ngày hôm sau ( kể cả do bị treo cổ hay lí do khác).",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/bodyguard.png"
+            },
+            "Cupid (Thần tình yêu)": {
+                "Description": "Thức dậy vào đêm đầu tiên và chọn ra 2 người chơi ( được phép chọn cả mình). Hai người được chọn sẽ trở thành 2 người yêu nhau. Nếu một trong hai người này chết, người còn lại cũng sẽ chết theo.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/cupid.png"
+            },
+            "Diseased (Người bệnh)": {
+                "Description": "Nếu Người bệnh bị Sói cắn, thì Sói sẽ không thể cắn người nào vào đêm tiếp theo do bị bệnh.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/diseased.png"
+            },
+            "Ghost ( Con ma) ": {
+                "Description": "Con ma bị chết ngay vào đêm đầu tiên. Mỗi đêm ( bao gồm cả đêm đầu tiên), Con Ma có thể liên hệ với những người chơi khác  bằng cách viết 1 chữ lên 1 tờ giấy nhưng không được viết tên hay viết tắt tên, mà thay vào đó là đưa ra các gợi ý thú vị.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/ghost.png"
+            },
+            "Hunter (Thợ săn)": {
+                "Description": "Nếu thợ săn chết, hắn lập tức được phép nhắm vào một người và người này sẽ bị chết. Nếu thợ săn chết trong đêm, Quản trò sẽ đụng vai Thợ săn để báo Thợ săn nhắm bắn. Thợ săn Ma cà rồng: Trong Game có Ma cà rồng. Khi thợ săn chết thì Ma cà rồng  gần thợ săn nhất sẽ chết. Nếu có 2 Ma cà rồng đều ngồi gần thợ săn như nhau, thì con bên phải sẽ chết.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/hunter.png"
+            },
+            "Idiot  (Thằng ngốc)": {
+                "Description": "Thằng ngốc luôn luôn phải giơ tay tán thành việc giết một người chơi khác. Biến thể: Không chia chức năng này, nhưng ngẫu nhiên chọn 1 người làm Thằng ngốc, và phiếu của người này luôn được tính là phiếu giết.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/village-idiot.png"
+            },
+            "Lycan (Người hóa sói)": {
+                "Description": "Người hóa sói thuộc Phe dân làng, nhưng nếu được chỉ định bởi Tiên tri, thì sẽ bị thông báo là Sói.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/lycan.png"
+            },
+            "Mason ( Sinh đôi)": {
+                "Description": "Đêm đầu tiên, Quản trò gọi Sinh đôi dậy để tìm kiếm các Sinh đôi khác. Không ai trong làng được phép nói hoặc ám chỉ về Sinh đôi, bằng không họ sẽ bị giết đêm hôm đó, tự động xử thua dù thuộc phe thắng.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/mason.png"
+            },
+            "Mayor (Thị trưởng)": {
+                "Description": "Phiếu biểu quyết của Thị trường được tính là 2 phiếu khi biểu quyết treo cổ.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/mayor.png"
+            },
+            "Old Hag (Phù Thủy già)": {
+                "Description": "Mỗi đêm, Phù thủy già chọn một người chơi để dời khỏi làng vào ngày hôm sau ( không được tham gia bình luận, biểu quyết treo cổ…)   Pacifist (Người yêu hòa bình) Người Yêu hòa bình luôn vote cho người chơi được sống. Chức năng này đi chung với lá bài Thằng ngốc.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/pacifist.png"
+            },
+            "P.I. (Paranormal Investigator) ( Thám tử)": {
+                "Description": "Một đêm trong ván game, Thám tử sẽ được gọi dậy và được phép chọn 1 một người. Quản trò sẽ cho Thám tử biết người đó hoặc hai người bên cạnh người đó có phải là Ma sói hay không.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/pi.png"
+            },
+            "Priest (Thầy tu)": {
+                "Description": "Một đêm trong ván game, Thầy tu có thể chọn một người chơi để được bảo vệ bởi sức mạnh của Chúa. Người chơi này sẽ bất tử vào buổi đêm. Chỉ bị loại bởi các lí do vào bam ngày. ( như bị treo cổ).",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/priest.png"
+            },
+            "Prince ( Hoàng tử)": {
+                "Description": "Hoàng tử không thể bị treo cổ chết. Vào lần bị vote chết và chuẩn bị treo cổ, người này sẽ lật lá bài lên để mọi người được thấy và không phải chịu treo cổ. Tất cả người chơi lập tức đi ngủ.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/prince.png"
+            },
+            "Seeker (Tiên tri)": {
+                "Description": "Mỗi đêm, Tiên tri chỉ tay vào một người. Quản trò sẽ cho Tiên tri biết người đó có phải là Ma sói hay không bằng cách gật hoặc lắc đầu.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/seer.png"
+            },
+            "Spellcaster (Người phù phép)": {
+                "Description": "Mỗi đêm, Người phú phép sẽ được phép chỉ định 1 người bị câm vào hôm sau. Người này vào ngày hôm sau sẽ không được nói.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/spellcaster.png"
+            },
+            "Tough Guy (Người cứng cỏi)": {
+                "Description": "Nếu bị Sói cắn, Người cứng cói sẽ chết vào đêm tiếp theo chứ không phải ngay tại đêm đó.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/tough-guy.png"
+            },
+            "Troublemaker (Kẻ phá rối)": {
+                "Description": "Mỗi đêm, Quản trò sẽ hỏi “ Kẻ phá rối có muốn quậy phá không?”. Nếu đồng ý, Kẻ quậy phá sẽ tỉnh dậy và ra hiệu bằng cách gật đầu. Ngày hôm sau, sẽ có 2 lượt biểu quyết treo cổ. Kẻ phá rối chỉ thực hiện được 1 lần quậy phá trong suốt cả ván chơi.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/troublemaker.png"
+            },
+            "Village (Dân làng)": {
+                "Description": "Không có tính năng đặc biệt nào cả, ngủ suốt đêm và tham gia biểu quyết tìm Sói vào ban ngày.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/villager.png"
+            },
+            "Witch (Phù thủy)": {
+                "Description": "Phù thủy sẽ có hai bình thuốc. Một bình thuốc để cứu 1 người và một bình thuốc để giết 1 người. Trong đêm, Quản trò sẽ cho Phù Thủy biết ai sẽ bị giết trong đêm và hỏi xem Phù thủy có muốn sử dụng quyền năng nào hay không. Có thể dùng cả hai bình thuốc này vào cùng 1 đêm, nhưng mỗi bình chỉ dùng một lần.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/witch.png"
+            }
+        }
+    },
+    "Phe sói": {
+        "Summary": "Hầu hết phe sói sẽ nhận biết được nhau. Một số sẽ cải trang và trà trộn vào trong dân làng để để tăng phần thắng dành cho phe Sói.",
+        "Deck of cards": {
+            "Minion  (Kẻ phản bội)": {
+                "Description": "Phản bội thức dậy cùng Sói và biết Sói là ai. Tham gia cùng Sói để giết Dân làng. Tuy nhiên Tiên tri khi soi vào Phản bội thì vẫn ra dân làng.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/minion.png"
+            },
+            "Sorceress (Pháp sư sói)": {
+                "Description": "Mỗi đêm, Pháp sư sói thức dậy và sẽ đi tìm kiếm Tiên tri bằng cách chỉ thị một người, Quản trò sẽ cho biết đó có phải Tiên tri hay không. Sói không được biết Pháp sư Sói là ai  và Pháp sư sói cũng không biết Sói là ai. Tiên tri sẽ soi Pháp sư sói là người.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/sorceress.png"
+            },
+            "Werewolf  (Ma sói)": {
+                "Description": "Vào ban đêm, Ma sói sẽ tỉnh dậy cùng nhau và thống nhất giết 1 nạn nhận nào đó. Sói có thể không giết người nào và không được giết sói khác.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/werewolf.png"
+            },
+            "Lone Wolf (Sói cô đơn)": {
+                "Description": "Hằng đêm, thức dậy cùng những con Sói khác. Sói cô đơn chỉ thắng cuộc nếu là người chơi cuối cùng trong trò chơi.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/lone-wolf.png"
+            },
+            "Wolf Cub (Sói con)": {
+                "Description": "Sói con là Sói và thức dậy cùng Sói mỗi đêm. Nếu Sói con bị giết, Sói còn lại sẽ giết 2 người vào đêm hôm sau. Sói có thể chọn giết Sói Con như 1 sự hy sinh ( Tất cả Sói bao gồm cả Sói con đều đồng ý việc đó). Khi đó Sói có thể lập tức giết 2 người chơi khác vào ngay đêm hôm đó.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/wolf-cub.png"
+            }
+        }
+    },
+    "Đổi phe": {
+        "Summary": "Những chức năng này có thể có 2 chức năng 1 lúc, hoặc họ có thể đổi từ phe này sang phe khác.",
+        "Deck of cards": {
+            "Cursed (Kẻ bị nguyền rủa)": {
+                "Description": "Kẻ bị Nguyền rủa ban đầu là người, Tiên tri soi cũng ra người. Nếu Kẻ bị Nguyền rủa bị Sói cắn thì sẽ không chết, mà từ đêm tiếp theo sẽ biến thành Sói, đồng thời nếu Tiên tri sói thì cũng sẽ là Sói. Kẻ bị Nguyền rủa mỗi đêm được gọi dậy riêng biệt, kể cả sau khi hóa Sói, để cho người này biết đã bị hóa Sói hay chưa. Doppelganger (Nhân bản) Vào đêm đầu tiên, Nhân bản tỉnh dậy và lựa chọn một người chơi. Nếu người chơi kia chết trong đêm, Nhân bản sẽ bí mật lấy chức năng của người đó. Trước khi có chức năng mới, Nhân bản theo Phe dân. Sau khi có chức năng mới, Nhân bản theo phe của chức năng này.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/doppelganger.png"
+            }
+        }
+    },
+    "Phe thứ 3": {
+        "Summary": "Những phe này thuộc phe riêng biệt, không thuộc phe Dân làng hay phe Sói",
+        "Deck of cards": {
+            "Cult Leader ( Trưởng giáo phái)": {
+                "Description": "Mỗi đêm, Trưởng giáo phải sẽ tỉnh dậy và thêm 1 người chơi vào giáo phái của mình. Nếu tất cả những người còn sống đều là người của giáo phái của mình, Trưởng giáo phái sẽ là người chiến thắng. Các điều kiện thắng khác cũng được áp dụng.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/cult-leader.png"
+            },
+            "Tanner (Chán đời)": {
+                "Description": "Chán đời chỉ thắng khi anh ta bị giết. Các điều kiện thắng khác cũng được áp dụng.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/tanner.png"
+            },
+            "Vampire (Ma cà rồng)": {
+                "Description": "Là 1 thế lực mạnh thứ 3 ngoài Phe Sói và Phe dân. Mỗi đêm, Ma cà rồng sẽ chọn 1 người chơi là nạn nhân. Nhưng nạn nhân của Ma cà rồng sẽ được công bố sau khi phiên treo cổ diễn ra. Vampire không thể bị giết bởi Ma sói vào ban đêm.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/vampire.png"
+            }
+        }
+    },
+    "Bản mở rộng Wolf Pack": {
+        "Summary": "Đây là những nhân vật thuộc bản Mở rộng Ultimate Werewolf: Wolfpack. Đây cũng là bản Mở rộng thường xuyên được bán kèm cùng Ma sói Ultimate cơ bản. Bao gồm 6 lá bài sau: ",
+        "Deck of cards": {
+            "Big Bad Wolf (Sói đại ca)": {
+                "Description": "Thức dậy cùng Ma sói. Chừng nào Big Bad Wolf còn tồn tại trong trò chơi thì mỗi đêm phe Ma sói có thể giết hai người chơi, miễn là hai người chơi đó ngồi cạnh nhau. Tuy nhiên Phe Ma sói sẽ không biết ai là Big Bad Wofl. Đêm đầu tiên, Big Bad Wolf sẽ thức dậy một mình để cho Quản trò biết được người đó là ai. Big Bad Wofl tạo ra lợi thế rất lớn cho phe Ma sói.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/Big_Bad_Wolf.png"
+            },
+            "Dire Wolf (Sói tuyết)": {
+                "Description": "Sói tuyết thức dậy cùng các Sói khác. Đêm đầu tiên thức dậy, Sói tuyết lựa chọn một người chơi khác làm bạn đồng hành. Nếu người chơi đó chết, Sói tuyết cũng sẽ chết theo. Nếu Sói Tuyết chết thì người đó không chết.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/Dire_Wolf.PNG"
+            },
+            "Fruit Wolf (Sói ăn chay)": {
+                "Description": "Hằng đêm thức dậy cùng các Sói khác. Nếu đây là Sói cuối cùng còn lại, Sói này sẽ không chọn giết người chơi nào cả, nhưng vẫn sẽ cố gắng để giết tất cả số Dân làng còn lại.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/Fruit_Wolf.PNG"
+            },
+            "Fang Face (Nanh sói)": {
+                "Description": "Đên đầu tiên, Nanh sói cũng thức dậy cùng những Sói khác. Nếu còn những con Sói khác sống sót thì Nanh sói sẽ tiếp tục ngủ vào các đêm tiếp theo, cho đến khi chỉ còn mình Nanh sói.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/Fang_Face.png"
+            },
+            "Wolverine (Chó sói)": {
+                "Description": "Hằng đêm, thức dậy cùng Sói. Nếu Chó sói là con Sói ngồi gần nạn nhân nhất, những người chơi sẽ nghe thấy tiếng kim loại chạm vào nhau.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/Wolverine.PNG"
+            },
+            "Virginia Woolf": {
+                "Description": "Lá bài này lấy theo tên của một tiểu thuyết gia có thật ngoài đời. Đêm đầu tiên, Quản trò sẽ gọi nhân vật này tỉnh dậy và chọn một người, người này sẽ là người sợ cô ấy. Quản trò cũng gọi nhân vật này dậy và cho biết mình bị chỉ thị. Nếu Virginia Woof chết thì người bị chỉ thị cũng sẽ chết theo.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/Virginia_Woolf.png"
+            }
+        }
+    },
+    "Bản mở rộng Hunting Party": {
+        "Summary": "Dưới đây là danh sách các nhân vật trong bản Mở rộng Ultimate Werewolf: Hunting Party (2017). Hầu hết là các nhân vật hỗ trợ cho team Dân làng, trừ Alpha Wofl",
+        "Deck of cards": {
+            "Alpha Wofl ( Sói Alpha)": {
+                "Description": "Thuộc phe Sói. Một lần trong trò chơi, sau cái chết của một Sói khác vào ban ngày, vào đêm tiếp theo, Sói Alpha có thể biến mục tiêu của Phe sói thành Sói thay vì bị loại. Nếu người chơi này được bảo vệ bởi một nguyên nhân nào đó thì vết cắn của Sói Alpha sẽ không có tác dụng. Khi đó Sói Alpha sẽ được cắn thêm một lần khác khi đủ điều kiện.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/mo_rong/Alpha_wofl.png"
+            },
+            "Mystic Seeker ( Tiên tri Huyền bí)": {
+                "Description": "Thuộc phe Dân làng. Mỗi đêm, Tiên tri Huyền bí sẽ tỉnh dậy và chỉ định một người. Quản trò sẽ cho Tiên tri Huyền bí biết chính xác người chơi này là Chức năng gì. Đây là một lá bài cực kì mạnh, đem đến lợi thế lớn cho Phe dân làng.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/mo_rong/Mystic_Seeker.png"
+            },
+            "Mad Bomberz (Kẻ đánh bom)": {
+                "Description": "Nếu Kẻ đánh bom  bị loại, thì hai người chơi bên trái và phải của người chơi này sẽ cùng bị loại (không tính những người chơi đã bị loại rồi).",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/mo_rong/mad_bommer.png"
+            },
+            "Revealer (Kẻ khám phá)": {
+                "Description": "Mỗi đêm, Kẻ khám phá  sẽ tỉnh dậy và chỉ vào một người chơi. Nếu người chơi đó là Ma sói, người đó sẽ loại. Nếu không, Kẻ khám phá sẽ bị loại.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/mo_rong/Revealer_2.png"
+            },
+            "Huntress ( Nữ Thợ săn)": {
+                "Description": "Thuộc phe Dân làng. Một lần trong trò chơi, Nữ thợ săn có thể chỉ định giết một người chơi.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/mo_rong/Nu_tho_san.png"
+            },
+            "Mentalist ( Nhà tinh thần học)": {
+                "Description": "Thuộc phe Dân làng. Mỗi Đêm, nhà Tinh thần học tỉnh dậy và chỉ định hai người chơi. Quản trò sẽ cho biết hai người chơi này có cùng phe với nhau hay không.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/mo_rong/Mentalist.png"
+            }
+        }
+    },
+    "Bản mở rộng Urban Legends": {
+        "Summary": "",
+        "Deck of cards": {
+            "Chân to": {
+                "Description": " Ban đầu thuộc phe Dân làng. Nhưng thật không may Tiên tri nếu soi vào Chân to lại ra phe Sói vì anh ta trông lông lá giống Sói. Anh ta sẽ thuộc phe Dân làng cho đến một ngày không có cuộc treo cổ nào. Ngày hôm đó anh ta sẽ rất tức giận và quyết định chuyển sang Phe Sói vào ngày hôm sau.  Nhà Tiên Tri Nostradamus  Thuộc phe thứ 3. Đêm đầu tiên, Nhà tiên tri Nostradamus sẽ tỉnh dậy và dự đoán xem Phe nào sẽ dành chiến thắng. Nếu Nostradamus còn sống ở cuối trò chơi và phe mà Nhà tiên tri dự đoán thực sự thắng, Nostradamus dành chiến thắng.  Bloody Marry Ban đầu Bloody Mary thuộc phe Dân làng. Nếu Bloody Mary bị giết, mỗi đêm tiếp theo Bloody Mary sẽ bắt đầu chọn một người để giết, bắt đầu từ người giết mình. Nếu người giết Bloody Mary là Ma sói, cô ta sẽ giết từng Ma sói. Nếu người giết là Dân làng, cô ta sẽ giết từng Dân làng. Khi Bloody Mary chết, cô ấy thắng nếu đội giết cô ấy thua. Vì vậy, nếu đội Người sói giết cô ấy, cô ấy sẽ ở lại đội Làng (đội mà cô ấy tham gia nếu cô ấy sống ở cuối trò chơi). Nếu đội Làng bầu chọn cô ấy, cô ấy sẽ tham gia đội Người sói / Ma cà rồng để cố gắng tiêu diệt đội Làng. ",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/mo_rong/Bloody_Mary.png"
+            },
+            "Yêu Tinh": {
+                "Description": "Thuộc phe Dân làng. Hàng đêm Yêu tinh sẽ thức dậy sau lượt của Ma sói và Quản trò sẽ cho anh ta biết nạn nhân là ai. Yêu tinh có quyền quyết định xem mình có muốn chuyển người bị giết thành người bên trái hay bên phải của Nạn nhân ban đầu hay không.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/mo_rong/Leprechaun.png"
+            },
+            "Chupacabra": {
+                "Description": "Thuộc phe thứ 3. Hàng đêm Chupacbra sẽ thức dậy, chọn một người chơi. Nếu người chơi đó là Ma sói, người chơi đó sẽ chết. Nếu tất cả Ma sói chết, Chupacabra sẽ chọn những người chơi ở các phe khác.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/mo_rong/Chupacabra.png"
+            },
+            "Wolf-man (Người sói)": {
+                "Description": "Thuộc phe Ma sói và hàng đêm thức dậy cùng các Sói khác. Đây là một Ma sói rất mạnh bởi vì Tiên tri khi soi vào Người sói sẽ ra Dân làng. Ngược lại với Lycan (Người hóa sói).",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/mo_rong/wofl_man.png"
+            }
+        }
+    },
+    "Bản mở rộng Night Terrors": {
+        "Summary": "",
+        "Deck of cards": {
+            "BeHolder": {
+                "Description": "Thuộc phe Dân làng. Đêm đầu tiên, Beholder tỉnh dậy, Quản trò sẽ cho biết ai là Tiên tri. Beholder có vai trò hỗ trợ cho Tiên tri để củng cố lòng tin của mọi người vào ban ngày, giúp phe Dân làng chiến thắng. ",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/mo_rong/Beholder.png"
+            },
+            "Bá Tước": {
+                "Description": "Thuộc phe Dân làng. Đêm đầu tiên, Bá tước sẽ thức dậy và Quản trò sẽ cho Bá tước biết ở mỗi bên nửa ngôi làng có bao nhiêu Ma sói. Quản trò nên chỉ cho Bá tước biết vị trí một nửa được xác định từ đâu ( tính từ vị trí của Bá tước).",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/mo_rong/Ba_tuoc.png"
+            },
+            " ": {
+                "Description": "Kẻ Mất Ngủ Thuộc phe Dân làng. Mỗi đêm thức dậy, Quản trò sẽ cho Kẻ mất ngủ biết 1 trong 2 người ngồi bên cạnh (không tính người bị loại) của Kẻ mất ngủ có thức dậy vào Ban đêm không ( tức có một năng lực nào đó), bằng cách ra dấu ví dụ gật đầu.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/mo_rong/Insomniac.png"
+            },
+            "The Thing": {
+                "Description": "Thuộc phe Dân làng. Mỗi đêm, The Thing sẽ tỉnh dậy và vỗ vào người ngồi bên cạnh mình.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/mo_rong/The_Thing.png"
+            },
+            "Sói Chiêm Bao": {
+                "Description": "Thuộc phe Sói. Sói Chiêm bao sẽ không thức dậy cùng phe Sói cho đến khi có một Ma sói bị giết.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/mo_rong/Dreamwofl.png"
+            },
+            "Ông Kẹ": {
+                "Description": "Thuộc phe thứ 3. Mỗi đêm, nếu phe Ma sói không chọn nhanh mục tiêu trong thời gian quy định thì Ông kẹ sẽ chọn thay. Ông Kẹ sẽ chiến thắng nếu tất cả những người chơi thức dậy ban đêm đều bị loại.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/mo_rong/Bogeyman.png"
+            }
+        }
+    },
+    "Bản mở rộng Classic Movie Monster": {
+        "Summary": "",
+        "Deck of cards": {
+            "Frankenstein's Monster": {
+                "Description": "Thuộc phe Dân làng. Mỗi khi có một người chơi có năng lực đặc biệt chết, Frankenstein sẽ lấy sức mạnh của người đó. Khi đến lượt thức dậy của vai trò bị loại, Quản trò ra hiệu Frankenstein dậy và thực hiện thay. Sức mạnh của Frankenstein là cộng dồn, chỉ bị mất đi khi Frankenstein bị loại.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/mo_rong/Frankenstein.png"
+            },
+            "The Blob ( Chất nhầy)": {
+                "Description": "Thuộc phe thứ 3. Mỗi đêm, một người chơi ở phía tay phải của Chất nhầy sẽ lần lượt bị Chất nhầy xâm lấn. Nếu tất cả người chơi còn sống đều bị xâm lấn thì Chất nhầy sẽ dành chiến thắng.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/mo_rong/The_Blob.png"
+            },
+            "Zombie": {
+                "Description": "Thuộc phe thứ 3. Mỗi đêm Zombie sẽ tỉnh dậy và chọn một người chơi để ăn não. Người chơi bị ăn não sẽ không còn được quyền bình chọn nữa. Nếu tất cả người chơi còn sống đều bị ăn não thì Zombie sẽ dành chiến thắng.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/mo_rong/Zombie.png"
+            },
+            "Bá Tước Dracula": {
+                "Description": "Thuộc phe thứ 3. Mỗi đêm Dracula tỉnh dậy và chọn một người chơi làm vợ. Nếu Dracula có 3 người vợ còn sống sau một ngày đêm thì Dracula giành chiến thắng.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/mo_rong/Dracula.png"
+            },
+            "The Mummy ( Xác ướp)": {
+                "Description": "Thuộc phe Dân làng. Mỗi đêm Xác ướp thức dậy và chọn một người chơi. Vào ngày hôm sau phiếu bầu của người chơi đó sẽ được tính theo phiếu bầu của Xác ướp. Ví dụ: Xác ướp chọn Có treo cổ và Người chơi chọn Không. Khi đó quản trò tính là 2 phiếu bầu Có.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/mo_rong/Mummy.png"
+            },
+            "Sói Tuổi Teen": {
+                "Description": "Thuộc phe Sói và mỗi đêm thức dậy cùng Phe Sói. Sói tuổi Teen rất háo hức vì được trở thành Ma sói nên mỗi ngày anh ta cần phải nói một từ \" Ma sói\". Nếu không sẽ bị loại.",
+                "Image Url": "https://static.thuthuatchoi.com/media/photos/shares/Boardgame/masoi/Ma_soi_Ultimate/mo_rong/Soi_tuoi_teen.png"
+            }
+        }
+    }
+}

@@ -1,0 +1,13 @@
+$kind: http-request
+description: "Use code and a Bearer capability for an authorized snapshot. config=1 is unauthenticated and returns only storage mode and supported catalog. Every response has Cache-Control: no-store. Polling does not write state or disclose secret action counts to players."
+url: "{{baseUrl}}/api/room?code=4FTOA9"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  code: 4FTOA9
+auth:
+  type: noauth
+settings: {}
+examples: ./.resources/Resume your room or obtain public configuration.resources/examples
+order: 1000

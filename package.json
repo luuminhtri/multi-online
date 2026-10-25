@@ -1,0 +1,24 @@
+{
+  "name": "ma-soi-multi-online",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.ts",
+    "demo": "node examples/night.ts",
+    "typecheck": "tsc --noEmit",
+    "dev": "vite --host 127.0.0.1",
+    "build": "npm run typecheck && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "test:data": "python3 -m unittest discover -s tests -p 'test_*.py' && python3 beauti.py --check",
+    "dev:online": "vite --host 0.0.0.0 --port 5174 --strictPort"
+  },
+  "devDependencies": {
+    "@types/node": "22.18.0",
+    "typescript": "5.9.3",
+    "vite": "8.3.5"
+  }
+}

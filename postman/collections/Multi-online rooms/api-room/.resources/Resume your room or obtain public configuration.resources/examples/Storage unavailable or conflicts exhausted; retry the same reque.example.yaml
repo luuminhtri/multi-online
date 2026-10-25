@@ -1,0 +1,28 @@
+$kind: http-example
+name: Storage unavailable or conflicts exhausted; retry the same requestId and exact body
+request:
+  url: "{{baseUrl}}/api/room?code=4FTOA9"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    code: 4FTOA9
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 503
+  statusText: Service Unavailable
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "error": {
+          "code": "string",
+          "message": "string",
+          "retryable": false
+        }
+      }
+order: 8000

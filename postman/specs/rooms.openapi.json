@@ -1,0 +1,523 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Ma Sói room API",
+    "version": "0.1.0",
+    "description": "Same-origin Node server for guest sessions. Browser-generated 256-bit capability sent only in Authorization. Server stores its SHA-256 hash and validates membership. Room data is private and committed with compare-and-swap. No Supabase keys in the browser. No deployment performed."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:5174"
+    }
+  ],
+  "security": [
+    {
+      "sessionCapability": []
+    }
+  ],
+  "paths": {
+    "/api/room": {
+      "get": {
+        "operationId": "getRoom",
+        "summary": "Resume your room or obtain public configuration",
+        "description": "Use code and a Bearer capability for an authorized snapshot. config=1 is unauthenticated and returns only storage mode and supported catalog. Every response has Cache-Control: no-store. Polling does not write state or disclose secret action counts to players.",
+        "security": [
+          {},
+          {
+            "sessionCapability": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "code",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z2-9]{6}$"
+            }
+          },
+          {
+            "name": "config",
+            "in": "query",
+            "schema": {
+              "const": "1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authorized snapshot, or public configuration when config=1",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Snapshot"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "storage": {
+                          "enum": [
+                            "local",
+                            "supabase"
+                          ]
+                        },
+                        "catalog": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        }
+                      },
+                      "required": [
+                        "storage",
+                        "catalog"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed or unknown fields/command",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing/invalid session capability",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but wrong room permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Room missing or expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale lobby revision/step, invalid game action, or lobby already started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage unavailable or conflicts exhausted; retry the same requestId and exact body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "mutateRoom",
+        "summary": "Create/join/reorder/deal or submit an authenticated core command",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/Create"
+                  },
+                  {
+                    "$ref": "#/components/schemas/Join"
+                  },
+                  {
+                    "$ref": "#/components/schemas/Reorder"
+                  },
+                  {
+                    "$ref": "#/components/schemas/Start"
+                  },
+                  {
+                    "$ref": "#/components/schemas/Command"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Current authorized snapshot; retries return current state without applying twice. Create is idempotent by token+requestId. Join preserves the same member. Start never reshuffles on retry. Core commands are rebased on fresh state after CAS conflicts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Snapshot"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed or unknown fields/command",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing/invalid session capability",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but wrong room permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Room missing or expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale lobby revision/step, invalid game action, or lobby already started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage unavailable or conflicts exhausted; retry the same requestId and exact body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "sessionCapability": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "64 lowercase hex characters from browser CSPRNG. Keep on the device, never put in room links, query strings or logs."
+      }
+    },
+    "schemas": {
+      "Create": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "const": "create"
+          },
+          "requestId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,128}$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          }
+        },
+        "required": [
+          "type",
+          "requestId",
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "Join": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "const": "join"
+          },
+          "requestId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,128}$"
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^[A-Z2-9]{6}$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          }
+        },
+        "required": [
+          "type",
+          "requestId",
+          "code",
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "Reorder": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "const": "reorder"
+          },
+          "requestId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,128}$"
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^[A-Z2-9]{6}$"
+          },
+          "expectedRevision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "playerIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 0,
+            "maxItems": 30,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "type",
+          "requestId",
+          "code",
+          "expectedRevision",
+          "playerIds"
+        ],
+        "additionalProperties": false
+      },
+      "Start": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "const": "start"
+          },
+          "requestId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,128}$"
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^[A-Z2-9]{6}$"
+          },
+          "expectedRevision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 3,
+            "maxItems": 30
+          }
+        },
+        "required": [
+          "type",
+          "requestId",
+          "code",
+          "expectedRevision",
+          "roles"
+        ],
+        "additionalProperties": false
+      },
+      "Command": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "const": "command"
+          },
+          "requestId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,128}$"
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^[A-Z2-9]{6}$"
+          },
+          "stepId": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "command": {
+            "type": "object",
+            "description": "Validated core command: wake, act (all supported abilities), advance, resolve, publish, verdict or nextNight. Sender identity is derived from Bearer token; actor/principal fields are forbidden."
+          }
+        },
+        "required": [
+          "type",
+          "requestId",
+          "code",
+          "stepId",
+          "command"
+        ],
+        "additionalProperties": false
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "retryable": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "code",
+              "message",
+              "retryable"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "Snapshot": {
+        "type": "object",
+        "required": [
+          "room",
+          "me",
+          "viewer",
+          "game",
+          "viewVersion",
+          "storage",
+          "serverTime",
+          "catalog"
+        ],
+        "properties": {
+          "room": {
+            "type": "object",
+            "description": "Code, phase, expiry, public member IDs/names/seats. Revision is visible only to moderator or while in lobby; null for players during a game."
+          },
+          "me": {
+            "type": "object",
+            "description": "Authenticated session ID/name, never token or token hash."
+          },
+          "viewer": {
+            "enum": [
+              "moderator",
+              "player"
+            ]
+          },
+          "game": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Only moderatorView for the moderator or playerView for the authenticated player. A client-supplied playerId cannot select another view."
+          },
+          "viewVersion": {
+            "type": "string"
+          },
+          "storage": {
+            "enum": [
+              "local",
+              "supabase"
+            ]
+          },
+          "serverTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "catalog": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "Supported role IDs and descriptions only; no assigned roles."
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

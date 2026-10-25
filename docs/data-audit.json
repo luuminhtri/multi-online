@@ -1,0 +1,468 @@
+{
+  "source": "response.html",
+  "sourceSha256": "a1360a0ad6fae3c2a31db14c2e15a456a17a3e8634b652270924c78297519da1",
+  "previousCardsSha256": "bcbef440dc32873baa8c549d25d484257ad11c8c66b96cca4731e95ff89d7f8f",
+  "groups": {
+    "Phe dân làng": 22,
+    "Phe sói": 5,
+    "Đổi phe": 3,
+    "Phe thứ 3": 4,
+    "Bản mở rộng Wolf Pack": 6,
+    "Bản mở rộng Hunting Party": 6,
+    "Bản mở rộng Urban Legends": 6,
+    "Bản mở rộng Night Terrors": 6,
+    "Bản mở rộng Classic Movie Monster": 6
+  },
+  "totalRoles": 64,
+  "changes": {
+    "added": [
+      [
+        "Phe dân làng",
+        "Pacifist (Người yêu hòa bình)"
+      ],
+      [
+        "Đổi phe",
+        "Doppelganger (Nhân bản)"
+      ],
+      [
+        "Đổi phe",
+        "Drunk ( Say rượu)"
+      ],
+      [
+        "Phe thứ 3",
+        "Hoodlum ( Du côn)"
+      ],
+      [
+        "Bản mở rộng Urban Legends",
+        "Nhà Tiên Tri Nostradamus"
+      ],
+      [
+        "Bản mở rộng Urban Legends",
+        "Bloody Marry"
+      ],
+      [
+        "Bản mở rộng Night Terrors",
+        "Kẻ Mất Ngủ"
+      ]
+    ],
+    "removed": [
+      [
+        "Bản mở rộng Night Terrors",
+        ""
+      ]
+    ],
+    "changed": [
+      {
+        "group": "Phe dân làng",
+        "name": "Old Hag (Phù Thủy già)",
+        "fields": [
+          "Description",
+          "Image Url"
+        ]
+      },
+      {
+        "group": "Đổi phe",
+        "name": "Cursed (Kẻ bị nguyền rủa)",
+        "fields": [
+          "Description",
+          "Image Url"
+        ]
+      },
+      {
+        "group": "Bản mở rộng Urban Legends",
+        "name": "Chân to",
+        "fields": [
+          "Description",
+          "Image Url"
+        ]
+      }
+    ]
+  },
+  "locations": [
+    {
+      "group": "Phe dân làng",
+      "name": "Apprentice Seer (Tiên tri tập sự)",
+      "line": 1144,
+      "tag": "h3"
+    },
+    {
+      "group": "Phe dân làng",
+      "name": "Aura Seer (Tiên tri hào quang)",
+      "line": 1152,
+      "tag": "h3"
+    },
+    {
+      "group": "Phe dân làng",
+      "name": "Bodyguard (Bảo vệ)",
+      "line": 1158,
+      "tag": "h3"
+    },
+    {
+      "group": "Phe dân làng",
+      "name": "Cupid (Thần tình yêu)",
+      "line": 1166,
+      "tag": "h3"
+    },
+    {
+      "group": "Phe dân làng",
+      "name": "Diseased (Người bệnh)",
+      "line": 1172,
+      "tag": "h3"
+    },
+    {
+      "group": "Phe dân làng",
+      "name": "Ghost ( Con ma)",
+      "line": 1178,
+      "tag": "h3"
+    },
+    {
+      "group": "Phe dân làng",
+      "name": "Hunter (Thợ săn)",
+      "line": 1184,
+      "tag": "h4"
+    },
+    {
+      "group": "Phe dân làng",
+      "name": "Idiot (Thằng ngốc)",
+      "line": 1192,
+      "tag": "h3"
+    },
+    {
+      "group": "Phe dân làng",
+      "name": "Lycan (Người hóa sói)",
+      "line": 1200,
+      "tag": "h3"
+    },
+    {
+      "group": "Phe dân làng",
+      "name": "Mason ( Sinh đôi)",
+      "line": 1208,
+      "tag": "h3"
+    },
+    {
+      "group": "Phe dân làng",
+      "name": "Mayor (Thị trưởng)",
+      "line": 1214,
+      "tag": "h3"
+    },
+    {
+      "group": "Phe dân làng",
+      "name": "Old Hag (Phù Thủy già)",
+      "line": 1220,
+      "tag": "h3"
+    },
+    {
+      "group": "Phe dân làng",
+      "name": "Pacifist (Người yêu hòa bình)",
+      "line": 1228,
+      "tag": "h3"
+    },
+    {
+      "group": "Phe dân làng",
+      "name": "P.I. (Paranormal Investigator) ( Thám tử)",
+      "line": 1234,
+      "tag": "h3"
+    },
+    {
+      "group": "Phe dân làng",
+      "name": "Priest (Thầy tu)",
+      "line": 1240,
+      "tag": "h3"
+    },
+    {
+      "group": "Phe dân làng",
+      "name": "Prince ( Hoàng tử)",
+      "line": 1246,
+      "tag": "h3"
+    },
+    {
+      "group": "Phe dân làng",
+      "name": "Seeker (Tiên tri)",
+      "line": 1252,
+      "tag": "h3"
+    },
+    {
+      "group": "Phe dân làng",
+      "name": "Spellcaster (Người phù phép)",
+      "line": 1258,
+      "tag": "h3"
+    },
+    {
+      "group": "Phe dân làng",
+      "name": "Tough Guy (Người cứng cỏi)",
+      "line": 1264,
+      "tag": "h3"
+    },
+    {
+      "group": "Phe dân làng",
+      "name": "Troublemaker (Kẻ phá rối)",
+      "line": 1270,
+      "tag": "h3"
+    },
+    {
+      "group": "Phe dân làng",
+      "name": "Village (Dân làng)",
+      "line": 1276,
+      "tag": "h3"
+    },
+    {
+      "group": "Phe dân làng",
+      "name": "Witch (Phù thủy)",
+      "line": 1284,
+      "tag": "h3"
+    },
+    {
+      "group": "Phe sói",
+      "name": "Minion (Kẻ phản bội)",
+      "line": 1310,
+      "tag": "h3"
+    },
+    {
+      "group": "Phe sói",
+      "name": "Sorceress (Pháp sư sói)",
+      "line": 1316,
+      "tag": "h3"
+    },
+    {
+      "group": "Phe sói",
+      "name": "Werewolf (Ma sói)",
+      "line": 1322,
+      "tag": "h3"
+    },
+    {
+      "group": "Phe sói",
+      "name": "Lone Wolf (Sói cô đơn)",
+      "line": 1328,
+      "tag": "h3"
+    },
+    {
+      "group": "Phe sói",
+      "name": "Wolf Cub (Sói con)",
+      "line": 1334,
+      "tag": "h3"
+    },
+    {
+      "group": "Đổi phe",
+      "name": "Cursed (Kẻ bị nguyền rủa)",
+      "line": 1360,
+      "tag": "h3"
+    },
+    {
+      "group": "Đổi phe",
+      "name": "Doppelganger (Nhân bản)",
+      "line": 1364,
+      "tag": "h3"
+    },
+    {
+      "group": "Đổi phe",
+      "name": "Drunk ( Say rượu)",
+      "line": 1369,
+      "tag": "p"
+    },
+    {
+      "group": "Phe thứ 3",
+      "name": "Cult Leader ( Trưởng giáo phái)",
+      "line": 1392,
+      "tag": "h3"
+    },
+    {
+      "group": "Phe thứ 3",
+      "name": "Hoodlum ( Du côn)",
+      "line": 1396,
+      "tag": "p"
+    },
+    {
+      "group": "Phe thứ 3",
+      "name": "Tanner (Chán đời)",
+      "line": 1403,
+      "tag": "h3"
+    },
+    {
+      "group": "Phe thứ 3",
+      "name": "Vampire (Ma cà rồng)",
+      "line": 1409,
+      "tag": "h3"
+    },
+    {
+      "group": "Bản mở rộng Wolf Pack",
+      "name": "Big Bad Wolf (Sói đại ca)",
+      "line": 1445,
+      "tag": "h3"
+    },
+    {
+      "group": "Bản mở rộng Wolf Pack",
+      "name": "Dire Wolf (Sói tuyết)",
+      "line": 1451,
+      "tag": "h3"
+    },
+    {
+      "group": "Bản mở rộng Wolf Pack",
+      "name": "Fruit Wolf (Sói ăn chay)",
+      "line": 1457,
+      "tag": "h3"
+    },
+    {
+      "group": "Bản mở rộng Wolf Pack",
+      "name": "Fang Face (Nanh sói)",
+      "line": 1463,
+      "tag": "h3"
+    },
+    {
+      "group": "Bản mở rộng Wolf Pack",
+      "name": "Wolverine (Chó sói)",
+      "line": 1469,
+      "tag": "h3"
+    },
+    {
+      "group": "Bản mở rộng Wolf Pack",
+      "name": "Virginia Woolf",
+      "line": 1475,
+      "tag": "h3"
+    },
+    {
+      "group": "Bản mở rộng Hunting Party",
+      "name": "Alpha Wofl ( Sói Alpha)",
+      "line": 1503,
+      "tag": "h3"
+    },
+    {
+      "group": "Bản mở rộng Hunting Party",
+      "name": "Mystic Seeker ( Tiên tri Huyền bí)",
+      "line": 1509,
+      "tag": "h3"
+    },
+    {
+      "group": "Bản mở rộng Hunting Party",
+      "name": "Mad Bomberz (Kẻ đánh bom)",
+      "line": 1515,
+      "tag": "h3"
+    },
+    {
+      "group": "Bản mở rộng Hunting Party",
+      "name": "Revealer (Kẻ khám phá)",
+      "line": 1521,
+      "tag": "h3"
+    },
+    {
+      "group": "Bản mở rộng Hunting Party",
+      "name": "Huntress ( Nữ Thợ săn)",
+      "line": 1527,
+      "tag": "h3"
+    },
+    {
+      "group": "Bản mở rộng Hunting Party",
+      "name": "Mentalist ( Nhà tinh thần học)",
+      "line": 1533,
+      "tag": "h3"
+    },
+    {
+      "group": "Bản mở rộng Urban Legends",
+      "name": "Chân to",
+      "line": 1553,
+      "tag": "h3"
+    },
+    {
+      "group": "Bản mở rộng Urban Legends",
+      "name": "Nhà Tiên Tri Nostradamus",
+      "line": 1561,
+      "tag": "h3"
+    },
+    {
+      "group": "Bản mở rộng Urban Legends",
+      "name": "Bloody Marry",
+      "line": 1569,
+      "tag": "h3"
+    },
+    {
+      "group": "Bản mở rộng Urban Legends",
+      "name": "Yêu Tinh",
+      "line": 1581,
+      "tag": "h3"
+    },
+    {
+      "group": "Bản mở rộng Urban Legends",
+      "name": "Chupacabra",
+      "line": 1589,
+      "tag": "h3"
+    },
+    {
+      "group": "Bản mở rộng Urban Legends",
+      "name": "Wolf-man (Người sói)",
+      "line": 1595,
+      "tag": "h3"
+    },
+    {
+      "group": "Bản mở rộng Night Terrors",
+      "name": "BeHolder",
+      "line": 1629,
+      "tag": "h3"
+    },
+    {
+      "group": "Bản mở rộng Night Terrors",
+      "name": "Bá Tước",
+      "line": 1637,
+      "tag": "h3"
+    },
+    {
+      "group": "Bản mở rộng Night Terrors",
+      "name": "Kẻ Mất Ngủ",
+      "line": 1646,
+      "tag": "h3"
+    },
+    {
+      "group": "Bản mở rộng Night Terrors",
+      "name": "The Thing",
+      "line": 1652,
+      "tag": "h3"
+    },
+    {
+      "group": "Bản mở rộng Night Terrors",
+      "name": "Sói Chiêm Bao",
+      "line": 1660,
+      "tag": "h3"
+    },
+    {
+      "group": "Bản mở rộng Night Terrors",
+      "name": "Ông Kẹ",
+      "line": 1666,
+      "tag": "h3"
+    },
+    {
+      "group": "Bản mở rộng Classic Movie Monster",
+      "name": "Frankenstein's Monster",
+      "line": 1686,
+      "tag": "h3"
+    },
+    {
+      "group": "Bản mở rộng Classic Movie Monster",
+      "name": "The Blob ( Chất nhầy)",
+      "line": 1692,
+      "tag": "h3"
+    },
+    {
+      "group": "Bản mở rộng Classic Movie Monster",
+      "name": "Zombie",
+      "line": 1698,
+      "tag": "h3"
+    },
+    {
+      "group": "Bản mở rộng Classic Movie Monster",
+      "name": "Bá Tước Dracula",
+      "line": 1704,
+      "tag": "h3"
+    },
+    {
+      "group": "Bản mở rộng Classic Movie Monster",
+      "name": "The Mummy ( Xác ướp)",
+      "line": 1710,
+      "tag": "h3"
+    },
+    {
+      "group": "Bản mở rộng Classic Movie Monster",
+      "name": "Sói Tuổi Teen",
+      "line": 1718,
+      "tag": "h3"
+    }
+  ],
+  "backup": "/Users/yennhi/LMT/ma-soi-app/multi-online/data/backups/cards.before-html-repair.bcbef440dc32.json"
+}

@@ -1,0 +1,32 @@
+$kind: http-request
+name: 'Reject changed retry'
+method: POST
+url: '{{baseUrl}}/api/room'
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: 'Bearer {{testTokenowner}}'
+order: 800
+body:
+  type: json
+  content: |-
+    {
+      "type": "start",
+      "requestId": "start-settings",
+      "code": "{{testCode}}",
+      "expectedRevision": 3,
+      "roles": [
+        "wolf",
+        "witch",
+        "villager"
+      ],
+      "settings": {
+        "witchSeesBite": true
+      }
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Cannot replace settings under same request', () => { pm.response.to.have.status(409); pm.expect(pm.response.json().error.code).to.eql('REQUEST_ID_REUSED'); });

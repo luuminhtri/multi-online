@@ -1,6 +1,6 @@
-# Luật cố định classic-core-v8
+# Luật classic-core-v9
 
-Mặc định hardcode của dự án, không khẳng định là luật Ma Sói phổ quát. Không có form cấu hình biến thể. Bản v8 có **27 vai**, schema ván **3**, thay các mô tả v1–v7. Dữ liệu cards.json vẫn là nguồn thô, không tự quyết định hành vi runtime.
+Mặc định của dự án, không khẳng định là luật Ma Sói phổ quát. Chỉ có tùy chọn Phù thủy theo yêu cầu mới của người dùng. Ván mới v9 có **27 vai**, schema **4**; ván v8/schema3 đã lưu giữ luật cũ đến hết ván. Dữ liệu cards.json vẫn là nguồn thô, không tự quyết định hành vi runtime.
 
 ## Vai nền và thông tin
 
@@ -10,7 +10,7 @@ Mặc định hardcode của dự án, không khẳng định là luật Ma Sói
 | Dân | Không có hành động đêm. |
 | Tiên tri | Bắt buộc soi một người sống khác mình. Lycan hiện Sói, Wolf-man hiện không phải Sói; các Sói thật khác hiện Sói, kể cả phe tình nhân. |
 | Bảo vệ | Bắt buộc bảo vệ một người sống, được tự bảo vệ, không cùng người hai đêm liền. Chỉ chặn cắn; không chặn độc, nổ, bắn, đau buồn hoặc vết thương cũ. |
-| Phù thủy | Một cứu/một độc cho cả ván, tự cứu/tự độc và dùng cả hai cùng đêm được phép. Còn cứu thì biết toàn bộ mục tiêu cắn, kể cả đã được bảo vệ; chỉ cứu một người trong danh sách. Cứu vẫn tốn nếu người đó đã được bảo vệ. Hết thuốc vẫn được gọi và xác nhận không dùng thuốc. |
+| Phù thủy | Một cứu/một độc cho cả ván, tự cứu/tự độc và dùng cả hai cùng đêm được phép. Bật xem nạn nhân (mặc định): còn cứu thì chỉ thấy mục tiêu cắn không được Bảo vệ chặn, không được cứu người đã bị lọc. Tắt xem nạn nhân: chỉ gửi dùng/giữ thuốc; máy chủ cứu tối đa một nạn nhân chưa được bảo vệ theo thứ tự ghế. Đã dùng là tốn thuốc kể cả không có nạn nhân; phản hồi không lộ tên/số nạn nhân. Hết thuốc vẫn được gọi và xác nhận không dùng thuốc. |
 | Thợ săn | Chết do mọi nguyên nhân đang hỗ trợ thì bắn một người sống khác mình, một lần. Chết đêm chỉ bắn sau công bố. Không còn mục tiêu thì kết thúc phản ứng để xét hòa; xử lý hết chuỗi bắn mới xét thắng. |
 | Cupid | Đêm đầu chọn hai người khác nhau, được chọn mình. Hai người biết tên nhau, không tự biết vai. Một người chết kéo theo người còn lại. |
 | Kẻ bị nguyền | Cắn không chặn sẽ sống và hóa Sói tại công bố sáng, tham gia từ lượt bầy đêm sau. Nếu cũng chết do nguyên nhân khác cùng đợt thì không chuyển. Cứu/bảo vệ chặn chuyển đổi. |
@@ -72,11 +72,13 @@ Khi tạo ván: tối thiểu ba người, ít nhất một Sói thật và số
 
 ## Schema và tương thích
 
-Luật v8, schemaVersion=3. Thêm biteTargets, doubleAttackNight, sacrificedCubId, alphaEligibleNight/Target/ActorId và alphaUsed của người chơi. biteTarget trong Game còn là alias của mục tiêu đầu để đọc demo cũ; xử lý thật dùng biteTargets. Private view witch.biteTarget chỉ có giá trị nếu đúng một nạn nhân, danh sách đầy đủ ở biteTargets; với hai nạn nhân lệnh potion phải chỉ rõ healTarget. Một thuốc cứu không thể cứu hai người.
+Ván mới dùng v9/schemaVersion=4, lưu settings.witchSeesBite cùng snapshot. Quản trò chọn khi start, không đổi giữa ván. createGame mặc định true để tương thích caller cũ; API kiểm boolean và từ chối trường lạ.
 
-Chưa có dữ liệu ván lưu bền vững. Snapshot trước v8/schema3 bị từ chối, không tự đổi nhãn hoặc đoán lịch thưởng/chuyển hóa. Sandbox tạo ván mới. Nếu cần giữ ván cũ, phải có handler/migration riêng có kiểm thử trước khi nối lưu trữ. Catalog/dữ liệu nguồn không đổi trong mốc này.
+Handler riêng giữ nguyên v8/schema3 và cách Phù thủy thấy cả mục tiêu được bảo vệ. Không nâng nhãn hoặc thay thuốc/lựa chọn đã ghi nhận của ván cũ. Chỉ chấp nhận đúng cặp v8/3 hoặc v9/4 có settings hợp lệ; bản cũ hơn vẫn bị từ chối. Room schema1 không đổi vì Game có version riêng. Muốn áp dụng luật mới thì tạo ván mới.
 
-Còn 37 vai nguồn chưa triển khai, xem ROLE_COVERAGE.md; chưa có vote/timer, undo, API/auth hoặc Supabase.
+Game.biteTargets là thông tin quản trò. Private view biteTargets luôn rỗng khi tắt hiển thị/hết cứu; khi bật, bỏ người được Bảo vệ. biteTarget chỉ có giá trị nếu đúng một người trong danh sách đã lọc. Hai người được thấy thì Phù thủy phải chọn healTarget; chế độ ẩn từ chối mọi healTarget, kể cả đoán đúng, để không dò nạn nhân. Một thuốc cứu tối đa một người.
+
+Còn 37 vai nguồn chưa triển khai; đã có API/phiên khách/lưu local và adapter Supabase, chưa xác minh cloud. Chưa có vote/timer hoặc undo.
 
 
 ## Nhóm liên kết và Sói ngủ v8

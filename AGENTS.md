@@ -8,7 +8,7 @@
 
 - Dùng tiếng Việt cho tài liệu sản phẩm và thông báo cho người dùng.
 - Yêu cầu đã chốt nằm trong PRODUCT.md. Đề xuất kỹ thuật không tự trở thành quyết định.
-- Hướng đã chọn: Vercel + Supabase; lõi TypeScript độc lập. Luật hardcode có version (hiện classic-core-v8) trong DEFAULT_RULES.md, không tạo form biến thể cho quản trò. Không dựng đồng thời nhiều stack.
+- Hướng đã chọn: Vercel + Supabase; lõi TypeScript độc lập. Luật có version (hiện classic-core-v9) trong DEFAULT_RULES.md. Ngoại lệ người dùng yêu cầu: quản trò chọn Phù thủy có thấy nạn nhân trước ván; không mở rộng form biến thể khác. Không dựng đồng thời nhiều stack.
 - Không mở rộng offline, native app hoặc game chơi từ xa thay cho nhu cầu chơi trực tiếp hiện tại.
 - Không ghi secret, token, dữ liệu ván thật hoặc thông tin bí mật của người chơi vào tài liệu/log công khai.
 

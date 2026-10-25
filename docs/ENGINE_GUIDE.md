@@ -1,5 +1,7 @@
 # Đọc và chạy lõi đầu tiên
 
+> Cập nhật v9 2026-10-25: phần "Biên an toàn quan trọng khi nối API", "Vì sao chưa có hàng đợi hiệu ứng tổng quát?" và "Ranh giới bản này" là ghi nhận của các mốc trước. Hiện đã có máy chủ phòng local (`src/server`), UI phòng nhiều thiết bị và tùy chọn Phù thủy v9; xem phần cuối và STATUS.md cho trạng thái hiện hành.
+
 ## Chạy
 
 Node.js >= 22.18 (hỗ trợ chạy TypeScript loại bỏ type trực tiếp).
@@ -73,3 +75,12 @@ roleCanWake phân biệt Sói thật với Sói được thức ở một đêm 
 deathBond lưu hướng follow hoặc revenge; bước đầu đêm thiết lập một lần cho người mới nhận Dire/Virginia. Hàng đợi chết kiểm quan hệ trước bom. Chỉ khi publishDeaths mới bật wolfDeathOccurred. Schema 3 và luật v8 từ chối trạng thái cũ, không tự đổi nhãn.
 
 Mẫu liên kết và ngủ 15 người để thử UI; mẫu đầy đủ hiện 27 vai. Kết quả hiện hành và các mặc định còn cần nhóm chơi góp ý ở STATUS.md/DEFAULT_RULES.md.
+
+
+## Tùy chọn Phù thủy và máy chủ phòng v9
+
+`src/engine/witch.ts` tách luật Phù thủy theo version: `legacyWitchRules` nhận diện ván v8/schema3 giữ luật cũ (thấy cả mục tiêu được bảo vệ); ván mới v9/schema4 đọc `settings.witchSeesBite`. `healableBites` luôn lọc mục tiêu Bảo vệ đã chặn ở chế độ hiện; chế độ ẩn chỉ chấp nhận lệnh potion không có `healTarget`, kể cả khi đoán đúng ID, để xác thực không trở thành công cụ dò nạn nhân. View chỉ trả `biteTargets` khi đang là lượt Phù thủy, còn thuốc cứu và chế độ cho phép; `sleepReady` là dữ liệu view cho lời mời ngủ, không phải lệnh bỏ lượt — máy chủ vẫn chỉ chuyển bước theo lệnh quản trò.
+
+Máy chủ phòng (`src/server`) giữ trạng thái có thẩm quyền: trình duyệt sinh token 256-bit làm phiên, server chỉ lưu SHA-256; mọi mutation có `requestId` chống xử lý trùng và trả snapshot đúng quyền qua `playerView`/`moderatorView`; commit dùng compare-and-swap qua repository (file local cho dev, adapter HTTP Supabase khi có cấu hình). Lõi vẫn không biết database; adapter mới đọc env và gọi lõi.
+
+Test tương ứng: `tests/witch-visibility.test.ts` (hai chế độ, chống dò nạn nhân, ván cũ không đổi luật, retry không tốn thêm thuốc) và `tests/rooms.test.ts` (HTTP: cạnh tranh join, restart giữ phiên, phân quyền, settings của quản trò, retry chia vai).

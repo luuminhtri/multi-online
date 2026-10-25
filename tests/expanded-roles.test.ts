@@ -140,7 +140,9 @@ test('tough guy survives bite, then dies next night despite protection and heali
   assert.equal(p(g, 'tough').delayedDeathNight, 2);
   assert.ok(!JSON.stringify(playerView(g, 'tough')).includes('delayedDeathNight'));
   g = next(g);
-  g = dawn(g, { bite: 'tough', protect: 'tough', heal: true });
+  const protectedAgain = dawn(g, { bite: 'tough', protect: 'tough' });
+  assert.equal(p(protectedAgain, 'tough').alive, false);
+  g = dawn(g, { bite: 'tough', protect: 't', heal: true });
   assert.equal(p(g, 'tough').alive, false);
   assert.deepEqual(g.events.findLast(e => e.type === 'death' && e.data.player === 'tough')?.data.causes, ['delayed-bite']);
 });

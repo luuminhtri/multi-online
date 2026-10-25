@@ -113,8 +113,12 @@ test('Big Bad Wolf bonus ends after its death', () => {
   assert.deepEqual(wolfPlan(g), { minTargets: 1, maxTargets: 1, adjacentPair: false });
 });
 
-test('27 two-bite protection, single-heal and poison combinations resolve independently', () => {
+test('two-bite protection, single-heal and poison combinations resolve independently; protected targets cannot be healed', () => {
   for (const protect of ['gr', 'a', 'b']) for (const healTarget of [undefined, 'a', 'b']) for (const poison of [null, 'a', 'b']) {
+    if (healTarget === protect) {
+      rejects(() => night(make({ bb: 'big_bad_wolf', gr: 'guard', wt: 'witch' }), { targets: ['a', 'b'], protect, healTarget, poison }), 'INVALID_HEAL_TARGET');
+      continue;
+    }
     const g = night(make({ bb: 'big_bad_wolf', gr: 'guard', wt: 'witch' }), { targets: ['a', 'b'], protect, healTarget, poison });
     const dead = new Set<string>();
     for (const id of ['a', 'b']) if (id !== protect && id !== healTarget) dead.add(id);

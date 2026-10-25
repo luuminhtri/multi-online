@@ -1,0 +1,32 @@
+$kind: http-request
+name: 'Retry preserves settings'
+method: POST
+url: '{{baseUrl}}/api/room'
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: 'Bearer {{testTokenowner}}'
+order: 700
+body:
+  type: json
+  content: |-
+    {
+      "type": "start",
+      "requestId": "start-settings",
+      "code": "{{testCode}}",
+      "expectedRevision": 3,
+      "roles": [
+        "wolf",
+        "witch",
+        "villager"
+      ],
+      "settings": {
+        "witchSeesBite": false
+      }
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('No redeal on retry', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().game).to.eql(JSON.parse(pm.collectionVariables.get('testDealtGame'))); });

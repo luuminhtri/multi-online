@@ -1,0 +1,24 @@
+$kind: http-request
+name: 'Join A'
+method: POST
+url: '{{baseUrl}}/api/room'
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: 'Bearer {{testTokenA}}'
+order: 200
+body:
+  type: json
+  content: |-
+    {
+      "type": "join",
+      "requestId": "join-A",
+      "code": "{{testCode}}",
+      "name": "A"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Join player', () => pm.response.to.have.status(200));

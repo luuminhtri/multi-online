@@ -1,7 +1,8 @@
 import { baseTeam, hasSpecialAbility, isWolf, seenAsWolf } from './role-policy.ts';
 import { adjacentLivingSeats, biteChoices, offeredCub, wolfActors, wolfPlan, canSacrifice, fruitMustFast, packMembers, canWolfTarget, roleCanWake } from './wolf-pack.ts';
 import { NIGHT_STEPS, ROLES, RULES } from './rules.ts';
-import type { Action, Command, Game, Principal, Request, Role, Step } from './types.ts';
+import { healableBites, legacyWitchRules, witchSeesBite } from './witch.ts';
+import type { Action, Command, Game, GameSettings, Principal, Request, Role, Step } from './types.ts';
 
 export class RuleError extends Error {
   code: string;
@@ -32,7 +33,8 @@ function nextOpening(g: Game, after?: Step): Step {
   const steps: Step[] = ['cupid', 'doppelganger', 'dire_wolf', 'virginia_woolf'];
   return steps.slice(after ? steps.indexOf(after) + 1 : 0).find(step => actors({ ...g, step }).length > 0) ?? 'guard';
 }
-export function createGame(id: string, roster: { id: string; name: string; role: Role }[]): Game {
+export function createGame(id: string, roster: { id: string; name: string; role: Role }[], settings: GameSettings = { witchSeesBite: true }): Game {
+  requireRule(typeof settings?.witchSeesBite === 'boolean' && Object.keys(settings).every(k => k === 'witchSeesBite'), 'INVALID_SETTINGS');
   requireRule(id.trim() && roster.length >= 3, 'INVALID_GAME');
   requireRule(new Set(roster.map(p => p.id)).size === roster.length, 'DUPLICATE_ID');
   requireRule(new Set(roster.map(p => p.name.trim().toLocaleLowerCase('vi'))).size === roster.length, 'DUPLICATE_NAME');
@@ -44,7 +46,7 @@ export function createGame(id: string, roster: { id: string; name: string; role:
   requireRule(wolves > 0 && wolves < roster.length - wolves, 'UNBALANCED_START');
   const startStep = roster.some(p => p.role === 'cupid') ? 'cupid' : roster.some(p => p.role === 'doppelganger') ? 'doppelganger' : roster.some(p => p.role === 'dire_wolf') ? 'dire_wolf' : roster.some(p => p.role === 'virginia_woolf') ? 'virginia_woolf' : 'guard';
   return {
-    schemaVersion: 3, id, rulesVersion: RULES.version, revision: 0, night: 1, step: startStep, stepSequence: 0,
+    schemaVersion: 4, settings: { ...settings }, id, rulesVersion: RULES.version, revision: 0, night: 1, step: startStep, stepSequence: 0,
     players: roster.map(p => ({ ...p, name: p.name.trim(), initialRole: p.role,
       team: baseTeam(p.role), alive: true,
       lastProtected: null, delayedDeathNight: null, alphaUsed: false, deathBond: null, knownWolves: [], cursedTransformed: false, doppelgangerTarget: null,
@@ -255,11 +257,19 @@ function applyAction(g: Game, actorId: string, a: Action) {
     requireRule(a.type === 'potion' && typeof a.heal === 'boolean' && (a.poison === null || typeof a.poison === 'string'), 'WRONG_ABILITY');
     requireRule(RULES.witchCanUseBoth || !a.heal || a.poison === null, 'TWO_POTIONS');
     if (a.heal) {
-      requireRule(p.resources.heal > 0 && g.biteTargets.length > 0, 'NO_HEAL_AVAILABLE');
-      requireRule(g.biteTargets.length === 1 || typeof a.healTarget === 'string', 'HEAL_TARGET_REQUIRED');
-      const healed = a.healTarget ?? g.biteTargets[0];
-      requireRule(g.biteTargets.includes(healed), 'INVALID_HEAL_TARGET');
-      requireRule(RULES.witchCanSelfHeal || healed !== actorId, 'NO_SELF_HEAL');
+      requireRule(p.resources.heal > 0, 'NO_HEAL_AVAILABLE');
+      if (witchSeesBite(g)) {
+        const bites = healableBites(g);
+        requireRule(bites.length > 0, 'NO_HEAL_AVAILABLE');
+        requireRule(bites.length === 1 || typeof a.healTarget === 'string', 'HEAL_TARGET_REQUIRED');
+        const healed = a.healTarget ?? bites[0];
+        requireRule(bites.includes(healed), 'INVALID_HEAL_TARGET');
+        requireRule(RULES.witchCanSelfHeal || healed !== actorId, 'NO_SELF_HEAL');
+      } else {
+        // Identical acceptance with zero/one/two bites; a guessed ID must not
+        // turn validation into an oracle for hidden or protected targets.
+        requireRule(a.healTarget === undefined, 'INVALID_HEAL_TARGET');
+      }
     }
     requireRule(a.heal || a.healTarget === undefined, 'INVALID_HEAL_TARGET');
     if (a.poison !== null) { requireRule(p.resources.poison > 0, 'NO_POISON_AVAILABLE'); target(g, a.poison); }
@@ -377,7 +387,7 @@ function advance(g: Game) {
   if (g.step === 'witch' && expected[0]) {
     const p = g.players.find(p => p.id === expected[0])!, a = actions[0];
     if (a.type === 'potion') {
-      if (a.heal) { g.healTarget = a.healTarget ?? g.biteTargets[0]; p.resources.heal--; }
+      if (a.heal) { g.healTarget = a.healTarget ?? healableBites(g)[0] ?? null; p.resources.heal--; }
       if (a.poison !== null) { g.poisonTarget = a.poison; p.resources.poison--; }
     }
   }
@@ -523,8 +533,9 @@ function moderatorCommand(g: Game, cmd: Command) {
   }
 }
 export function dispatch(input: Game, principal: Principal, request: Request): Game {
-  requireRule(input.rulesVersion === RULES.version, 'UNSUPPORTED_RULES_VERSION');
-  requireRule(input.schemaVersion === 3, 'UNSUPPORTED_SCHEMA_VERSION');
+  requireRule(input.rulesVersion === RULES.version || input.rulesVersion === 'classic-core-v8', 'UNSUPPORTED_RULES_VERSION');
+  requireRule(legacyWitchRules(input) || (input.rulesVersion === RULES.version && input.schemaVersion === 4), 'UNSUPPORTED_SCHEMA_VERSION');
+  requireRule(legacyWitchRules(input) || typeof input.settings?.witchSeesBite === 'boolean', 'INVALID_SETTINGS');
   requireRule(request.gameId === input.id && typeof request.id === 'string' && request.id.length > 0 && request.id.length <= 128, 'INVALID_REQUEST');
   requireRule(principal.kind === 'moderator' || (principal.kind === 'player' && input.players.some(p => p.id === principal.playerId)), 'FORBIDDEN');
   const key = JSON.stringify([principal.kind, principal.kind === 'player' ? principal.playerId : '', request.id]);

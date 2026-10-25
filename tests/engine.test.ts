@@ -193,6 +193,7 @@ test('public and private event IDs do not reveal the number of secret events', (
 });
 test('exhaustive basic protection/heal/poison combinations match the fixed policy', () => {
   for (const protect of ['g', 'a', 'b']) for (const heal of [false, true]) for (const poison of [null, 'a', 'b']) {
+    if (protect === 'a' && heal) { rejects(() => night(protect, 'a', heal, poison), 'NO_HEAL_AVAILABLE'); continue; }
     const g = night(protect, 'a', heal, poison);
     const dead = new Set<string>();
     if (protect !== 'a' && !heal) dead.add('a');

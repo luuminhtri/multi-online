@@ -1,8 +1,8 @@
 import type { Role, Step } from './types.ts';
 
-// Fixed policy for v8. Change this version whenever game semantics change.
+// v9 adds the moderator's explicit pre-game Witch visibility option.
 export const RULES = Object.freeze({
-  version: 'classic-core-v8',
+  version: 'classic-core-v9',
   guardCanSelfProtect: true,
   guardCanRepeat: false,
   protectionBlocksPoison: false,
@@ -15,7 +15,7 @@ export const ROLES: Record<Role, { name: string; description: string }> = {
   villager: { name: 'Dân làng', description: 'Thảo luận và biểu quyết ban ngày. Không có hành động ban đêm.' },
   seer: { name: 'Tiên tri', description: 'Mỗi đêm soi một người khác còn sống. Sói thường hiện Sói; Người hóa sói cũng hiện Sói, còn Người sói che giấu hiện không phải Sói.' },
   guard: { name: 'Bảo vệ', description: 'Mỗi đêm bảo vệ một người, được chọn mình nhưng không cùng người hai đêm liên tiếp. Chỉ chặn Sói cắn, không chặn độc.' },
-  witch: { name: 'Phù thủy', description: 'Có một thuốc cứu và một thuốc độc cho cả ván. Được tự cứu và dùng cả hai cùng đêm. Cứu chỉ chặn đòn cắn; độc vẫn gây chết. Có quyền để dành thuốc cho các đêm sau. Khi còn thuốc cứu được biết mục tiêu cắn, kể cả mục tiêu được bảo vệ. Khi hết thuốc vẫn được gọi dậy để bảo mật thông tin.' },
+  witch: { name: 'Phù thủy', description: 'Có một thuốc cứu và một thuốc độc cho cả ván. Được tự cứu, dùng cả hai cùng đêm hoặc để dành. Người được Bảo vệ chặn đòn cắn không được báo là nạn nhân. Quản trò chọn có cho xem nạn nhân khi còn thuốc cứu hay không. Khi ẩn, bạn chỉ quyết định dùng thuốc; máy chủ cứu một nạn nhân theo thứ tự ghế. Đã dùng là mất thuốc, kể cả không có nạn nhân. Hết thuốc vẫn được gọi dậy.' },
   hunter: { name: 'Thợ săn', description: 'Khi chết (do bị cắn, đầu độc hoặc treo cổ), Thợ săn được bắn một phát súng cuối cùng để tiêu diệt một người chơi khác còn sống.' },
   cupid: { name: 'Thần tình yêu', description: 'Đêm đầu tiên thức dậy chọn 2 người yêu nhau. Khi một trong hai người chết, người kia sẽ chết theo vì đau buồn.' },
   cursed: { name: 'Kẻ bị nguyền', description: 'Ban đầu thuộc phe Dân làng. Nếu bị Ma Sói cắn sẽ không chết mà biến thành Ma Sói từ đêm tiếp theo. Nếu bị đầu độc hoặc treo cổ thì chết bình thường.' },

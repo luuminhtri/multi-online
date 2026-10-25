@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { ROLE_CATALOG, isImplementedRole, roleCoverage } from '../src/catalog/roles.ts';
+import { ROLE_IMAGES } from '../src/catalog/images.ts';
 import { ROLES, RULES } from '../src/engine/rules.ts';
 import { createGame, dispatch, RuleError, stepId } from '../src/engine/engine.ts';
 
@@ -44,6 +45,15 @@ test('new schema is validated; v5 snapshot is not silently migrated', () => {
   g.rulesVersion = RULES.version;
   (g as unknown as {schemaVersion: number}).schemaVersion = 999;
   assert.throws(() => dispatch(g, { kind: 'moderator' }, request), (e: unknown) => e instanceof RuleError && e.code === 'UNSUPPORTED_SCHEMA_VERSION');
+});
+
+test('generated image map covers every source role and matches cards.json exactly', () => {
+  const data = JSON.parse(readFileSync(new URL('../cards.json', import.meta.url), 'utf8'));
+  for (const role of ROLE_CATALOG) {
+    const expected = data[role.source.group]['Deck of cards'][role.source.name]['Image Url'];
+    assert.equal(ROLE_IMAGES[role.id], expected, role.id);
+  }
+  assert.equal(Object.keys(ROLE_IMAGES).length, 64);
 });
 
 test('saved HTML extraction reproduces all card descriptions and image URLs', async () => {

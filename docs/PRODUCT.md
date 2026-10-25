@@ -2,7 +2,7 @@
 
 > Tiếp nhận 2026-10-25: code có 9 vai theo classic-core-v4, chưa nghiệm thu đầy đủ tương tác. Bộ 5 vai và luật nền không còn là câu hỏi chưa chọn; âm thanh thu sẵn/TTS đã được bỏ theo D18. Các câu hỏi về giới hạn phòng, danh tính và vote/timer vẫn cần thiết kế. Xem STATUS.md.
 
-> Cập nhật 2026-10-25: dùng một bộ luật hardcode, không có cấu hình biến thể trên giao diện. Xem [DEFAULT_RULES.md](DEFAULT_RULES.md), [ENGINE_GUIDE.md](ENGINE_GUIDE.md) và [STATUS.md](STATUS.md) cho hành vi/trạng thái đã triển khai. Các đoạn chọn bộ luật bên dưới là thiết kế ban đầu, chỉ còn áp dụng như phiên bản luật nội bộ. Hướng hạ tầng hiện là Vercel + Supabase; lõi TypeScript.
+> Cập nhật 2026-10-25: dùng một bộ luật có version. Ngoại lệ mới theo yêu cầu người dùng ở v9: quản trò bật/tắt Phù thủy thấy nạn nhân trước khi chia vai. Khi tắt, Phù thủy chỉ dùng/giữ thuốc, máy chủ cứu không lộ tên. Người được Bảo vệ chặn cắn không được báo cho Phù thủy. Xem [DEFAULT_RULES.md](DEFAULT_RULES.md), [ENGINE_GUIDE.md](ENGINE_GUIDE.md) và [STATUS.md](STATUS.md). Hướng hạ tầng hiện là Vercel + Supabase; lõi TypeScript.
 ## Mục tiêu
 
 Giảm tối đa gánh nặng quản trò khi chơi trực tiếp: app nhớ trạng thái, thu hành động bí mật, xử lý tương tác và giữ nhịp; quản trò dẫn chuyện, nhắc người chơi và xử lý ngoại lệ.
@@ -59,3 +59,14 @@ Hiện 22/64 vai nguồn có core và test. Bầy nhiều mục tiêu, Sói con 
 ## Tiến độ core v8
 
 27/64 vai đã có core/test: thêm liên kết một chiều và Sói ngủ theo điều kiện. Giữ kín vai gồm cả danh sách mục tiêu/phiếu và bộ nhớ bầy; không chỉ ẩn thông tin trên UI. Virginia dùng phe Dân theo mặc định riêng đã ghi trong DEFAULT_RULES; chưa có kết luận từ mô tả nguồn về phe. Còn 37 vai nguồn, không mở rộng thêm danh mục.
+
+## Yêu cầu giao diện — 2026-10-25 (người dùng chốt)
+
+| ID | Yêu cầu | Ghi chú |
+|---|---|---|
+| F06 | Giao diện tối, hiện đại, đơn giản; chữ to, ít chữ, rõ ràng; điện thoại là chính | Đã áp dụng cho trang phòng |
+| F07 | Nhận vai xong phải ẩn ngay để tránh người khác nhìn; lần đầu nhận vai có thời gian đọc và nút "Tôi đã đọc và sẵn sàng" | Overlay lần đầu mỗi ván mỗi tab; sau đó vai luôn ẩn sau nút xem |
+| F08 | Tận dụng ảnh thẻ trong cards.json | Sinh tự động từ dữ liệu nguồn qua script; ảnh nằm trên máy chủ nguồn, UI có phương án dự phòng khi không tải được |
+| F09 | Trước và trong khi chơi luôn có mục xem tất cả vai | Mục gập riêng ở lobby và trong ván |
+| F10 | Thông tin mở theo mục, không dồn một màn hình; mặc định chỉ sống/chết từng người dạng bàn tròn: sống sáng, chết mờ | Các phần còn lại đặt trong mục gập |
+| F11 | Quản trò kéo thả xếp chỗ trước khi chia vai, giống ngoài đời thật | Vòng ghế liên quan bom, Sói đại ca và các vai ghế; có nút ↑↓ dự phòng |

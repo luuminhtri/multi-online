@@ -1,0 +1,29 @@
+$kind: http-request
+name: 'Create settings room'
+method: POST
+url: '{{baseUrl}}/api/room'
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: 'Bearer {{testTokenowner}}'
+order: 100
+body:
+  type: json
+  content: |-
+    {
+      "type": "create",
+      "requestId": "create-settings",
+      "name": "Postman v9"
+    }
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      const random = () => (pm.variables.replaceIn('{{$guid}}') + pm.variables.replaceIn('{{$guid}}')).replace(/-/g, '').toLowerCase();
+      for (const name of ['owner','A','B','C']) pm.collectionVariables.set('testToken' + name, random());
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Create room', () => pm.response.to.have.status(200));
+      pm.collectionVariables.set('testCode', pm.response.json().room.code);

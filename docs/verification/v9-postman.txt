@@ -1,0 +1,68 @@
+No authorization data found. Please use the `postman login` command.
+Refer:https://learning.postman.com/docs/postman-cli/postman-cli-options/#postman-login
+
+Running your collection...
+postman
+
+Multi-online rooms
+
+Folder Witch settings
+Sub-folder Create settings room
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 6.75 KB, 13 ms]
+  Pass  Create room
+
+Sub-folder Join A
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 6.8 KB, 26 ms]
+  Pass  Join player
+
+Sub-folder Join B
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 6.87 KB, 29 ms]
+  Pass  Join player
+
+Sub-folder Join C
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 6.93 KB, 10 ms]
+  Pass  Join player
+
+Sub-folder Player cannot choose settings
+
+  POST http://127.0.0.1:5174/api/room [403 Forbidden, 369 B, 10 ms]
+  Pass  Moderator required
+
+Sub-folder Disable Witch visibility
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 8.62 KB, 14 ms]
+  Pass  Setting persisted
+
+Sub-folder Retry preserves settings
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 8.62 KB, 5 ms]
+  Pass  No redeal on retry
+
+Sub-folder Reject changed retry
+
+  POST http://127.0.0.1:5174/api/room [409 Conflict, 377 B, 2 ms]
+  Pass  Cannot replace settings under same request
+
+--------------------------------------------------------------------
+|                         |           executed |            failed |
+--------------------------+--------------------+--------------------
+|              iterations |                  1 |                 0 |
+--------------------------+--------------------+--------------------
+|                requests |                  8 |                 0 |
+--------------------------+--------------------+--------------------
+|            test-scripts |                  8 |                 0 |
+--------------------------+--------------------+--------------------
+|      prerequest-scripts |                  1 |                 0 |
+--------------------------+--------------------+--------------------
+|              assertions |                  8 |                 0 |
+--------------------------------------------------------------------
+| total run duration: 442 ms                                       |
+--------------------------------------------------------------------
+| total data received: 43.36 KB (approx)                           |
+--------------------------------------------------------------------
+| average response time: 13 ms [min: 2 ms, max: 29 ms, s.d.: 8 ms] |
+--------------------------------------------------------------------

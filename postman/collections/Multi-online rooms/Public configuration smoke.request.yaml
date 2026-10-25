@@ -1,0 +1,21 @@
+$kind: http-request
+name: Public configuration smoke
+method: GET
+url: '{{baseUrl}}/api/room?config=1'
+queryParams:
+  config: '1'
+auth:
+  type: noauth
+order: 100
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Configuration is available', () => pm.response.to.have.status(200));
+      pm.test('Only supported catalog and storage mode are public', () => {
+        const body = pm.response.json();
+        pm.expect(Object.keys(body).sort()).to.eql(['catalog', 'storage']);
+        pm.expect(body.catalog).to.have.lengthOf(27);
+        pm.expect(body.storage).to.be.oneOf(['local', 'supabase']);
+      });
+      pm.test('Snapshots cannot be cached', () => pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store'));

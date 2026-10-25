@@ -20,7 +20,7 @@
 
 ## Hiện trạng và chạy thử
 
-Lõi TypeScript hiện có **27 vai**, luật `classic-core-v8`, sandbox thử trên một máy. Dữ liệu nguồn đã đối chiếu và trích lại từ `response.html`: **64 vai riêng trong 9 nhóm**. Catalog `source-map-v2` ánh xạ 1–1; còn 37 vai chưa triển khai. Mục tiêu ưu tiên là hoàn thiện core toàn bộ danh mục, UI phục vụ kiểm chứng. Xem [STATUS.md](docs/STATUS.md), [bảng phủ](docs/ROLE_COVERAGE.md) và [ROADMAP.md](docs/ROADMAP.md).
+Lõi TypeScript hiện có **27 vai**, luật `classic-core-v9`. Dữ liệu nguồn gồm **64 vai riêng trong 9 nhóm**, catalog `source-map-v2` ánh xạ 1–1. Theo hướng mới của người dùng, 37 vai còn lại có thể bổ sung sau; ưu tiên hiện tại là luồng phòng và độ tin cậy online. Đã có bản local để phát triển, chưa xác minh cloud. Xem [STATUS.md](docs/STATUS.md), [kết nối online](docs/ONLINE_SETUP.md) và [ROADMAP.md](docs/ROADMAP.md).
 
 ```sh
 cd multi-online
@@ -34,7 +34,7 @@ npm run dev  # mở địa chỉ localhost in trong terminal
 
 Cần Node.js >= 22.18. Đọc [hướng dẫn lõi](docs/ENGINE_GUIDE.md) để vừa chạy vừa học, và [luật hardcode](docs/DEFAULT_RULES.md) để biết chính xác cách xử lý.
 
-Hướng hạ tầng đã chọn: Vercel + Supabase, chưa tích hợp. Đã bỏ âm thanh phát từ app; hiển thị lời thoại để quản trò đọc trực tiếp, không cần Storage âm thanh.
+Hướng hạ tầng: Vercel + Supabase. Adapter và migration đã được chuẩn bị; chưa có project để kiểm chứng kết nối thực tế. `npm run dev:online` chạy bản phát triển ở cổng 5174 với lưu trữ local. Đã bỏ âm thanh phát từ app; quản trò đọc lời thoại.
 
 Dữ liệu thẻ: [cards.json](cards.json), trích từ bản HTML lưu tại [response.html](response.html). Đã sửa lỗi bỏ/gộp vai và nhầm ảnh theo yêu cầu người dùng, có [báo cáo đối chiếu](docs/data-audit.json) và bản JSON trước sửa trong `data/backups/`. Không tải lại HTML khi kiểm tra. `python3 beauti.py --check` chỉ đọc; `--write` mới ghi và tạo backup. Các công cụ thu thập không thuộc runtime game.
 
@@ -52,10 +52,10 @@ Yêu cầu mới cập nhật PRODUCT; thay đổi luồng cập nhật GAME_FLO
 
 ## Giao diện thử luật
 
-Chạy `npm run dev`, mở URL terminal hiển thị (thường http://127.0.0.1:5173).
+Chạy `npm run dev`, mở `/sandbox.html` tại URL terminal hiển thị (thường http://127.0.0.1:5173/sandbox.html). Trang gốc hiện là giao diện phòng.
 
 Ba bảng: quản trò, đóng vai người chơi, thông tin công khai; nhật ký giải thích ở bên dưới. Có ván mẫu 6 người, 7 người/2 Sói, 10 người/9 vai nền (mặc định) và 27 người/27 vai, mẫu 12 người cho bầy Sói và mẫu 15 người cho liên kết/ngủ. Các tên và vai mẫu cố định để thử ngay. Chọn người → thức dậy → hành động → quản trò chốt lượt → xử lý đêm → công bố sáng. Ban ngày có phán quyết thủ công để sang đêm tiếp.
 
 Chỉ mô phỏng trên một trình duyệt, chưa lưu ván; tải lại trang bắt đầu lại. Không dùng sandbox để giữ bí mật cho ván thật. Nhập số người và vòng tròn ghế có tên đã ghi backlog, chưa làm.
 
-`npm run build` kiểm tra kiểu và xuất sandbox vào dist; `npm run preview` xem bản build.
+`npm run build` kiểm tra kiểu và xuất cả giao diện phòng lẫn sandbox vào dist; `npm run preview` xem bundle tĩnh, không chạy API phòng.

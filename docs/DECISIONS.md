@@ -118,3 +118,23 @@ Chi tiết trường hợp độc/nổ/tình nhân, vòng ghế và giới hạn
 - D32 — Schema2 → schema3, luật v7 → v8 cho cờ Sói đã chết và bộ nhớ/link từng người. Không tự migration snapshot trước v8. Nguồn 64 vai và source-map-v2 không đổi.
 
 Mặc định chi tiết và giới hạn kiểm chứng tại DEFAULT_RULES.md, STATUS.md; có thể chỉnh cùng người dùng kèm test/version sau.
+
+## Chuyển sang luồng phòng — 2026-10-25
+
+- D33 — Người dùng đồng ý hoãn các vai còn lại, phát triển các phần ngoài core với 27 vai hiện có. Đây là thứ tự hiện hành, thay ưu tiên D19; giữ mục tiêu bổ sung vai dài hạn.
+- D34 — Người dùng chưa có project Supabase và yêu cầu chuẩn bị kết nối trước. Làm local và kiểm thử trước; không tự tạo project, deploy hoặc yêu cầu gửi key vào chat.
+- Bản triển khai đang dùng phiên khách theo từng trình duyệt, polling và phòng 24 giờ làm mặc định phát triển. Chưa có khôi phục phiên mất localStorage, vote/timer hoặc Realtime. Cần kiểm chứng cloud trước khi sử dụng thật.
+
+
+## Mốc tùy chọn Phù thủy classic-core-v9 — 2026-10-25
+
+- D35 — Người dùng yêu cầu hai điều: khi Bảo vệ chặn đòn cắn, Phù thủy không được biết người đó bị cắn; và trước khi chia vai, quản trò bật/tắt việc Phù thủy thấy nạn nhân. Người dùng chọn rõ hành vi khi tắt: Phù thủy chỉ chọn dùng hoặc giữ thuốc cứu, máy chủ tự cứu tối đa một nạn nhân chưa được bảo vệ theo thứ tự ghế và không lộ tên/số nạn nhân; dùng thuốc vẫn tốn kể cả không có nạn nhân. Luật tăng v8 → v9, Game schema3 → schema4, settings lưu khi bắt đầu ván và không đổi giữa ván.
+- Ván v8/schema3 đã lưu tiếp tục luật cũ (Phù thủy thấy cả mục tiêu được bảo vệ) đến hết ván; không nâng nhãn, không trộn luật. Dispatch và lưu phòng chỉ chấp nhận đúng cặp v8/3 hoặc v9/4 có settings hợp lệ; bản cũ hơn vẫn bị từ chối.
+- `sleepReady` chỉ là dữ liệu view phục vụ lời mời ngủ sau khi máy chủ nhận hành động; máy chủ vẫn chuyển bước theo lệnh quản trò. Đây không khôi phục cơ chế bỏ lượt đã loại bỏ ở D17: Phù thủy dùng/giữ thuốc và Sói ăn chay xác nhận không cắn vẫn là hành động riêng của vai.
+
+
+## Giao diện tối và bàn tròn — 2026-10-25
+
+- D36 — Người dùng chốt hướng giao diện trang phòng: tối, hiện đại, đơn giản, chữ to ít chữ, điện thoại là chính (F06–F11 trong PRODUCT.md). Nhận vai xong ẩn ngay; lần đầu nhận vai có overlay đọc vai với nút xác nhận sẵn sàng, sau đó vai luôn ẩn sau nút xem trên từng thiết bị. Mặc định mỗi màn hình chỉ hiện bàn tròn sống/chết (sống sáng, chết mờ); mọi thông tin khác đặt trong mục gập; luôn có mục xem toàn bộ vai từ catalog.
+- D37 — Ảnh thẻ lấy từ cards.json bằng script sinh `src/catalog/images.ts` theo ánh xạ source-map-v2; không sửa dữ liệu nguồn. Ảnh tải từ máy chủ nguồn của dữ liệu thẻ; quyền sử dụng/tải ổn định chưa xác minh, UI có dự phòng chữ cái khi ảnh lỗi. Nâng catalog API trả thêm trường `image` (có thể null), spec OpenAPI 0.2.0 cập nhật cùng lúc.
+- D38 — Kéo thả xếp ghế ở lobby chỉ là cách nhập mới cho mutation `reorder` có sẵn; server vẫn xác thực hoán vị đầy đủ và chỉ cho xếp trước khi chia vai. Thứ tự ghế cố định sau start theo luật vòng ghế hiện hành.

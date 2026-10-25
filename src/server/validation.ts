@@ -57,9 +57,14 @@ export function parseMutation(v: unknown): Mutation {
     return { type: 'reorder', requestId, code, expectedRevision, playerIds: list(o.playerIds) };
   }
   if (o.type === 'start') {
-    keys(o, ['type', 'requestId', 'code', 'expectedRevision', 'roles']); const roles = list(o.roles);
+    keys(o, ['type', 'requestId', 'code', 'expectedRevision', 'roles', 'settings']); const roles = list(o.roles);
     requireApi(roles.every(r => Object.hasOwn(ROLES, r)), 'UNSUPPORTED_ROLE');
-    return { type: 'start', requestId, code, expectedRevision, roles: roles as Role[] };
+    let settings;
+    if (o.settings !== undefined) {
+      const s = object(o.settings); keys(s, ['witchSeesBite']);
+      requireApi(typeof s.witchSeesBite === 'boolean', 'INVALID_SETTINGS'); settings = { witchSeesBite: s.witchSeesBite };
+    }
+    return { type: 'start', requestId, code, expectedRevision, roles: roles as Role[], ...(settings ? { settings } : {}) };
   }
   throw new ApiError('INVALID_REQUEST');
 }

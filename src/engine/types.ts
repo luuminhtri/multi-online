@@ -55,7 +55,9 @@ export interface GameEvent {
   data: Record<string, unknown>;
 }
 export interface Game {
-  schemaVersion: 3;
+  // v8/schema3 snapshots retain their original rules; new games use v9/schema4.
+  schemaVersion: 3 | 4;
+  settings?: GameSettings;
   id: string;
   rulesVersion: string;
   revision: number;
@@ -90,3 +92,4 @@ export interface Game {
   events: GameEvent[];
   receipts: Record<string, { fingerprint: string; revision: number }>;
 }
+export interface GameSettings { witchSeesBite: boolean; }

@@ -183,6 +183,7 @@ test('a simultaneous final batch with no legal hunter target finishes as a draw'
 test('protection and healing prevent cursed conversion; simultaneous poison kills normally', () => {
   for (const protect of [false, true]) for (const heal of [false, true]) for (const poison of [null, 'u']) {
     let g = game({ u: 'cursed', t: 'witch', g: 'guard' });
+    if (protect && heal) { rejects(() => night(g, 'u', poison, 'u', heal), 'NO_HEAL_AVAILABLE'); continue; }
     g = cmd(night(g, 'u', poison, protect ? 'u' : 'g', heal), { type: 'publish' });
     assert.equal(p(g, 'u').alive, poison === null);
     assert.equal(p(g, 'u').role, !protect && !heal && !poison ? 'wolf' : 'cursed');

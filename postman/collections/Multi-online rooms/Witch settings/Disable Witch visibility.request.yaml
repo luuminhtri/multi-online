@@ -1,0 +1,33 @@
+$kind: http-request
+name: 'Disable Witch visibility'
+method: POST
+url: '{{baseUrl}}/api/room'
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: 'Bearer {{testTokenowner}}'
+order: 600
+body:
+  type: json
+  content: |-
+    {
+      "type": "start",
+      "requestId": "start-settings",
+      "code": "{{testCode}}",
+      "expectedRevision": 3,
+      "roles": [
+        "wolf",
+        "witch",
+        "villager"
+      ],
+      "settings": {
+        "witchSeesBite": false
+      }
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Setting persisted', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().game.settings.witchSeesBite).to.eql(false); pm.expect(pm.response.json().game.schemaVersion).to.eql(4); });
+      pm.collectionVariables.set('testDealtGame', JSON.stringify(pm.response.json().game));

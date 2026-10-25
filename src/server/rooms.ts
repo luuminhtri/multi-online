@@ -2,20 +2,22 @@ import { createHash, randomInt, randomUUID } from 'node:crypto';
 import { createGame, dispatch, RuleError } from '../engine/engine.ts';
 import { moderatorView, playerView } from '../engine/views.ts';
 import { ROLES, RULES } from '../engine/rules.ts';
+import { legacyWitchRules } from '../engine/witch.ts';
+import { ROLE_IMAGES } from '../catalog/images.ts';
 import type { Role } from '../engine/types.ts';
 import type { Member, Mutation, Room, RoomRepository, Snapshot } from './types.ts';
 import { ApiError, requireApi } from './validation.ts';
 
 const hash = (v: string) => createHash('sha256').update(v).digest('hex');
 const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-export const supportedCatalog = () => (Object.keys(ROLES) as Role[]).map(id => ({ id, ...ROLES[id] }));
+export const supportedCatalog = () => (Object.keys(ROLES) as Role[]).map(id => ({ id, ...ROLES[id], image: ROLE_IMAGES[id] ?? null }));
 export class RoomService {
   readonly repository: RoomRepository; private now: () => number;
   constructor(repository: RoomRepository, now = () => Date.now()) { this.repository = repository; this.now = now; }
   private valid(room: Room | null): asserts room is Room {
     requireApi(room && Date.parse(room.expiresAt) > this.now(), 'ROOM_NOT_FOUND', 404);
     requireApi(room.schemaVersion === 1, 'ROOM_VERSION_UNSUPPORTED', 409);
-    requireApi(!room.game || (room.game.rulesVersion === RULES.version && room.game.schemaVersion === 3), 'GAME_VERSION_UNSUPPORTED', 409);
+    requireApi(!room.game || legacyWitchRules(room.game) || (room.game.rulesVersion === RULES.version && room.game.schemaVersion === 4 && typeof room.game.settings?.witchSeesBite === 'boolean'), 'GAME_VERSION_UNSUPPORTED', 409);
   }
   private member(room: Room, tokenHash: string): { member: Member; moderator: boolean } {
     if (room.moderator.tokenHash === tokenHash) return { member: room.moderator, moderator: true };
@@ -91,7 +93,7 @@ export class RoomService {
             requireApi(operation.roles.length === room.members.length, 'DECK_SIZE_MISMATCH');
             const roles = [...operation.roles];
             for (let i = roles.length - 1; i > 0; i--) { const j = randomInt(i + 1); [roles[i], roles[j]] = [roles[j], roles[i]]; }
-            try { room.game = createGame(randomUUID(), room.members.map((m, i) => ({ id: m.id, name: m.name, role: roles[i] }))); }
+            try { room.game = createGame(randomUUID(), room.members.map((m, i) => ({ id: m.id, name: m.name, role: roles[i] })), operation.settings); }
             catch (e) { if (e instanceof RuleError) throw new ApiError(e.code, 409); throw e; }
           }
         }

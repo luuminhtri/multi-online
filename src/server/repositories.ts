@@ -60,7 +60,7 @@ export class SupabaseRoomRepository implements RoomRepository {
   private async request(path: string, body?: unknown): Promise<unknown> {
     try {
       const response = await fetch(this.base + path, { method: body === undefined ? 'GET' : 'POST',
-        headers: { apikey: this.key, Authorization: `Bearer ${this.key}`, 'Content-Type': 'application/json' },
+        headers: { apikey: this.key, ...(this.key.startsWith('sb_secret_') ? {} : { Authorization: `Bearer ${this.key}` }), 'Content-Type': 'application/json' },
         body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(this.timeoutMs), redirect: 'error' });
       if (!response.ok) throw new Error('Storage request failed');
       return await response.json();
@@ -80,7 +80,8 @@ export class SupabaseRoomRepository implements RoomRepository {
   }
 }
 export function configuredRepository(env: NodeJS.ProcessEnv, allowLocal: boolean): RoomRepository {
-  if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) return new SupabaseRoomRepository(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
-  if (env.SUPABASE_URL || env.SUPABASE_SERVICE_ROLE_KEY || !allowLocal) throw new ApiError('STORAGE_NOT_CONFIGURED', 503);
+  const key = env.SUPABASE_SECRET_KEY || env.SUPABASE_SERVICE_ROLE_KEY;
+  if (env.SUPABASE_URL && key) return new SupabaseRoomRepository(env.SUPABASE_URL, key);
+  if (env.SUPABASE_URL || key || !allowLocal) throw new ApiError('STORAGE_NOT_CONFIGURED', 503);
   return new FileRoomRepository(env.ROOM_DATA_DIR ?? join(process.cwd(), '.local-rooms'));
 }

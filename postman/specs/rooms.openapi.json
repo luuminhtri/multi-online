@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Ma Sói room API",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "Same-origin Node server for guest sessions. Browser-generated 256-bit capability sent only in Authorization. Server stores its SHA-256 hash and validates membership. Room data is private and committed with compare-and-swap. No Supabase keys in the browser. No deployment performed."
   },
   "servers": [
@@ -389,6 +389,9 @@
             },
             "minItems": 3,
             "maxItems": 30
+          },
+          "settings": {
+            "$ref": "#/components/schemas/GameSettings"
           }
         },
         "required": [
@@ -512,11 +515,33 @@
             "type": "array",
             "items": {
               "type": "object",
-              "description": "Supported role IDs and descriptions only; no assigned roles."
+              "description": "Supported role IDs, names, descriptions and optional card image URL from the source deck; no assigned roles.",
+              "properties": {
+                "id": { "type": "string" },
+                "name": { "type": "string" },
+                "description": { "type": "string" },
+                "image": { "type": "string", "nullable": true }
+              },
+              "required": ["id", "name", "description", "image"],
+              "additionalProperties": false
             }
           }
         },
         "additionalProperties": false
+      },
+      "GameSettings": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "witchSeesBite": {
+            "type": "boolean",
+            "default": true,
+            "description": "Moderator chooses before dealing. True reveals only bites not blocked by Guard while a heal potion remains. False hides all victim identities; using a heal spends it even with no victim and saves at most one unprotected bite target, first in seat order."
+          }
+        },
+        "required": [
+          "witchSeesBite"
+        ]
       }
     }
   }

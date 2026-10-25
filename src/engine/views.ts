@@ -1,6 +1,8 @@
 import { actors, stepId } from './engine.ts';
 import { offeredCub, wolfPlan, packMembers, roleCanWake, canSacrifice, canWolfTarget } from './wolf-pack.ts';
 import { ROLES } from './rules.ts';
+import { healableBites, legacyWitchRules, witchSeesBite } from './witch.ts';
+import { biteChoices } from './wolf-pack.ts';
 import type { Game } from './types.ts';
 
 // Explicit allowlists: never serialize the whole Game to a player or public channel.
@@ -19,13 +21,25 @@ export function playerView(g: Game, id: string) {
   // Use the published life state until morning: an early death flag leaks night results.
   const canAct = actors(g).includes(id);
   const pack = packMembers(g, p);
+  const witchTurn = canAct && p.role === 'witch' && g.step === 'witch';
+  const visibleBites = witchTurn && p.resources.heal > 0 && witchSeesBite(g) ? healableBites(g) : [];
+  const submitted = Object.hasOwn(g.actions, id);
+  const wolfChoice = (actorId: string) => {
+    const action = g.actions[actorId];
+    const choices = action ? biteChoices(action) : null;
+    return action ? JSON.stringify(choices ? [...choices].sort() : action) : null;
+  };
+  const packAgrees = g.step === 'wolves' && actors(g).every(actorId => wolfChoice(actorId) !== null && wolfChoice(actorId) === wolfChoice(id));
   return {
     ...publicView(g),
-    self: { id, role: p.role, description: ROLES[p.role].description, team: p.team,
+    self: { id, role: p.role, description: legacyWitchRules(g) && p.role === 'witch'
+      ? 'Ván này giữ luật v8: khi còn thuốc cứu, Phù thủy thấy cả mục tiêu cắn được bảo vệ. Có một cứu và một độc, được tự cứu, dùng cả hai hoặc giữ thuốc. Luật Phù thủy mới áp dụng khi tạo ván mới.'
+      : ROLES[p.role].description, team: p.team,
       resources: { ...p.resources } },
     turn: canAct ? {
       stepId: stepId(g), ability: g.step, awake: g.awake.includes(id),
-      submitted: Object.hasOwn(g.actions, id),
+      submitted,
+      sleepReady: submitted && (g.step !== 'wolves' || (packAgrees && g.actions[id].type !== 'sacrifice')),
       action: Object.hasOwn(g.actions, id) ? structuredClone(g.actions[id]) : null,
       wolfPlan: g.step === 'wolves' ? { ...wolfPlan(g),
         sacrificeTarget: offeredCub(g),
@@ -48,8 +62,12 @@ export function playerView(g: Game, id: string) {
       targetName: g.players.find(pl => pl.id === p.doppelgangerTarget)!.name,
     } : null,
     // Legacy single-target convenience is intentionally null for a multi-bite.
-    biteTarget: g.step === 'witch' && p.role === 'witch' && p.alive && p.resources.heal > 0 && g.biteTargets.length === 1 ? g.biteTargets[0] : null,
-    biteTargets: g.step === 'witch' && p.role === 'witch' && p.alive && p.resources.heal > 0 ? [...g.biteTargets] : [],
+    biteTarget: visibleBites.length === 1 ? visibleBites[0] : null,
+    biteTargets: visibleBites,
+    witchInfo: witchTurn ? {
+      visibility: !p.resources.heal ? 'unavailable' as const : witchSeesBite(g) ? 'visible' as const : 'hidden' as const,
+      canHeal: p.resources.heal > 0 && (!witchSeesBite(g) || visibleBites.length > 0),
+    } : null,
     alphaAvailable: p.role === 'alpha_wolf' ? !p.alphaUsed : null,
     wolvesBlocked: roleCanWake(g, p, true) ? g.wolvesBlockedNight === g.night : null,
     pack: pack ? pack.map(t => ({

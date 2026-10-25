@@ -163,6 +163,14 @@ blockquote { margin: 12px 0; padding: 14px 16px; border-left: 3px solid var(--ac
 .pack-list { list-style: none; margin: 0; padding: 0; }
 .pack-list li { display: flex; justify-content: space-between; gap: 14px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
 .pack-list li span { color: var(--muted); text-align: right; }
+.pack-chat .chat-body { padding: 4px 18px 14px; }
+.chat-line { background: var(--surface-2); border-radius: 8px; padding: 7px 11px; margin: 6px 0; }
+.chat-line strong { display: block; font-size: 11px; color: var(--muted); }
+.chat-line.mine strong { color: var(--accent); }
+.chat-line span { font-size: 14px; }
+.chat-input { display: flex; gap: 8px; margin-top: 10px; }
+.chat-input input { flex: 1; margin: 0; }
+.chat-input button { flex: 0 0 auto; margin: 0; }
 
 @media (min-width: 700px) {
   main.grid { grid-template-columns: 1fr 1fr; align-items: start; }

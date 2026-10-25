@@ -20,6 +20,7 @@ let poll: ReturnType<typeof setTimeout> | undefined;
 let deck: Record<string, number> = {};
 let failed = false;
 let editingWolfStep: string | null = null;
+let chatDraftCleared = false;
 const formMemory = new Map<string, string | boolean>();
 function persist() { localStorage.setItem('ma-soi:sessions:v1', JSON.stringify(sessions)); if (pending) localStorage.setItem('ma-soi:pending:v1', JSON.stringify(pending)); else localStorage.removeItem('ma-soi:pending:v1'); }
 const name = (id: unknown) => snapshot?.room.members.find(m => m.id === id)?.name ?? String(id ?? 'không ai');
@@ -110,6 +111,17 @@ function catalogSection() {
   return `<details class="role-catalog"><summary>Các vai trong trò chơi<span>${catalog.length}</span></summary><div class="catalog-grid">${catalog.map(r => `<figure><div class="card-frame">${cardImage(r.id, r.name)}<figcaption>${esc(r.name)}</figcaption></div><p>${esc(r.description)}</p></figure>`).join('')}</div></details>`;
 }
 const sessionStorageKey = (gameId: string) => `ma-soi:role-read:${gameId}`;
+// Chat bầy: chỉ Sói đang thức ở bước bầy mới gửi; lịch sử hiện gọn trong mục gập.
+function chatPanel(g: Extract<Snapshot, { viewer: 'player' }>['game']): string {
+  if (!g) return '';
+  const c = g.packChat;
+  if (!c.open && !c.items.length) return '';
+  const list = c.items.slice(-20).map(m => `<p class="chat-line ${m.mine ? 'mine' : ''}"><strong>${esc(m.mine ? 'Bạn' : m.from)}</strong><span>${esc(m.text)}</span></p>`).join('');
+  const input = c.open
+    ? `<div class="chat-input"><input id="chat-text" maxlength="200" placeholder="Nhắn bầy..." autocomplete="off">${button('chat-send', 'Gửi')}</div>`
+    : '<p class="muted">Bước đêm đã khép — chat chỉ mở khi bầy thức.</p>';
+  return `<details class="fold pack-chat" ${c.open ? 'open' : ''}><summary>Chat bầy Sói</summary><div class="chat-body">${list || '<p class="empty">Chưa có tin nhắn.</p>'}${input}</div></details>`;
+}
 // Overlay chỉ hiện lần đầu nhận vai; sau khi xác nhận, vai luôn ẩn sau nút xem.
 function roleInfo(g: Extract<Snapshot, { viewer: 'player' }>['game']) {
   if (!g) return '';
@@ -162,7 +174,7 @@ function player(s: Extract<Snapshot, { viewer: 'player' }>) {
     }
   }
   const privatePanel = `<details class="fold"><summary>Chỉ mình bạn biết</summary>${g.pack ? `<h3>Lựa chọn của bầy</h3><ul class="pack-list">${g.pack.map(p => `<li><strong>${esc(name(p.id))}</strong><span>${p.choice ? esc(describeAction(p.choice)) : 'Chưa chọn'}</span></li>`).join('')}</ul>` : ''}${g.messages.slice(-8).map(e => `<p class="private-message">${esc(eventText(e))}</p>`).join('') || '<p class="empty">Chưa có lời nhắn riêng.</p>'}</details>`;
-  return `${controls}${rolePeek(g)}<section class="panel"><h2>Bàn tròn</h2>${roundTable(g.players, { hub: g.phase === 'ended' ? 'Kết thúc' : g.phase === 'day' ? 'Ban ngày' : `Đêm ${g.night}` })}</section>${privatePanel}<details class="fold"><summary>Diễn biến cả làng</summary>${g.announcements.slice(-6).map(e => `<p class="public-line">${esc(eventText(e))}</p>`).join('') || '<p class="empty">Chưa có công bố.</p>'}</details>${catalogSection()}`;
+  return `${controls}${chatPanel(g)}${rolePeek(g)}<section class="panel"><h2>Bàn tròn</h2>${roundTable(g.players, { hub: g.phase === 'ended' ? 'Kết thúc' : g.phase === 'day' ? 'Ban ngày' : `Đêm ${g.night}` })}</section>${privatePanel}<details class="fold"><summary>Diễn biến cả làng</summary>${g.announcements.slice(-6).map(e => `<p class="public-line">${esc(eventText(e))}</p>`).join('') || '<p class="empty">Chưa có công bố.</p>'}</details>${catalogSection()}`;
 }
 function moderator(s: Extract<Snapshot, { viewer: 'moderator' }>) {
   const g = s.game!; let controls = '';
@@ -175,13 +187,16 @@ function moderator(s: Extract<Snapshot, { viewer: 'moderator' }>) {
   else controls = `<div class="progress-head"><span>${done}/${g.progress.length} đã gửi</span></div><ul class="progress-list">${g.progress.map(p => `<li class="${p.submitted ? 'complete' : ''}"><strong>${esc(name(p.id))}</strong><small>${p.submitted ? esc(describeAction(g.actions[p.id])) : p.awake ? 'Đang chọn' : 'Chờ thức'}</small></li>`).join('') || '<li class="empty">Không ai cần hành động — chốt để qua.</li>'}</ul>${allDone && g.step !== 'wolves' && MODERATOR_SCRIPTS[g.step].sleep ? `<p class="sleep-cue">“${esc(MODERATOR_SCRIPTS[g.step].sleep)}”</p>` : ''}${button('advance', 'Chốt lượt · Gọi vai tiếp', !g.progress.every(p => p.submitted), 'class="primary wide"')}`;
   return `<section class="panel"><span class="eyebrow">${g.step === 'ended' ? 'KẾT THÚC' : g.step === 'day' ? 'BAN NGÀY' : 'ĐÊM ' + g.night}</span><h2>${esc(g.step === 'review' ? 'Tổng kết đêm' : g.step === 'day' ? 'Cả làng thảo luận' : g.step === 'wolves' ? 'Bầy Sói' : g.step === 'ended' ? 'Kết thúc' : roleName(g.step))}</h2><blockquote>${esc(MODERATOR_SCRIPTS[g.step].wake)}</blockquote>${controls}<details class="fold"><summary>Hành động vừa nhận</summary>${latest.map(e => `<p class="feed-line">↳ ${esc(eventText(e))}</p>`).join('') || '<p class="empty">Chờ người chơi gửi.</p>'}</details></section>
     <section class="panel"><h2>Bàn tròn</h2>${roundTable(g.players.map(p => ({ id: p.id, name: p.name, alive: !g.publicDead.includes(p.id) })), { hub: hubLabel(g.step, g.night) })}</section>
-    <details class="fold secret-book"><summary>Sổ tay bí mật</summary><p class="muted">${g.rulesVersion === 'classic-core-v8' ? 'Ván cũ giữ luật v8.' : `Phù thủy ${g.settings?.witchSeesBite ? 'được xem nạn nhân (trừ người được Bảo vệ chặn)' : 'không xem nạn nhân · dùng thuốc không lộ tên'}.`}</p><ul class="secret-roster">${g.players.map((p, i) => `<li class="${p.alive ? '' : 'dead'}"><span class="seat-no">${String(i + 1).padStart(2, '0')}</span><div><strong>${esc(p.name)}</strong><small>${esc(roleName(p.role))}</small></div><span>${p.alive ? 'Sống' : !g.publicDead.includes(p.id) ? 'Chưa công bố' : 'Đã chết'}</span></li>`).join('')}</ul><details><summary>Nhật ký đầy đủ</summary>${g.events.slice(-15).map(e => `<p class="log-entry">${esc(eventText(e))}</p>`).join('')}</details></details>
+    <details class="fold secret-book"><summary>Sổ tay bí mật</summary><p class="muted">${g.rulesVersion === 'classic-core-v8' ? 'Ván cũ giữ luật v8.' : g.rulesVersion === 'classic-core-v9' ? 'Ván cũ giữ luật v9 (không có chat bầy).' : `Phù thủy ${g.settings?.witchSeesBite ? 'được xem nạn nhân (trừ người được Bảo vệ chặn)' : 'không xem nạn nhân · dùng thuốc không lộ tên'}.`}</p><ul class="secret-roster">${g.players.map((p, i) => `<li class="${p.alive ? '' : 'dead'}"><span class="seat-no">${String(i + 1).padStart(2, '0')}</span><div><strong>${esc(p.name)}</strong><small>${esc(roleName(p.role))}</small></div><span>${p.alive ? 'Sống' : !g.publicDead.includes(p.id) ? 'Chưa công bố' : 'Đã chết'}</span></li>`).join('')}</ul><details><summary>Chat bầy Sói</summary>${(g.chat ?? []).slice(-20).map(m => `<p class="log-entry">Đêm ${m.night} · ${esc(name(m.from))}: ${esc(m.text)}</p>`).join('') || '<p class="empty">Chưa có chat.</p>'}</details><details><summary>Nhật ký đầy đủ</summary>${g.events.slice(-15).map(e => `<p class="log-entry">${esc(eventText(e))}</p>`).join('')}</details></details>
     ${catalogSection()}`;
 }
 function render() {
   const phaseKey = snapshot?.game && 'stepId' in snapshot.game ? snapshot.game.stepId : snapshot?.viewer === 'player' ? snapshot.game?.turn?.stepId ?? 'wait' : 'lobby';
   const previousKey = app.dataset.phase;
-  for (const el of app.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input[id],select[id]')) formMemory.set(`${previousKey}:${el.id}`, el.type === 'checkbox' ? (el as HTMLInputElement).checked : el.value);
+  for (const el of app.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input[id],select[id]')) {
+    if (el.id === 'chat-text' && chatDraftCleared) { formMemory.delete(`${previousKey}:chat-text`); continue; }
+    formMemory.set(`${previousKey}:${el.id}`, el.type === 'checkbox' ? (el as HTMLInputElement).checked : el.value);
+  }
   app.dataset.phase = phaseKey;
   const overlay = snapshot?.viewer === 'player' && snapshot.game && snapshot.game.phase !== 'ended'
     ? roleRevealOverlay(snapshot.game) : '';
@@ -312,6 +327,14 @@ app.addEventListener('click', async e => {
     if (action === 'copy') { await navigator.clipboard.writeText(`${location.origin}/?room=${code}`); notice = 'Đã sao chép link vào phòng.'; render(); return; }
     if (action === 'role-read') { if (snapshot?.viewer === 'player' && snapshot.game) { try { sessionStorage.setItem(sessionStorageKey(snapshot.game.gameId), '1'); } catch {} } render(); return; }
     if (action === 'edit-wolf') { editingWolfStep = snapshot?.viewer === 'player' ? snapshot.game?.turn?.stepId ?? null : null; render(); return; }
+    if (action === 'chat-send') {
+      const text = value('chat-text').trim();
+      const step = snapshot?.viewer === 'player' ? snapshot.game?.turn?.stepId : undefined;
+      if (!text || !step) return;
+      await mutate({ type: 'command', code, requestId: random(), stepId: step, command: { type: 'chat', text } });
+      chatDraftCleared = true; render(); chatDraftCleared = false;
+      return;
+    }
     if (action === 'preset') { preset(); render(); return; }
     if (action === 'create') { await mutate({ type: 'create', requestId: random(), name: value('create-name') }, random()); return; }
     if (action === 'join') {

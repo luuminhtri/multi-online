@@ -1,8 +1,9 @@
 import type { Role, Step } from './types.ts';
 
-// v9 adds the moderator's explicit pre-game Witch visibility option.
+// v10 adds pack chat during the wolves step; v9 adds the moderator's explicit
+// pre-game Witch visibility option.
 export const RULES = Object.freeze({
-  version: 'classic-core-v9',
+  version: 'classic-core-v10',
   guardCanSelfProtect: true,
   guardCanRepeat: false,
   protectionBlocksPoison: false,

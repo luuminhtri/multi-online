@@ -1,6 +1,6 @@
 # Trạng thái làm việc
 
-Cập nhật: 2026-10-25 (Asia/Ho_Chi_Minh). **Core 27/64 vai, luật classic-core-v9, Game schemaVersion=4 cho ván mới; ván v8/schema3 đã lưu giữ luật cũ đến hết ván.** Còn 37 vai có thể bổ sung sau. Ưu tiên hiện hành là luồng online; bản local đang được kiểm chứng, chưa deploy hoặc có project Supabase.
+Cập nhật: 2026-10-25 (Asia/Ho_Chi_Minh). **Core 27/64 vai, luật classic-core-v10, Game schemaVersion=5 cho ván mới; ván v9/schema4 (không chat) và v8/schema3 đã lưu giữ luật cũ đến hết ván.** Còn 37 vai có thể bổ sung sau. Ưu tiên hiện hành là luồng online; bản local đang được kiểm chứng, chưa deploy hoặc có project Supabase.
 
 ## Mốc vừa hoàn tất — v9: tùy chọn Phù thủy và luồng phòng
 
@@ -11,6 +11,7 @@ Cập nhật: 2026-10-25 (Asia/Ho_Chi_Minh). **Core 27/64 vai, luật classic-co
 - Postman collection "Witch settings" (8 requests, 8 assertions, 0 failed; log `docs/verification/v9-postman.txt`); OpenAPI 0.2.0 bổ sung GameSettings. `scripts/open-test-players.mjs` đã chạy thật: mở 8 Chrome A–H vào phòng lobby, tên trùng bị máy chủ từ chối 409, chạy lại giữ đúng phiên, đã đóng cửa sổ test.
 - Giao diện trang phòng viết lại theo yêu cầu người dùng (D36–D38, F06–F11): nền tối, chữ lớn, ít chữ, mobile-first; bàn tròn hiển thị sống (sáng) / chết (mờ) làm màn hình mặc định; vai luôn ẩn — lần đầu nhận vai có overlay đọc vai với nút "Tôi đã đọc và sẵn sàng" (theo từng ván trên từng tab), sau đó chỉ mở bằng nút xem; mọi thông tin phụ (nhật ký, lời nhắn riêng, sổ tay, diễn biến) đặt trong mục gập; mục "Các vai trong trò chơi" có ảnh thẻ ở lobby và trong ván; quản trò kéo thả xếp ghế trên bàn tròn trước khi chia vai (mutation `reorder` giữ nguyên, còn nút ↑↓ dự phòng).
 - Ảnh thẻ sinh tự động vào `src/catalog/images.ts` từ cards.json qua `npm run gen:images` (script chỉ đọc nguồn); catalog API trả thêm `image`, có thể null khi thiếu; UI có dự phòng chữ cái khi ảnh không tải được. Ảnh nằm trên máy chủ nguồn, quyền sử dụng chưa xác minh — xem CARD_DATA.md.
+- Chat trong đêm bầy Sói (F12, D39): luật classic-core-v10, Game schema5. Chỉ Sói đang thức ở bước bầy gửi được tin; máy chủ tự quyết định người nhận là Sói đang thức của bước đó — bạn ngủ và Dream chưa biết không gửi/không nhận, sau thức dậy không đọc lại chat cũ. Chat không phải hành động, không cản đồng thuận hay chốt lượt; giới hạn 200 ký tự/tin, 200 tin/ván, retry cùng requestId không trùng tin. UI: khung "Chat bầy Sói" mở trong bước bầy (kể cả trên màn mời ngủ), lịch sử gập lại sau đó; quản trò xem toàn bộ trong Sổ tay bí mật. Ván v9/schema4 và v8/schema3 tiếp tục chơi nhưng lệnh chat bị từ chối `CHAT_UNAVAILABLE`.
 
 ### Kiểm chứng trình duyệt v9
 
@@ -35,12 +36,13 @@ Node v26.5.0, Python 3. Chưa chạy lại trên Node tối thiểu 22.18.
 
 | Kiểm tra | Kết quả |
 |---|---|
-| npm test | **144/144 đạt**, thêm 9 test visibility, 6 test HTTP phòng và test ảnh catalog |
+| npm test | **150/150 đạt**, thêm test visibility, HTTP phòng, ảnh catalog và 6 test chat bầy |
 | npm run test:data | **8/8 đạt**, JSON khớp HTML nguồn |
 | npm run typecheck/build | Đạt; bundle gồm trang phòng và sandbox |
 | Postman | Collection "Witch settings": 8 requests, 8 assertions, 0 failed; log tại docs/verification/v9-postman.txt. CLI báo chưa đăng nhập, chạy local vẫn đạt |
 | Trình duyệt v9 | Hai phòng ẩn/hiện chạy trọn đêm như mục trên; mobile 375px không tràn ngang |
 | Trình duyệt giao diện tối | Phòng NXR4RE qua UI mới: tạo phòng, kéo thả ghế (Dũng lên chỗ 1), mở catalog 27 ảnh (không lỗi ảnh), overlay đọc vai Phù thủy có ảnh thẻ, xác nhận rồi vai ẩn cả sau reload, Phù thủy dùng thuốc qua form mới, resolve/publish, phán quyết treo cổ Sói → Dân thắng, bàn tròn làm mờ người chết; đo tràn ngang mobile 390px sạch |
+| Trình duyệt chat bầy | Phòng UNG354 (2 Sói): Bình nhắn → Dũng thấy qua polling; chat vẫn mở trên màn mời ngủ sau khi gửi cắn; khép đêm resolve/publish bình thường, lịch sử giữ trong ván; snapshot Bảo vệ/Tiên tri không chứa nội dung chat; quản trò thấy "Đêm 1 · tên: tin" trong Sổ tay bí mật |
 | HTTP phòng và adapter | 6 test: cạnh tranh join, restart, phân quyền, retry start, key mới/cũ, 503/timeout/JSON lỗi, settings và retry chữa trị ẩn |
 | Trình duyệt v8 | Mẫu 15 người chạy qua hai đêm (mốc trước) |
 | npm run demo | Đạt |

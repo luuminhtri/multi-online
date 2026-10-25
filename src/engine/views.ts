@@ -1,5 +1,6 @@
 import { actors, stepId } from './engine.ts';
 import { offeredCub, wolfPlan, packMembers, roleCanWake, canSacrifice, canWolfTarget } from './wolf-pack.ts';
+import { isWolf } from './role-policy.ts';
 import { ROLES } from './rules.ts';
 import { healableBites, legacyWitchRules, witchSeesBite } from './witch.ts';
 import { biteChoices } from './wolf-pack.ts';
@@ -74,6 +75,13 @@ export function playerView(g: Game, id: string) {
       id: t.id, alive: !g.publicDead.includes(t.id),
       choice: g.step === 'wolves' && canAct && Object.hasOwn(g.actions, t.id) ? structuredClone(g.actions[t.id]) : null,
     })) : null,
+    // Pack chat is addressed by the engine to the awake pack at send time; a
+    // player only ever sees messages that list them as a recipient.
+    packChat: {
+      open: canAct && g.step === 'wolves' && g.awake.includes(id) && isWolf(p.role),
+      items: (g.chat ?? []).filter(m => m.recipients.includes(id))
+        .map(m => ({ id: m.id, night: m.night, mine: m.from === id, from: g.players.find(pl => pl.id === m.from)!.name, text: m.text })),
+    },
     messages: structuredClone(g.events.filter(e => e.audience === 'private' && e.recipient === id).map((e, i) => ({ ...e, id: i + 1 }))),
   };
 }

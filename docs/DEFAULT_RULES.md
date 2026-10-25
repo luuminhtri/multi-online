@@ -1,6 +1,6 @@
-# Luật classic-core-v9
+# Luật classic-core-v10
 
-Mặc định của dự án, không khẳng định là luật Ma Sói phổ quát. Chỉ có tùy chọn Phù thủy theo yêu cầu mới của người dùng. Ván mới v9 có **27 vai**, schema **4**; ván v8/schema3 đã lưu giữ luật cũ đến hết ván. Dữ liệu cards.json vẫn là nguồn thô, không tự quyết định hành vi runtime.
+Mặc định của dự án, không khẳng định là luật Ma Sói phổ quát. Chỉ có tùy chọn Phù thủy và chat bầy theo yêu cầu mới của người dùng. Ván mới v10 có **27 vai**, schema **5**; ván v9/schema4 và v8/schema3 đã lưu giữ luật cũ đến hết ván (v9 không có chat bầy). Dữ liệu cards.json vẫn là nguồn thô, không tự quyết định hành vi runtime.
 
 ## Vai nền và thông tin
 
@@ -70,11 +70,18 @@ Review chỉ dành quản trò. Private/public view không tiết lộ kết qu�
 
 Khi tạo ván: tối thiểu ba người, ít nhất một Sói thật và số Sói ít hơn người còn lại. Mỗi vai chức năng tối đa một người; nhiều Sói thường, Wolf-man và Dân được phép. Sandbox là công cụ thử toàn bộ state trên một máy, không phải bản multiplayer bảo mật.
 
+## Chat trong đêm bầy Sói (v10)
+
+- Chat chỉ mở ở bước bầy Sói, chỉ Sói đang thức (đã xác nhận thức dậy) được gửi; không phải hành động — không ảnh hưởng đồng thuận cắn, hy sinh hay việc chốt lượt của quản trò.
+- Máy chủ tự quyết định người nhận là toàn bộ Sói đang thức của bước đó; người gửi không chọn người nhận. Sói đang ngủ (Nanh sói, Sói chiêm bao chưa biết) không gửi và không nhận tin, giữ đúng nguyên tắc "ngủ không nhận tin mới". Khi thức dậy sau này cũng không đọc lại chat trước đó.
+- Sau khi quản trò chốt lượt, chat khép lại: chỉ còn đọc lịch sử trong mục riêng; tin nhắn chỉ hiện với người được nhận, người ngoài không thấy qua bất kỳ view nào. Quản trò xem toàn bộ chat kèm số đêm.
+- Giới hạn: tối đa 200 ký tự sau khi lọc khoảng trắng hai đầu và ký tự điều khiển; cả ván tối đa 200 tin. Gửi lại cùng mã yêu cầu không tạo tin trùng. Chat là nội dung người chơi sinh ra — không dùng làm bằng chứng luật, chỉ quản trò và người nhận xem.
+
 ## Schema và tương thích
 
-Ván mới dùng v9/schemaVersion=4, lưu settings.witchSeesBite cùng snapshot. Quản trò chọn khi start, không đổi giữa ván. createGame mặc định true để tương thích caller cũ; API kiểm boolean và từ chối trường lạ.
+Ván mới dùng v10/schemaVersion=5, lưu settings.witchSeesBite và mảng chat cùng snapshot. Quản trò chọn khi start, không đổi giữa ván. createGame mặc định true để tương thích caller cũ; API kiểm boolean và từ chối trường lạ.
 
-Handler riêng giữ nguyên v8/schema3 và cách Phù thủy thấy cả mục tiêu được bảo vệ. Không nâng nhãn hoặc thay thuốc/lựa chọn đã ghi nhận của ván cũ. Chỉ chấp nhận đúng cặp v8/3 hoặc v9/4 có settings hợp lệ; bản cũ hơn vẫn bị từ chối. Room schema1 không đổi vì Game có version riêng. Muốn áp dụng luật mới thì tạo ván mới.
+Handler riêng giữ nguyên v8/schema3 (Phù thủy thấy cả mục tiêu được bảo vệ) và v9/schema4 (settings Phù thủy, không có chat). Không nâng nhãn hoặc thay thuốc/lựa chọn đã ghi nhận của ván cũ. Chỉ chấp nhận đúng cặp v8/3, v9/4 hoặc v10/5 có settings hợp lệ; bản cũ hơn vẫn bị từ chối. Room schema1 không đổi vì Game có version riêng. Muốn áp dụng luật mới thì tạo ván mới.
 
 Game.biteTargets là thông tin quản trò. Private view biteTargets luôn rỗng khi tắt hiển thị/hết cứu; khi bật, bỏ người được Bảo vệ. biteTarget chỉ có giá trị nếu đúng một người trong danh sách đã lọc. Hai người được thấy thì Phù thủy phải chọn healTarget; chế độ ẩn từ chối mọi healTarget, kể cả đoán đúng, để không dò nạn nhân. Một thuốc cứu tối đa một người.
 

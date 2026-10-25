@@ -138,3 +138,10 @@ Mặc định chi tiết và giới hạn kiểm chứng tại DEFAULT_RULES.md,
 - D36 — Người dùng chốt hướng giao diện trang phòng: tối, hiện đại, đơn giản, chữ to ít chữ, điện thoại là chính (F06–F11 trong PRODUCT.md). Nhận vai xong ẩn ngay; lần đầu nhận vai có overlay đọc vai với nút xác nhận sẵn sàng, sau đó vai luôn ẩn sau nút xem trên từng thiết bị. Mặc định mỗi màn hình chỉ hiện bàn tròn sống/chết (sống sáng, chết mờ); mọi thông tin khác đặt trong mục gập; luôn có mục xem toàn bộ vai từ catalog.
 - D37 — Ảnh thẻ lấy từ cards.json bằng script sinh `src/catalog/images.ts` theo ánh xạ source-map-v2; không sửa dữ liệu nguồn. Ảnh tải từ máy chủ nguồn của dữ liệu thẻ; quyền sử dụng/tải ổn định chưa xác minh, UI có dự phòng chữ cái khi ảnh lỗi. Nâng catalog API trả thêm trường `image` (có thể null), spec OpenAPI 0.2.0 cập nhật cùng lúc.
 - D38 — Kéo thả xếp ghế ở lobby chỉ là cách nhập mới cho mutation `reorder` có sẵn; server vẫn xác thực hoán vị đầy đủ và chỉ cho xếp trước khi chia vai. Thứ tự ghế cố định sau start theo luật vòng ghế hiện hành.
+
+
+## Chat trong đêm bầy Sói — classic-core-v10 — 2026-10-25
+
+- D39 — Người dùng yêu cầu: trong đêm, người cùng phe từ 2 trở lên chat được với nhau (F12). Triển khai trước cho bầy Sói ở bước bầy — phe duy nhất hiện có bước đêm chung. Luật tăng v9 → v10, Game schema4 → schema5 (mảng chat trong snapshot); ván v9/schema4 và v8/schema3 tiếp tục chơi bình thường nhưng không có lệnh chat.
+- Máy chủ quyết định người nhận từng tin (Sói đang thức của bước đó), client không chọn người nhận; Sói ngủ và Sói chiêm bao chưa biết không gửi/không nhận, sau thức dậy không đọc lại chat cũ. Chat không phải hành động: không ảnh hưởng đồng thuận, sleepReady hay chốt lượt. Giới hạn 200 ký tự/tin, 200 tin/ván, retry cùng requestId không trùng tin.
+- Chỉ mở rộng cho bầy Sói ở mốc này; chat tình nhân, Mason hoặc phe khác cần thiết kế riêng khi các vai/phe tương ứng có bước đêm chung — không tự coi yêu cầu đã phủ mọi "phe".

@@ -70,3 +70,4 @@ Hiện 22/64 vai nguồn có core và test. Bầy nhiều mục tiêu, Sói con 
 | F09 | Trước và trong khi chơi luôn có mục xem tất cả vai | Mục gập riêng ở lobby và trong ván |
 | F10 | Thông tin mở theo mục, không dồn một màn hình; mặc định chỉ sống/chết từng người dạng bàn tròn: sống sáng, chết mờ | Các phần còn lại đặt trong mục gập |
 | F11 | Quản trò kéo thả xếp chỗ trước khi chia vai, giống ngoài đời thật | Vòng ghế liên quan bom, Sói đại ca và các vai ghế; có nút ↑↓ dự phòng |
+| F12 | Trong đêm, người cùng phe từ 2 trở lên chat được với nhau | Hiện triển khai cho bầy Sói ở bước bầy: chỉ Sói đang thức gửi/nhận, máy chủ quyết định người nhận, bạn ngủ và Dream chưa biết không nhận; ván cũ v9 không có chat |

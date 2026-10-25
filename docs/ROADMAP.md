@@ -10,6 +10,7 @@ Cập nhật 2026-10-25. Người dùng đồng ý bổ sung các vai còn lại
 | Bầy Sói nhiều mục tiêu | Đã làm ở v7: Sói con/đại ca/Alpha; tổng 22 vai, 100 test Node và 8 test dữ liệu đạt | Duy trì kiểm tra đa mục tiêu, hy sinh/chuyển hóa và thông tin khi mở rộng |
 | Liên kết và điều kiện thức | Đã làm ở v8: Dire/Virginia/Fruit/Fang/Dream; tổng 27 vai, 127 test Node và 8 test dữ liệu đạt | Giữ hồi quy bí mật, bộ nhớ và chuỗi chết |
 | Tùy chọn Phù thủy | Đã làm ở v9: witchSeesBite hai chế độ do quản trò chọn khi chia vai, Game schema4; 143 test Node, Postman và trình duyệt hai phòng đạt | Giữ hồi quy chế độ ẩn (không dò nạn nhân qua lệnh), ván v8/schema3 không đổi luật giữa ván, Bảo vệ che được nạn nhân ở cả hai chế độ |
+| Giao diện tối, bàn tròn, chat bầy | Đã làm ở v10: UI tối mobile-first (F06–F11), bàn tròn sống/chết, kéo thả xếp ghế, mục vai có ảnh; chat bầy ở bước Sói (F12) với schema5; 150 test Node và browser hai phòng đạt | Giữ hồi quy bí mật chat (người nhận do máy chủ quyết), ván v9/4 và v8/3 không đổi luật giữa ván |
 | Vai bầy còn lại | Hoãn, có thể bổ sung sau | Minion/Sorceress, Wolverine, Teen Wolf; Lone Wolf đi cùng mô hình thắng riêng |
 | Ngày, vote và hiệu ứng quyền | Chưa triển khai | Vote vào core, trọng số/quyền bỏ phiếu, nhiều lần phán quyết, hiệu ứng hết hạn và xác nhận hành vi ngoài app |
 | Thông tin theo ghế/kỹ năng một lần | Có nền ghế/bom; các vai còn lại chưa làm | Tập mục tiêu hợp lệ, dữ liệu theo quyền, tài nguyên một lần và phản ứng chuyển mục tiêu |

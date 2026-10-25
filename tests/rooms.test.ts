@@ -155,7 +155,7 @@ test('room HTTP: only moderator can deal with Witch settings; hidden healing sur
   await f.post(owner, { ...start, settings: { witchSeesBite: 'false' } }, 400);
   await f.post(owner, { ...start, settings: { witchSeesBite: false, clientAdmin: true } }, 400);
   let current = await f.post(owner, start);
-  assert.equal(current.game.settings.witchSeesBite, false); assert.equal(current.game.schemaVersion, 4);
+  assert.equal(current.game.settings.witchSeesBite, false); assert.equal(current.game.schemaVersion, 5);
   assert.deepEqual((await f.post(owner, start)).game, current.game);
   await f.post(owner, { ...start, settings: { witchSeesBite: true } }, 409);
   const byRole = (role: string) => current.game.players.find((p: { role: string }) => p.role === role).id as string;

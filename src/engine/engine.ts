@@ -46,7 +46,7 @@ export function createGame(id: string, roster: { id: string; name: string; role:
   requireRule(wolves > 0 && wolves < roster.length - wolves, 'UNBALANCED_START');
   const startStep = roster.some(p => p.role === 'cupid') ? 'cupid' : roster.some(p => p.role === 'doppelganger') ? 'doppelganger' : roster.some(p => p.role === 'dire_wolf') ? 'dire_wolf' : roster.some(p => p.role === 'virginia_woolf') ? 'virginia_woolf' : 'guard';
   return {
-    schemaVersion: 4, settings: { ...settings }, id, rulesVersion: RULES.version, revision: 0, night: 1, step: startStep, stepSequence: 0,
+    schemaVersion: 5, settings: { ...settings }, id, rulesVersion: RULES.version, revision: 0, night: 1, step: startStep, stepSequence: 0,
     players: roster.map(p => ({ ...p, name: p.name.trim(), initialRole: p.role,
       team: baseTeam(p.role), alive: true,
       lastProtected: null, delayedDeathNight: null, alphaUsed: false, deathBond: null, knownWolves: [], cursedTransformed: false, doppelgangerTarget: null,
@@ -55,7 +55,7 @@ export function createGame(id: string, roster: { id: string; name: string; role:
         poison: p.role === 'witch' ? 1 : 0,
         hunterShot: p.role === 'hunter' ? 1 : 0,
       } })),
-    awake: [], actions: {}, wolfDeathOccurred: false, wolvesBlockedNight: null, biteTarget: null,
+    awake: [], actions: {}, chat: [], wolfDeathOccurred: false, wolvesBlockedNight: null, biteTarget: null,
     biteTargets: [], doubleAttackNight: null, sacrificedCubId: null,
     alphaEligibleNight: null, alphaTarget: null, alphaActorId: null, protectedTarget: null, healTarget: null,
     poisonTarget: null, resolved: false, pendingDeaths: [], publicDead: [], verdictDone: false,
@@ -533,9 +533,13 @@ function moderatorCommand(g: Game, cmd: Command) {
   }
 }
 export function dispatch(input: Game, principal: Principal, request: Request): Game {
-  requireRule(input.rulesVersion === RULES.version || input.rulesVersion === 'classic-core-v8', 'UNSUPPORTED_RULES_VERSION');
-  requireRule(legacyWitchRules(input) || (input.rulesVersion === RULES.version && input.schemaVersion === 4), 'UNSUPPORTED_SCHEMA_VERSION');
-  requireRule(legacyWitchRules(input) || typeof input.settings?.witchSeesBite === 'boolean', 'INVALID_SETTINGS');
+  // Version pairs are accepted exactly, including legacy snapshots. Old games
+  // keep playing forever; only chat requires v10/schema5.
+  requireRule(input.rulesVersion === 'classic-core-v8' || input.rulesVersion === 'classic-core-v9' ||
+    input.rulesVersion === RULES.version, 'UNSUPPORTED_RULES_VERSION');
+  const expectedSchema = input.rulesVersion === 'classic-core-v8' ? 3 : input.rulesVersion === 'classic-core-v9' ? 4 : 5;
+  requireRule(input.schemaVersion === expectedSchema, 'UNSUPPORTED_SCHEMA_VERSION');
+  requireRule(input.rulesVersion === 'classic-core-v8' || typeof input.settings?.witchSeesBite === 'boolean', 'INVALID_SETTINGS');
   requireRule(request.gameId === input.id && typeof request.id === 'string' && request.id.length > 0 && request.id.length <= 128, 'INVALID_REQUEST');
   requireRule(principal.kind === 'moderator' || (principal.kind === 'player' && input.players.some(p => p.id === principal.playerId)), 'FORBIDDEN');
   const key = JSON.stringify([principal.kind, principal.kind === 'player' ? principal.playerId : '', request.id]);
@@ -553,10 +557,28 @@ export function dispatch(input: Game, principal: Principal, request: Request): G
       if (g.step === 'wolves') g.players.find(p => p.id === id)!.knownWolves = packMembers(g, g.players.find(p => p.id === id)!)!.map(p => p.id);
     }
     else applyAction(g, id, cmd.action);
+  } else if (cmd.type === 'chat') {
+    applyChat(g, principal, cmd.text);
   } else {
     requireRule(principal.kind === 'moderator', 'MODERATOR_REQUIRED'); moderatorCommand(g, cmd);
   }
   g.revision++;
   g.receipts[key] = { fingerprint, revision: g.revision };
   return g;
+}
+// Pack chat is only available to awake wolves during the wolves step. The
+// engine, never the client, decides the recipients: the currently awake pack.
+// Sleeping wolves keep their old information and undiscovered Dream Wolves are
+// not pack actors yet, so neither ever receives a message.
+function applyChat(g: Game, principal: Principal, raw: string) {
+  requireRule(principal.kind === 'player', 'PLAYER_REQUIRED');
+  requireRule(g.rulesVersion === RULES.version && g.schemaVersion === 5, 'CHAT_UNAVAILABLE');
+  requireRule(g.step === 'wolves', 'WRONG_PHASE');
+  requireRule(actors(g).includes(principal.playerId), 'NOT_YOUR_TURN');
+  requireRule(g.awake.includes(principal.playerId), 'NOT_AWAKE');
+  const text = typeof raw === 'string' ? raw.trim() : '';
+  requireRule(text.length > 0 && text.length <= 200 && !/[\u0000-\u001f\u007f]/u.test(text), 'INVALID_MESSAGE');
+  requireRule((g.chat?.length ?? 0) < 200, 'CHAT_FULL');
+  g.chat ??= [];
+  g.chat.push({ id: g.chat.length + 1, night: g.night, from: principal.playerId, recipients: [...wolfActors(g)], text });
 }

@@ -40,6 +40,7 @@ function command(v: unknown): Command {
     case 'wake': case 'advance': case 'resolve': case 'publish': case 'nextNight': keys(c, ['type']); return { type: c.type };
     case 'verdict': keys(c, ['type', 'target']); return { type: 'verdict', target: c.target === null ? null : text(c.target, 80) };
     case 'act': keys(c, ['type', 'action']); return { type: 'act', action: action(c.action) };
+    case 'chat': keys(c, ['type', 'text']); return { type: 'chat', text: text(c.text, 200) };
     default: throw new ApiError('INVALID_COMMAND');
   }
 }

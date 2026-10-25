@@ -20,7 +20,7 @@
 
 ## Hiện trạng và chạy thử
 
-Lõi TypeScript hiện có **27 vai**, luật `classic-core-v9`. Dữ liệu nguồn gồm **64 vai riêng trong 9 nhóm**, catalog `source-map-v2` ánh xạ 1–1. Theo hướng mới của người dùng, 37 vai còn lại có thể bổ sung sau; ưu tiên hiện tại là luồng phòng và độ tin cậy online. Đã có bản local để phát triển, chưa xác minh cloud. Xem [STATUS.md](docs/STATUS.md), [kết nối online](docs/ONLINE_SETUP.md) và [ROADMAP.md](docs/ROADMAP.md).
+Lõi TypeScript hiện có **27 vai**, luật `classic-core-v10` (tùy chọn Phù thủy, chat bầy đêm). Dữ liệu nguồn gồm **64 vai riêng trong 9 nhóm**, catalog `source-map-v2` ánh xạ 1–1. Theo hướng mới của người dùng, 37 vai còn lại có thể bổ sung sau; ưu tiên hiện tại là luồng phòng và độ tin cậy online. Đã có bản local để phát triển, chưa xác minh cloud. Xem [STATUS.md](docs/STATUS.md), [kết nối online](docs/ONLINE_SETUP.md) và [ROADMAP.md](docs/ROADMAP.md).
 
 ```sh
 cd multi-online

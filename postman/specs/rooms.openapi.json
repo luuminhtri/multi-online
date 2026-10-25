@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Ma Sói room API",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "description": "Same-origin Node server for guest sessions. Browser-generated 256-bit capability sent only in Authorization. Server stores its SHA-256 hash and validates membership. Room data is private and committed with compare-and-swap. No Supabase keys in the browser. No deployment performed."
   },
   "servers": [
@@ -423,7 +423,7 @@
           },
           "command": {
             "type": "object",
-            "description": "Validated core command: wake, act (all supported abilities), advance, resolve, publish, verdict or nextNight. Sender identity is derived from Bearer token; actor/principal fields are forbidden."
+              "description": "Validated core command: wake, act (all supported abilities), chat (pack-only, v10/schema5 games), advance, resolve, publish, verdict or nextNight. Sender identity is derived from Bearer token; actor/principal fields are forbidden."
           }
         },
         "required": [

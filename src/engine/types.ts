@@ -35,6 +35,7 @@ export type Action =
 export type Command =
   | { type: 'wake' }
   | { type: 'act'; action: Action }
+  | { type: 'chat'; text: string }
   | { type: 'advance' }
   | { type: 'resolve' }
   | { type: 'publish' }
@@ -55,8 +56,9 @@ export interface GameEvent {
   data: Record<string, unknown>;
 }
 export interface Game {
-  // v8/schema3 snapshots retain their original rules; new games use v9/schema4.
-  schemaVersion: 3 | 4;
+  // v8/schema3 and v9/schema4 snapshots retain their original rules; new games
+  // use v10/schema5 with pack chat. Chat is optional because v9 games predate it.
+  schemaVersion: 3 | 4 | 5;
   settings?: GameSettings;
   id: string;
   rulesVersion: string;
@@ -67,6 +69,7 @@ export interface Game {
   players: Player[];
   awake: string[];
   actions: Record<string, Action>;
+  chat?: ChatMessage[];
   wolfDeathOccurred: boolean;
   wolvesBlockedNight: number | null;
   // biteTarget is a compatibility alias for the first committed target.
@@ -93,3 +96,6 @@ export interface Game {
   receipts: Record<string, { fingerprint: string; revision: number }>;
 }
 export interface GameSettings { witchSeesBite: boolean; }
+// Pack chat: recipients are computed by the engine at send time (awake pack
+// members only). Sleepers and undiscovered Dream Wolves are never recipients.
+export interface ChatMessage { id: number; night: number; from: string; recipients: string[]; text: string; }

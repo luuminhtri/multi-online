@@ -17,7 +17,12 @@ export class RoomService {
   private valid(room: Room | null): asserts room is Room {
     requireApi(room && Date.parse(room.expiresAt) > this.now(), 'ROOM_NOT_FOUND', 404);
     requireApi(room.schemaVersion === 1, 'ROOM_VERSION_UNSUPPORTED', 409);
-    requireApi(!room.game || legacyWitchRules(room.game) || (room.game.rulesVersion === RULES.version && room.game.schemaVersion === 4 && typeof room.game.settings?.witchSeesBite === 'boolean'), 'GAME_VERSION_UNSUPPORTED', 409);
+    // v8/schema3 and v9/schema4 are readable legacy shapes; only v10/schema5 games support pack chat.
+    const game = room.game;
+    const legacyV9 = !!game && game.rulesVersion === 'classic-core-v9' && game.schemaVersion === 4;
+    const current = !!game && game.rulesVersion === RULES.version && game.schemaVersion === 5;
+    requireApi(!game || legacyWitchRules(game) ||
+      (legacyV9 && typeof game.settings?.witchSeesBite === 'boolean') || current, 'GAME_VERSION_UNSUPPORTED', 409);
   }
   private member(room: Room, tokenHash: string): { member: Member; moderator: boolean } {
     if (room.moderator.tokenHash === tokenHash) return { member: room.moderator, moderator: true };

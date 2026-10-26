@@ -324,7 +324,11 @@ function lobby(s: Snapshot) {
     hub: count === 0 ? `${icon('users')}<span>Chờ người chơi</span>` : `<strong>${count}</strong><span>người chơi</span>`,
   });
   const stage = `<section class="table-stage"><div class="section-heading"><h2>Bàn chơi</h2><div class="stage-tools"><span class="live-label">${count ? 'Đang chuẩn bị' : 'Chưa có người chơi'}</span>${owner ? button('modal-open', icon('user') + '<span>Thêm người offline</span>', false, 'class="text-button" data-modal="offline-add" aria-label="Thêm người không có điện thoại"') : ''}</div></div>${table}<div class="table-caption">${owner && count > 1 ? 'Kéo để đổi chỗ ngồi' : count ? 'Chờ quản trò bắt đầu' : 'Chia sẻ mã phòng để mời mọi người'}</div></section>`;
-  if (!owner) return `${stage}<section class="waiting-panel">${icon('clock')}<span>Đang chờ chia vai</span></section>`;
+  if (!owner) {
+    const roles = Object.entries(s.deck ?? {}).filter(([, quantity]) => quantity > 0)
+      .sort((a, b) => b[1] - a[1] || roleName(a[0]).localeCompare(roleName(b[0]), 'vi'));
+    return `${stage}<section class="setup-panel"><div class="setup-heading"><h2>Vai trong ván này</h2></div>${roles.length ? `<div class="role-rows">${roles.map(([id, quantity]) => `<button type="button" class="role-row" data-action="modal-open" data-modal="role:${esc(id)}"><span>${esc(roleName(id))}</span><b>×${quantity}</b></button>`).join('')}</div>` : '<p class="muted">Quản trò chưa lưu bộ vai.</p>'}<p class="muted">Đang chờ quản trò chia vai.</p></section>`;
+  }
   return `${stage}<aside class="setup-panel"><div class="setup-heading"><div><span class="eyebrow">TRƯỚC KHI BẮT ĐẦU</span><h2>Bộ vai</h2></div>${modalButton('deck', 'edit', 'Chỉnh bộ vai')}</div><div class="card-stack" aria-hidden="true"><i>${moon}</i><i>${moon}</i><i>${moon}</i></div><div id="deck-summary" class="deck-summary">${deckSummary()}</div><div class="setup-footer"><p id="deck-total" class="deck-total"></p>${button('start', `Chia vai ${icon('arrow')}`, count < 3, 'class="primary wide start-button"')}<p id="start-hint" class="start-hint"></p></div></aside>`;
 }
 function hubLabel(step: string, night: number) { return step === 'ended' ? 'Kết thúc' : step === 'day' ? 'Ban ngày' : step === 'review' ? 'Chưa công bố' : `Đêm ${night}`; }

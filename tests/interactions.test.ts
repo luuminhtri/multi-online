@@ -1,8 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { actors, createGame, dispatch, RuleError, stepId } from '../src/engine/engine.ts';
+import { actors, createGame as createCurrentGame, dispatch, RuleError, stepId } from '../src/engine/engine.ts';
 import { playerView, publicView } from '../src/engine/views.ts';
 import type { Action, Command, Game, Role } from '../src/engine/types.ts';
+
+// These scenarios preserve the pre-v13 death-time Hunter contract.
+function createGame(...args: Parameters<typeof createCurrentGame>) { return legacyHunter(createCurrentGame(...args)); }
+import { legacyHunter } from './helpers/legacy-hunter.ts';
 
 const mod = { kind: 'moderator' } as const;
 function cmd(g: Game, command: Command, playerId?: string): Game {

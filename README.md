@@ -20,7 +20,7 @@
 
 ## Hiện trạng và chạy thử
 
-Lõi TypeScript hiện có **27 vai**, luật `classic-core-v12` (Phù thủy tùy chọn, chat bầy đêm, đồng hồ ban ngày, giới hạn ngày không loại ai). Dữ liệu nguồn gồm **64 vai riêng trong 9 nhóm**, catalog `source-map-v2` ánh xạ 1–1. Theo hướng mới của người dùng, 37 vai còn lại có thể bổ sung sau; ưu tiên hiện tại là luồng phòng và độ tin cậy online. Đã có bản local để phát triển, chưa xác minh cloud. Xem [STATUS.md](docs/STATUS.md), [kết nối online](docs/ONLINE_SETUP.md) và [ROADMAP.md](docs/ROADMAP.md).
+Lõi TypeScript hiện có **27 vai**, luật `classic-core-v13` (Phù thủy tùy chọn, chat bầy đêm, đồng hồ ban ngày, giới hạn ngày không loại ai). Dữ liệu nguồn gồm **64 vai riêng trong 9 nhóm**, catalog `source-map-v2` ánh xạ 1–1. Theo hướng mới của người dùng, 37 vai còn lại có thể bổ sung sau; ưu tiên hiện tại là luồng phòng và độ tin cậy online. Đã có bản local để phát triển, đã xác minh tạo/join/reload với Vercel + Supabase. Xem [STATUS.md](docs/STATUS.md), [kết nối online](docs/ONLINE_SETUP.md) và [ROADMAP.md](docs/ROADMAP.md).
 
 ```sh
 cd multi-online
@@ -34,7 +34,7 @@ npm run dev  # mở địa chỉ localhost in trong terminal
 
 Cần Node.js >= 22.18. Đọc [hướng dẫn lõi](docs/ENGINE_GUIDE.md) để vừa chạy vừa học, và [luật hardcode](docs/DEFAULT_RULES.md) để biết chính xác cách xử lý.
 
-Hướng hạ tầng: Vercel + Supabase. Adapter và migration đã được chuẩn bị; chưa có project để kiểm chứng kết nối thực tế. `npm run dev:online` chạy bản phát triển ở cổng 5174 với lưu trữ local. Đã bỏ âm thanh phát từ app; quản trò đọc lời thoại.
+Hướng hạ tầng: Vercel + Supabase. Production đã hoạt động tại https://multi-online.vercel.app với Supabase. `npm run dev:online` chạy bản phát triển ở cổng 5174 với Supabase nếu có cấu hình env, nếu thiếu thì lưu local. Đã bỏ âm thanh phát từ app; quản trò đọc lời thoại.
 
 Dữ liệu thẻ: [cards.json](cards.json), trích từ bản HTML lưu tại [response.html](response.html). Đã sửa lỗi bỏ/gộp vai và nhầm ảnh theo yêu cầu người dùng, có [báo cáo đối chiếu](docs/data-audit.json) và bản JSON trước sửa trong `data/backups/`. Không tải lại HTML khi kiểm tra. `python3 beauti.py --check` chỉ đọc; `--write` mới ghi và tạo backup. Các công cụ thu thập không thuộc runtime game.
 

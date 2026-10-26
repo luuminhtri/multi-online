@@ -38,7 +38,7 @@ export function playerView(g: Game, id: string) {
     ...publicView(g),
     self: { id, role: p.role, description: legacyWitchRules(g) && p.role === 'witch'
       ? 'Ván này giữ luật v8: khi còn thuốc cứu, Phù thủy thấy cả mục tiêu cắn được bảo vệ. Có một cứu và một độc, được tự cứu, dùng cả hai hoặc giữ thuốc. Luật Phù thủy mới áp dụng khi tạo ván mới.'
-      : ROLES[p.role].description, team: p.team,
+      : p.role === 'hunter' && g.rulesVersion === 'classic-core-v13' ? (g.settings?.hunterActiveShot ? 'Bắn chủ động: một phát trong cả ván, được giữ lại. Mục tiêu chết trong đêm; trúng phe Sói thì bạn sống, bắn sai thì cả hai chết. Bảo vệ và thuốc cứu không chặn phát bắn.' : 'Bắn bị động: mỗi đêm ghim một người khác còn sống. Nếu bạn chết trong đêm vì bất kỳ nguyên nhân nào, người ghim đêm đó chết theo. Chết ban ngày không kích hoạt.') : p.role === 'hunter' && g.rulesVersion !== 'classic-core-v13' ? 'Ván cũ: khi chết, Thợ săn chọn một người còn sống để bắn, kể cả chết ban ngày.' : ROLES[p.role].description, team: p.team,
       resources: { ...p.resources } },
     turn: canAct ? {
       stepId: stepId(g), ability: g.step, awake: g.awake.includes(id),
@@ -56,6 +56,7 @@ export function playerView(g: Game, id: string) {
         g.step === 'guard' ? t.id !== p.lastProtected : true
       )).map(t => t.id),
     } : null,
+    hunterMode: p.role === 'hunter' && g.rulesVersion === 'classic-core-v13' ? (g.settings?.hunterActiveShot ? 'active' as const : 'passive' as const) : null,
     deathBond: (p.role === 'dire_wolf' || p.role === 'virginia_woolf') && p.deathBond ? structuredClone(p.deathBond) : null,
     lover: g.lovers && g.lovers.includes(id) ? {
       partnerId: g.lovers[0] === id ? g.lovers[1] : g.lovers[0],

@@ -1,6 +1,35 @@
 # Trạng thái làm việc
 
+## 2026-10-27 — Thợ săn v13 và avatar mục tiêu
+
+- Luật người dùng chốt: mặc định bị động ghim mỗi đêm, chết đêm mọi nguyên nhân kéo người ghim đêm đó chết theo; chết ban ngày không bắn. Tùy chọn chủ động thay thế: một phát cả ván, được giữ lại; trúng team Sói lúc chốt thì sống, sai thì cả hai chết. Bảo vệ/cứu không chặn phát bắn. Tổng kết cùng đợt đêm; không lộ nguyên nhân.
+- classic-core-v13/schema8 cho ván mới; v8–v12 giữ đúng luật/ghép schema cũ (gồm chat, clocks, skip budget). Thợ săn Nhân bản không nạp lại đạn chủ động hay sao chép ghim. Không cần SQL migration. Test tương tác luật Thợ săn cũ được đánh dấu legacyHunter rõ, vẫn có kiểm tra 100 ván seed theo luật mới.
+- Chọn mục tiêu đêm qua avatar, nhiều mục tiêu có từng ô chọn; giữ Xác nhận riêng. Viền vàng mục tiêu, đỏ đồng đội sống từ pack projection khi thức ở lượt bầy. Sửa giảm sáng awaiting-ready; offline không làm người sống tối đi. Menu quản lý riêng trên avatar khi đang chọn mục tiêu ở chế độ tối giản.
+- Kiểm: 225/225 Node tests, typecheck và build đạt. Spec syntax lint/collection lint đạt. Postman Night modes 46 requests/50 assertions/0 failures (log verification/hunter-modes-postman.txt). Chrome đã thử ghim Thợ săn, tự sang Sói, chọn avatar, menu quản lý; đo tất cả ghế sống opacity 1, 0 select mục tiêu, viền đỏ chỉ đúng Sói đã biết và viền chọn độc lập. Chiều rộng 390 không tràn ngang.
+- Chưa thử nhiều điện thoại vật lý hoặc mọi tổ hợp vai trên giao diện; core/privacy/legacy/offline có test tự động.
+
+
+## 2026-10-26 — Bộ vai công khai ngay màn chờ người chơi
+
+- Giữ nút Vai và contract setDeck có sẵn. Thêm danh sách vai và số lượng trực tiếp ở lobby người chơi trước khi chia; bấm từng vai xem ảnh/mô tả. Chỉ hiện bộ vai quản trò đã lưu, không lộ phân vai. Bộ vai chưa lưu có thông báo rõ.
+- Kiểm: typecheck + production build đạt; test lobby deck public/persistence/authorization/retry đạt.
+
+
+## 2026-10-26 — Supabase và Vercel production đã kiểm chứng
+
+- Người dùng đã chạy 5 migration và kiểm tra RLS/grants. Đã cấu hình server-only env cục bộ và trên Vercel theo xác nhận của người dùng; không ghi giá trị bí mật vào repo.
+- Production: https://multi-online.vercel.app — repo main, bản sửa deployment `45fcacc`. Lần deploy đầu lỗi ERR_MODULE_NOT_FOUND do import `.ts` trong JS emitted; bật `rewriteRelativeImportExtensions` để compiler viết đường dẫn `.js`. Không đổi contract, luật hay schema.
+- Đã kiểm: handler JS biên dịch load được độc lập; 6 test product boundaries/room codes đạt; typecheck + production build đạt; production config HTTP 200 storage=supabase; tạo phòng qua Chrome thành công, xác minh bản ghi thật qua Supabase; client khác join và đọc lại đều HTTP 200, revision tăng. Phòng dùng dữ liệu thử.
+- Chưa kiểm trọn ván nhiều điện thoại hoặc chế độ máy bay trên điện thoại thật. Git main tự deploy sau push; các tài liệu đang sửa khác được giữ nguyên, chưa đưa vào commit sửa runtime.
+
+
 Cập nhật: 2026-10-26 (Asia/Ho_Chi_Minh). **Core 27/64 vai, luật classic-core-v12, Game schemaVersion=7 cho ván mới; ván v11/schema6 (không giới hạn bỏ vote), v10/schema5 (không đồng hồ), v9/schema4 (không chat) và v8/schema3 đã lưu giữ luật cũ đến hết ván.** Còn 37 vai có thể bổ sung sau. Ưu tiên hiện hành là luồng online; bản local đang được kiểm chứng, chưa deploy hoặc có project Supabase.
+
+## Hướng dẫn người dùng tự kết nối và deploy (2026-10-26)
+
+- Viết lại ONLINE_SETUP theo repo thực tế: Node local đang 26.5.0 nên khuyên test bằng Node 24 LTS tương ứng Vercel; Git root/nhánh main/repo multi-online, Root Directory cloud là dấu chấm.
+- Nêu rõ 5 migration theo thứ tự, key server-only, SQL kiểm bảng/RPC/RLS/quyền, test adapter bằng dev:online và xác nhận hàng thật. Sửa hướng dẫn cũ nhầm debug để kiểm Supabase: debug luôn dùng RAM.
+- Bao gồm cấu hình Vercel, env Production/Preview và redeploy, checklist nhiều máy/offline/khôi phục, bảng lỗi thường gặp. Đối chiếu tài liệu Supabase/Vercel chính thức tại ngày hướng dẫn. Chỉ sửa tài liệu, không kết nối cloud, không deploy, không chạy SQL hoặc xem secret thực tế.
 
 ## Bộ lọc gọn và gọi lượt toàn màn hình (D70, 2026-10-26)
 

@@ -93,3 +93,9 @@ Tạo phòng → chọn Offline → Tạo bàn → Thêm người offline → ch
 Ban đêm tối giản: mỗi vai có form chọn và một nút Xác nhận, tự sang vai tiếp. Tiên tri dừng ở kết quả tới Đã rõ · Vai tiếp. Bầy Sói chỉ có một form chung cho các Sói thực sự đang được hành động; vẫn tuân theo Sói ngủ, bệnh bầy, kỹ năng cắn đặc biệt. Vai vắng tự bỏ qua; tới review tự tổng kết, quản trò bấm công bố. Ngày và phản ứng Thợ săn giữ quy trình luật cũ. Tắt tối giản thì giữ luồng thao tác từng người bằng máy quản trò.
 
 Tải lại `?local=...` giữ nguyên bước, hành động và kết quả chờ; trang đầu có Tiếp tục bàn đã lưu trên máy. Mở bản build một lần có mạng để trình duyệt tải và lưu sẵn app. Không xóa dữ liệu trình duyệt nếu còn cần bản lưu.
+
+## Thợ săn v13 và chọn avatar (2026-10-27)
+
+Ván mới classic-core-v13/schema8. Cài đặt Thợ săn bắn chủ động mặc định tắt. Bị động: gọi sau Bảo vệ mỗi đêm để ghim người; chết đêm kéo người ghim đêm đó chết theo, chết sáng không bắn. Chủ động: giữ hoặc dùng một phát cả ván; trúng phe Sói thì sống, sai thì cả hai chết. Tổng kết chuỗi chết trước công bố và xét thắng. Ván cũ giữ luật cũ, không cần SQL migration.
+
+Lượt đêm chọn mục tiêu bằng avatar. Với nhiều mục tiêu hoặc thuốc, chọn ô mục tiêu rồi bấm avatar; Xác nhận mới gửi. Viền vàng là mục tiêu, viền đỏ là đồng đội trong pack projection khi Sói thức. Chuyển offline chỉ đổi thiết bị điều khiển, không đổi trạng thái sống; chưa sẵn sàng dùng dấu check, không giảm sáng.

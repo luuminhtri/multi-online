@@ -75,6 +75,7 @@ function options(ids: string[], empty?: string) {
 function describeAction(a: Action): string {
   switch (a.type) {
     case 'bond': return `Liên kết với ${name(a.target)}`;
+    case 'hold': return 'Giữ lại phát bắn';
     case 'fast': return 'Xác nhận không cắn vì là Sói ăn chay cuối cùng';
     case 'compare': return `So sánh phe ${name(a.targets[0])} và ${name(a.targets[1])}`;
     case 'pair': return `Ghép đôi ${name(a.targets[0])} và ${name(a.targets[1])}`;

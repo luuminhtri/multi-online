@@ -56,8 +56,8 @@ export class RoomService {
     const game = room.game;
     const legacy = !!game && ((game.rulesVersion === 'classic-core-v9' && game.schemaVersion === 4) ||
       (game.rulesVersion === 'classic-core-v10' && game.schemaVersion === 5) ||
-      (game.rulesVersion === 'classic-core-v11' && game.schemaVersion === 6));
-    const current = !!game && game.rulesVersion === RULES.version && game.schemaVersion === 7;
+      (game.rulesVersion === 'classic-core-v11' && game.schemaVersion === 6) || (game.rulesVersion === 'classic-core-v12' && game.schemaVersion === 7));
+    const current = !!game && game.rulesVersion === RULES.version && game.schemaVersion === 8;
     requireApi(!game || legacyWitchRules(game) ||
       (legacy && typeof game.settings?.witchSeesBite === 'boolean') || current, 'GAME_VERSION_UNSUPPORTED', 409);
   }

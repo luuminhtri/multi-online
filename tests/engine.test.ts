@@ -1,3 +1,4 @@
+import { legacyHunter } from './helpers/legacy-hunter.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { actors, createGame, dispatch, RuleError, stepId } from '../src/engine/engine.ts';
@@ -247,7 +248,7 @@ test('hunter shoots on night death; cascading shot can trigger lover heartbreak'
     { id: 'a', name: 'An', role: 'villager' },
     { id: 'b', name: 'Bình', role: 'villager' },
   ];
-  let g = createGame('hunter_game', hunterRoster, { witchSeesBite: true, skipVoteDays: 30 });
+  let g = legacyHunter(createGame('hunter_game', hunterRoster, { witchSeesBite: true, skipVoteDays: 30 }));
   // Night 1: Cupid pairs 'a' and 'b'
   g = act(g, 'c', { type: 'pair', targets: ['a', 'b'] });
   g = command(g, { type: 'advance' });

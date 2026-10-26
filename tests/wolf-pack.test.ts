@@ -1,3 +1,4 @@
+import { legacyHunter } from './helpers/legacy-hunter.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { actors, createGame, dispatch, RuleError, stepId } from '../src/engine/engine.ts';
@@ -325,11 +326,11 @@ test('two bites integrate simultaneous Cursed conversion, Tough Guy wound and la
 });
 
 test('daytime Hunter shot triggers Cub revenge and Alpha; sacrifice Hunter lover waits until dawn', () => {
-  let g = dawn(make({ ht: 'hunter', cb: 'wolf_cub', al: 'alpha_wolf' }), { targets: ['ht'] });
+  let g = dawn(legacyHunter(make({ ht: 'hunter', cb: 'wolf_cub', al: 'alpha_wolf' })), { targets: ['ht'] });
   g = cmd(act(g, 'ht', { type: 'shoot', target: 'cb' }), { type: 'advance' });
   assert.equal(g.doubleAttackNight, 2);
   assert.equal(g.alphaEligibleNight, 2);
-  g = until(make({ ht: 'hunter', cb: 'wolf_cub', cu: 'cupid' }), 'wolves', { pair: ['cb', 'ht'] });
+  g = until(legacyHunter(make({ ht: 'hunter', cb: 'wolf_cub', cu: 'cupid' })), 'wolves', { pair: ['cb', 'ht'] });
   g = act(g, 'cb', { type: 'sacrifice', target: 'cb' });
   g = act(g, 'w', { type: 'sacrifice', target: 'cb' });
   g = cmd(g, { type: 'advance' });

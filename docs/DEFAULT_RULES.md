@@ -1,6 +1,6 @@
-# Luật classic-core-v12
+# Luật classic-core-v13
 
-Mặc định của dự án, không khẳng định là luật Ma Sói phổ quát. Có tùy chọn Phù thủy, chat bầy và đồng hồ ban ngày theo yêu cầu của người dùng. Ván mới v12 có **27 vai**, schema **7**; ván v11/schema6 (không giới hạn bỏ vote), v10/schema5 (không đồng hồ), v9/schema4 (không chat) và v8/schema3 đã lưu giữ luật cũ đến hết ván. Dữ liệu cards.json vẫn là nguồn thô, không tự quyết định hành vi runtime.
+Mặc định của dự án, không khẳng định là luật Ma Sói phổ quát. Có tùy chọn Phù thủy, chat bầy và đồng hồ ban ngày theo yêu cầu của người dùng. Ván mới v13 có **27 vai**, schema **8**; ván v12/schema7 (Thợ săn bắn sau khi chết), ván v11/schema6 (không giới hạn bỏ vote), v10/schema5 (không đồng hồ), v9/schema4 (không chat) và v8/schema3 đã lưu giữ luật cũ đến hết ván. Dữ liệu cards.json vẫn là nguồn thô, không tự quyết định hành vi runtime.
 
 ## Vai nền và thông tin
 
@@ -11,10 +11,10 @@ Mặc định của dự án, không khẳng định là luật Ma Sói phổ qu
 | Tiên tri | Bắt buộc soi một người sống khác mình. Lycan hiện Sói, Wolf-man hiện không phải Sói; các Sói thật khác hiện Sói, kể cả phe tình nhân. |
 | Bảo vệ | Bắt buộc bảo vệ một người sống, được tự bảo vệ, không cùng người hai đêm liền. Chỉ chặn cắn; không chặn độc, nổ, bắn, đau buồn hoặc vết thương cũ. |
 | Phù thủy | Một cứu/một độc cho cả ván, tự cứu/tự độc và dùng cả hai cùng đêm được phép. Bật xem nạn nhân: còn cứu thì chỉ thấy mục tiêu cắn không được Bảo vệ chặn, không được cứu người đã bị lọc. Tắt xem nạn nhân: chỉ gửi dùng/giữ thuốc; máy chủ cứu tối đa một nạn nhân chưa được bảo vệ theo thứ tự ghế. Đã dùng là tốn thuốc kể cả không có nạn nhân; phản hồi không lộ tên/số nạn nhân. Hết thuốc vẫn được gọi và xác nhận không dùng thuốc. |
-| Thợ săn | Chết do mọi nguyên nhân đang hỗ trợ thì bắn một người sống khác mình, một lần. Chết đêm chỉ bắn sau công bố. Không còn mục tiêu thì kết thúc phản ứng để xét hòa; xử lý hết chuỗi bắn mới xét thắng. |
+| Thợ săn | Mặc định bị động: mỗi đêm ghim người khác còn sống; chết đêm vì mọi nguyên nhân kéo mục tiêu ghim đêm đó chết theo, chết ngày không kích hoạt. Tùy chọn chủ động: một phát cả ván, được giữ lại; mục tiêu chết, trúng phe Sói thực tế thì Thợ săn sống, bắn sai thì cả hai chết. Hết đạn không gọi nữa, không kèm quyền bị động. Bảo vệ/thuốc cứu không chặn bắn. Chốt phát bắn ở lượt Thợ săn, tổng kết chung đợt chết đêm; không công khai nguồn bắn/ghim. |
 | Cupid | Đêm đầu chọn hai người khác nhau, được chọn mình. Hai người biết tên nhau, không tự biết vai. Một người chết kéo theo người còn lại. |
 | Kẻ bị nguyền | Cắn không chặn sẽ sống và hóa Sói tại công bố sáng, tham gia từ lượt bầy đêm sau. Nếu cũng chết do nguyên nhân khác cùng đợt thì không chuyển. Cứu/bảo vệ chặn chuyển đổi. |
-| Nhân bản | Đêm đầu chọn người khác. Khi mục tiêu chết và bản thân còn sống, nhận vai hiện tại, tài nguyên còn lại, lịch bảo vệ và trạng thái Alpha đã dùng; Thợ săn có viên đạn riêng. Không nhận vết thương chết trễ hay liên kết tình nhân của mục tiêu. Nhận Cupid sau đêm đầu không ghép lại. |
+| Nhân bản | Đêm đầu chọn người khác. Khi mục tiêu chết và bản thân còn sống, nhận vai hiện tại, tài nguyên còn lại, lịch bảo vệ và trạng thái Alpha đã dùng; Thợ săn kế thừa đúng số đạn còn lại ở v13, không sao chép ghim. Ván cũ giữ viên đạn riêng. Không nhận vết thương chết trễ hay liên kết tình nhân của mục tiêu. Nhận Cupid sau đêm đầu không ghép lại. |
 | Tiên tri tập sự | Thế chỗ khi một Tiên tri chết và không còn Tiên tri sống. Nhân bản kế thừa trước; nếu đã có Tiên tri mới thì tập sự tiếp tục đợi. Không thăng cấp nếu chết cùng đợt. Không dùng biến thể soi hai lần. |
 | Tiên tri hào quang | Mỗi đêm chọn người sống khác mình, chỉ biết có năng lực đặc biệt không. Chỉ Sói thường/Dân thường không có năng lực; mọi vai chức năng/biến thể khác đều có. |
 | Tiên tri huyền bí | Mỗi đêm chọn người sống khác mình để biết ID vai hiện tại; không bị Lycan/Wolf-man đánh lừa. |
@@ -62,7 +62,7 @@ Xét sau công bố/phán quyết và sau khi hết hàng đợi phản ứng:
 
 ## Trình tự và thông tin
 
-Đêm đầu thêm Cupid/Nhân bản nếu có → Bảo vệ → Tiên tri → Tiên tri hào quang → Tiên tri huyền bí → Nhà tinh thần học → bầy Sói (có thể hai lượt nếu hy sinh) → Alpha nếu có → Phù thủy → review/resolve → quản trò publish → Thợ săn → ngày. Vai không có người cần hành động được quản trò chuyển qua. Không có action skip; Phù thủy giữ thuốc và Alpha từ chối chuyển hóa là quyết định hợp lệ riêng của vai.
+Đêm đầu thêm Cupid/Nhân bản nếu có → Bảo vệ → Thợ săn → Tiên tri → Tiên tri hào quang → Tiên tri huyền bí → Nhà tinh thần học → bầy Sói (có thể hai lượt nếu hy sinh) → Alpha nếu có → Phù thủy → review/resolve → quản trò publish → ngày. Ván cũ giữ phản ứng Thợ săn sau công bố. Vai không có người cần hành động được quản trò chuyển qua. Không bỏ lượt tùy tiện; Phù thủy giữ thuốc, Alpha từ chối chuyển hóa và Thợ săn chủ động giữ đạn là quyết định hợp lệ riêng của vai.
 
 Mọi nạn nhân trực tiếp được đánh dấu trước; sau đó duyệt phản ứng theo thứ tự trong đợt: tình nhân, liên kết một chiều rồi bom của từng người chết, đến khi không còn người chết mới. Bom tìm ghế sống tại thời điểm phản ứng, bỏ qua người đã đánh dấu. Sau đó mới kế thừa/thăng cấp, xếp lượt bắn và xét thắng. Nhân bản chết cùng đợt không kế thừa.
 
@@ -111,7 +111,7 @@ Còn 37 vai nguồn chưa triển khai; đã có API/phiên khách/lưu local v�
 
 Thứ tự mở đầu: Cupid → Nhân bản → Sói tuyết → Virginia, chỉ thêm vai đang cần chọn. Sau đó đến Bảo vệ và lịch đêm thường. Khi Nhân bản nhận vai Dire/Virginia, không sao chép mối quan hệ cá nhân của mục tiêu; mở bước chọn mới ở đầu đêm tiếp theo, kể cả sau đêm 1.
 
-Phản ứng mỗi người chết theo thứ tự: tình nhân → Dire sống có bạn đồng hành vừa chết → mục tiêu Virginia nếu người chết là Virginia → bom. Lặp hàng đợi đến khi không có người chết mới; mỗi người chết tối đa một lần. Toàn bộ đợt chết xong mới kế thừa và xếp Thợ săn. Các liên kết riêng không công khai nguyên nhân. Đổi vai làm mất kỹ năng của vai cũ: Virginia bị Alpha chuyển thành Sói không còn gây chết qua liên kết, dù thông báo đã biết trước đó không thể thu hồi.
+Phản ứng mỗi người chết theo thứ tự: tình nhân → Dire sống có bạn đồng hành vừa chết → mục tiêu Virginia nếu người chết là Virginia → Thợ săn bị động kéo mục tiêu ghim đêm đó nếu chết đêm → bom. Lặp hàng đợi đến khi không có người chết mới; mỗi người chết tối đa một lần. Toàn bộ đợt chết xong mới kế thừa; chỉ ván cũ xếp phản ứng Thợ săn chọn bắn sau chết. Các liên kết riêng không công khai nguyên nhân. Đổi vai làm mất kỹ năng của vai cũ: Virginia bị Alpha chuyển thành Sói không còn gây chết qua liên kết, dù thông báo đã biết trước đó không thể thu hồi.
 
 ### Bí mật của Sói ngủ
 

@@ -1,0 +1,28 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/room?code=KQ7DQ4&offlinePlayerId=string"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    code: KQ7DQ4
+    offlinePlayerId: string
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 403
+  statusText: Forbidden
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "error": {
+          "code": "string",
+          "message": "string",
+          "retryable": true
+        }
+      }
+order: 4000

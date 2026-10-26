@@ -1,3 +1,4 @@
+import { legacyHunter } from './helpers/legacy-hunter.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { actors, createGame, dispatch, RuleError, stepId } from '../src/engine/engine.ts';
@@ -118,7 +119,7 @@ test('cyclic one-way bonds terminate and each player dies once', () => {
 });
 
 test('Virginia to companion to Dire to lover to Hunter resolves before winner', () => {
-  let g = dawn(make({ dr: 'dire_wolf', vw: 'virginia_woolf', cu: 'cupid', ht: 'hunter' }), {
+  let g = dawn(legacyHunter(make({ dr: 'dire_wolf', vw: 'virginia_woolf', cu: 'cupid', ht: 'hunter' })), {
     bite: 'j', links: { dr: 'a', vw: 'a' }, pair: ['dr', 'ht'],
   });
   g = cmd(g, { type: 'verdict', target: 'vw' });

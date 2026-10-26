@@ -665,6 +665,11 @@
             "maximum": 30,
             "default": 0,
             "description": "Total number of mornings allowed to end without an execution, chosen before dealing. Each null verdict consumes one allowance. At zero remaining, null verdict returns VOTE_REQUIRED (409). Legacy games through v11 keep unlimited skips."
+          },
+          "hunterActiveShot": {
+            "type": "boolean",
+            "default": false,
+            "description": "Default passive: pin each night, only night death triggers. Active: one optional shot for the whole game; kill target, hunter also dies unless target belongs to wolves. No public cause disclosure."
           }
         },
         "required": [

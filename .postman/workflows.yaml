@@ -1,4 +1,4 @@
 workflows:
   syncSpecToCollection:
     - spec: ../postman/specs/rooms.openapi.json
-      collection: ../postman/collections/Numeric room codes
+      collection: ../postman/collections/Hunter modes contract

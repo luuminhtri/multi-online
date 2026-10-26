@@ -1,10 +1,11 @@
 import type { Role, Step } from './types.ts';
 
+// v13 adds nightly Hunter pins or one active shot; older games retain death-time shots.
 // v12 makes no-execution days a limited budget; v11 adds moderator-started day
 // phase clocks; v10 adds pack chat during the wolves step; v9 adds the
 // moderator's explicit pre-game Witch visibility option.
 export const RULES = Object.freeze({
-  version: 'classic-core-v12',
+  version: 'classic-core-v13',
   dayPhases: ['discussion', 'nomination', 'defense', 'finalvote'] as const,
   defaultDayTimers: { discussion: 300, nomination: 15, defense: 30, finalvote: 15 } as const,
   guardCanSelfProtect: true,
@@ -20,7 +21,7 @@ export const ROLES: Record<Role, { name: string; description: string }> = {
   seer: { name: 'Tiên tri', description: 'Mỗi đêm soi một người khác còn sống. Sói thường hiện Sói; Người hóa sói cũng hiện Sói, còn Người sói che giấu hiện không phải Sói.' },
   guard: { name: 'Bảo vệ', description: 'Mỗi đêm bảo vệ một người, được chọn mình nhưng không cùng người hai đêm liên tiếp. Chỉ chặn Sói cắn, không chặn độc.' },
   witch: { name: 'Phù thủy', description: 'Có một thuốc cứu và một thuốc độc cho cả ván. Được tự cứu, dùng cả hai cùng đêm hoặc để dành. Người được Bảo vệ chặn đòn cắn không được báo là nạn nhân. Quản trò chọn có cho xem nạn nhân khi còn thuốc cứu hay không. Khi ẩn, bạn chỉ quyết định dùng thuốc; máy chủ cứu một nạn nhân theo thứ tự ghế. Đã dùng là mất thuốc, kể cả không có nạn nhân. Hết thuốc vẫn được gọi dậy.' },
-  hunter: { name: 'Thợ săn', description: 'Khi chết (do bị cắn, đầu độc hoặc treo cổ), Thợ săn được bắn một phát súng cuối cùng để tiêu diệt một người chơi khác còn sống.' },
+  hunter: { name: 'Thợ săn', description: 'Mỗi đêm ghim một người khác còn sống. Nếu chết trong đêm vì bất kỳ nguyên nhân nào, người đã ghim trong đêm đó chết theo. Chết ban ngày không kích hoạt. Nếu bật bắn chủ động: được bắn một phát trong cả ván mà không cần chết; mục tiêu chết, bắn sai phe Sói thì Thợ săn cũng chết. Được giữ lại phát bắn.' },
   cupid: { name: 'Thần tình yêu', description: 'Đêm đầu tiên thức dậy chọn 2 người yêu nhau. Khi một trong hai người chết, người kia sẽ chết theo vì đau buồn.' },
   cursed: { name: 'Kẻ bị nguyền', description: 'Ban đầu thuộc phe Dân làng. Nếu bị Ma Sói cắn sẽ không chết mà biến thành Ma Sói từ đêm tiếp theo. Nếu bị đầu độc hoặc treo cổ thì chết bình thường.' },
   doppelganger: { name: 'Nhân bản', description: 'Đêm đầu tiên thức dậy chọn một người làm mục tiêu. Khi mục tiêu đó chết, Nhân bản sẽ nhận vai hiện tại và tài nguyên còn lại của người đó; phe được tính theo vai mới và liên kết tình nhân của chính mình.' },
@@ -46,7 +47,7 @@ export const ROLES: Record<Role, { name: string; description: string }> = {
   dream_wolf: { name: 'Sói chiêm bao', description: 'Không thức hoặc biết bầy cho đến khi một Sói thật chết được công bố. Sau đó thức và cắn cùng bầy.' },
 
 };
-export const NIGHT_STEPS: Step[] = ['guard', 'seer', 'aura_seer', 'mystic_seer', 'mentalist', 'wolves', 'alpha_wolf', 'witch'];
+export const NIGHT_STEPS: Step[] = ['guard', 'hunter', 'seer', 'aura_seer', 'mystic_seer', 'mentalist', 'wolves', 'alpha_wolf', 'witch'];
 export const MODERATOR_SCRIPTS: Record<Step, { wake: string; sleep?: string }> = {
   dire_wolf: { wake: 'Sói tuyết thức dậy, chọn một bạn đồng hành.', sleep: 'Sói tuyết đi ngủ.' },
   virginia_woolf: { wake: 'Virginia Woolf thức dậy, chọn người sợ mình.', sleep: 'Virginia Woolf đi ngủ.' },

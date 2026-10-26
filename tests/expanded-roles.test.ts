@@ -1,3 +1,4 @@
+import { legacyHunter } from './helpers/legacy-hunter.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { actors, createGame, dispatch, livingNeighbors, RuleError, stepId } from '../src/engine/engine.ts';
@@ -24,6 +25,7 @@ function step(g: Game, choice: Choices = {}) {
     const targets = playerView(g, id).turn!.targets;
     const action: Action = choice.actions?.[id] ?? (g.step === 'guard' ? { type: 'protect', target: choice.protect ?? targets[0] }
       : ['seer', 'aura_seer', 'mystic_seer'].includes(g.step) ? { type: 'inspect', target: targets[0] }
+      : g.step === 'hunter' ? { type: 'shoot', target: targets[0] }
       : g.step === 'mentalist' ? { type: 'compare', targets: [targets[0], targets[1]] }
       : g.step === 'wolves' ? { type: 'bite', target: choice.bite ?? 'a' }
       : g.step === 'doppelganger' ? { type: 'mimic', target: 's' }
@@ -215,7 +217,7 @@ test('bomb cascades into lover death and hunter reaction before checking winner'
     ['w', 'wolf'], ['h', 'hunter'], ['bomb', 'mad_bomber'], ['a', 'villager'],
     ['b', 'villager'], ['c', 'villager'], ['cu', 'cupid'],
   ].map(([id, role]) => ({ id, name: id, role: role as Role })), { witchSeesBite: true, skipVoteDays: 30 });
-  g = dawn(g, { bite: 'bomb' });
+  g = dawn(legacyHunter(g), { bite: 'bomb' });
   assert.deepEqual(new Set(g.publicDead), new Set(['bomb', 'h', 'a', 'b']));
   assert.equal(g.activeHunterId, 'h');
   assert.equal(g.winner, null);

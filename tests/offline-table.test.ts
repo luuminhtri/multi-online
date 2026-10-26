@@ -4,7 +4,7 @@ import { LocalTable, localCatalog, type LocalMutation } from '../src/offline/tab
 import type { Snapshot } from '../src/server/types.ts';
 import type { Action, Role } from '../src/engine/types.ts';
 
-function fixture(simplified = true, roles: Role[] = ['guard', 'seer', 'wolf', 'wolf', 'villager', 'villager', 'villager']) {
+function fixture(simplified = true, roles: Role[] = ['guard', 'seer', 'wolf', 'wolf', 'villager', 'villager', 'villager'], hunterActiveShot = false) {
   const values = new Map<string, string>();
   const storage = { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => { values.set(key, value); } };
   const table = new LocalTable(storage, () => 1_770_000_000_000);
@@ -12,7 +12,7 @@ function fixture(simplified = true, roles: Role[] = ['guard', 'seer', 'wolf', 'w
   let serial = 0;
   const send = (operation: Record<string, unknown>) => { s = table.mutate({ code: s.room.code, requestId: `r${++serial}`, ...operation } as LocalMutation) as typeof s; return s; };
   for (let i = 0; i < roles.length; i++) send({ type: 'addOffline', expectedRevision: s.room.revision, name: `Người ${i}` });
-  const deal = () => send({ type: 'localStart', expectedRevision: s.room.revision, roles, simplified, settings: { witchSeesBite: true, skipVoteDays: 1 } });
+  const deal = () => send({ type: 'localStart', expectedRevision: s.room.revision, roles, simplified, settings: { witchSeesBite: true, hunterActiveShot, skipVoteDays: 1 } });
   const begin = () => { deal(); send({ type: 'begin', expectedRevision: s.room.revision }); };
   const id = (role: Role) => s.game!.players.find(p => p.role === role)!.id;
   const act = (action: Action) => send({ type: 'simpleAct', stepId: s.game!.stepId, action });
@@ -128,11 +128,16 @@ test('cub sacrifice in simplified mode submits the offer before the rest of the 
   assert.equal(f.s.game!.step, 'wolves');
 });
 
-test('hunter reaction remains an explicit single action after night publication', () => {
+test('hunter pins before wolf bite and night publication resolves the shot automatically', () => {
   const f = fixture(true, ['wolf', 'hunter', 'villager', 'villager', 'villager']); f.begin();
-  f.act({ type: 'bite', target: f.id('hunter') }); f.cmd({ type: 'publish' });
   assert.equal(f.s.game!.step, 'hunter');
-  f.act({ type: 'shoot', target: f.id('wolf') }); assert.equal(f.s.game!.winner, 'village');
+  f.act({ type: 'shoot', target: f.id('wolf') });
+  f.act({ type: 'bite', target: f.id('hunter') });
+  assert.equal(f.s.game!.resolved, true);
+  const reloaded = new LocalTable(f.storage).read(f.s.room.code);
+  assert.equal(reloaded.game!.step, 'review');
+  f.cmd({ type: 'publish' });
+  assert.equal(f.s.game!.winner, 'village');
 });
 
 test('complete local flow works when HTTP browser has no crypto.randomUUID', () => {
@@ -153,4 +158,18 @@ test('complete local flow works when HTTP browser has no crypto.randomUUID', () 
     if (descriptor) Object.defineProperty(crypto, 'randomUUID', descriptor);
     else Reflect.deleteProperty(crypto, 'randomUUID');
   }
+});
+
+
+test('offline active hunter retains ammunition across reload after holding, then fires once', () => {
+  const f = fixture(true, ['wolf', 'hunter', 'villager', 'villager', 'villager'], true); f.begin();
+  assert.equal(f.s.game!.step, 'hunter');
+  f.act({ type: 'hold' }); f.act({ type: 'bite', target: f.id('villager') }); f.cmd({ type: 'publish' });
+  assert.equal(new LocalTable(f.storage).read(f.s.room.code).game!.players.find(p => p.role === 'hunter')!.resources.hunterShot, 1);
+  f.cmd({ type: 'verdict', target: null }); f.cmd({ type: 'nextNight' });
+  assert.equal(f.s.game!.step, 'hunter');
+  f.act({ type: 'shoot', target: f.id('wolf') });
+  f.act({ type: 'bite', target: f.id('hunter') }); f.cmd({ type: 'publish' });
+  assert.equal(f.s.game!.players.find(p => p.role === 'wolf')!.alive, false);
+  assert.equal(f.s.game!.players.find(p => p.role === 'hunter')!.resources.hunterShot, 0);
 });

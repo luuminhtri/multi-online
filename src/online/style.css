@@ -332,7 +332,7 @@ blockquote { margin: 20px 0; padding: 0 0 0 14px; border-left: 1px solid #bdab80
 .role-desc { white-space: pre-wrap; }
 .modal-footer { flex: 0 0 auto; }
 
-.seat.awaiting-ready { opacity: .28; }
+.seat.awaiting-ready { opacity: 1; }
 .ready-check { position: absolute; right: -4px; bottom: -3px; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; color: #172016; background: #b5cba5; border: 2px solid var(--bg); }
 .ready-check .icon { width: 12px; height: 12px; }
 .ready-count { color: var(--muted); margin: 28px 0; }
@@ -416,3 +416,20 @@ blockquote { margin: 20px 0; padding: 0 0 0 14px; border-left: 1px solid #bdab80
 .wake-content > p { margin: 0; color: var(--muted); font-size: 16px; }
 .wake-content .wake-notice { color: #eca69b; font-size: 13px; }
 .wake-content .primary { flex-shrink: 0; min-height: 54px; margin-top: 20px; font-size: 16px; }
+
+/* Connection method never dims a living seat. Target and teammate rings are distinct. */
+.seat.pack-mate .avatar { border: 2px solid #d76861; box-shadow: 0 0 0 3px #763c39; }
+.seat.target-selected .avatar { outline: 3px solid var(--accent); outline-offset: 5px; }
+.seat.target-available .avatar { cursor: pointer; }
+.seat .avatar[aria-disabled="true"] { cursor: default; opacity: 1; }
+.seat-settings { position: absolute; right: -1px; top: -8px; width: 24px; height: 24px; min-height: 24px; padding: 4px; border-radius: 50%; background: var(--surface); }
+.seat-settings svg { width: 14px; height: 14px; }
+.avatar-target-field { display: flex; align-items: center; gap: 8px; margin: 8px 0; min-width: 0; }
+.target-slot { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 10px 12px; text-align: left; border: 1px solid var(--line); background: transparent; }
+.target-slot span { font-size: 11px; color: var(--muted); }
+.target-slot strong { font-size: 14px; font-weight: 500; overflow-wrap: anywhere; }
+.target-slot.active { border-color: var(--accent); }
+.target-clear { flex-shrink: 0; max-width: 42%; font-size: 11px; }
+.target-help { font-size: 12px; }
+
+.seat.pack-mate button.avatar:hover:enabled { border-color: #d76861; }

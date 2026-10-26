@@ -277,3 +277,11 @@ Theo người dùng, sổ tay quản trò quá dài trên điện thoại. Chia 
 Theo ảnh/góp ý: bộ lọc Đêm căn phải thành cụm gọn, select chữ 13px nét thường, nền dịu/viền mảnh và mũi tên thống nhất; vẫn dùng select native để hỗ trợ bàn phím. Focus panel dùng viền nhẹ thay viền mặc định xanh.
 
 Khi room đang playing và playerView.turn tồn tại nhưng chưa awake, hiển thị alertdialog phủ viewport với Đến lượt bạn, lời gọi chung và nút Tôi đã thức dậy. Không lộ tên vai, không tự wake; dùng cùng lệnh đã có, chỉ đóng khi snapshot xác nhận awake. Không áp dụng ở ready/ended, người không có lượt hoặc màn quản trò tối giản. Overlay không đóng qua Escape; giữ focus trong overlay và hiển thị lỗi gửi để người chơi thử lại. Không thay API/luật.
+
+## D71 — Thợ săn bị động/chủ động theo yêu cầu 2026-10-27
+
+Mặc định bị động, ghim mỗi đêm; chết đêm mọi nguyên nhân kéo mục tiêu ghim chết theo, chết ngày không bắn. Chủ động thay thế bị động: một phát cả ván, được giữ lại; trúng phe Sói thực tế thì sống, sai thì cả hai chết. Không dùng tên bắn công khai. Bảo vệ/cứu không chặn bắn. Chốt bắn ở lượt đêm và tổng kết đợt chết chung; phe xét là team tại lúc chốt, trước chuyển hóa Alpha/công bố. Không công khai nguồn chết. Version v13/schema8; ván cũ giữ luật cũ.
+
+## D72 — Chọn mục tiêu avatar và nhận đồng đội
+
+Theo yêu cầu: avatar chọn mục tiêu đêm, giữ Xác nhận riêng. Nhiều mục tiêu có từng ô chọn; viền vàng đánh dấu mục tiêu. Viền đỏ chỉ lấy pack projection được phép biết khi Sói thức, không suy từ dữ liệu vai quản trò. Người sống giữ sáng khi offline/chưa ready. Menu quản lý có nút riêng khi avatar đang chọn mục tiêu ở chế độ tối giản.

@@ -1,0 +1,36 @@
+{
+  "$kind": "http-request",
+  "name": "Active ready 2",
+  "order": 3100,
+  "method": "POST",
+  "url": "{{baseUrl}}/api/room",
+  "auth": {
+    "type": "noauth"
+  },
+  "headers": [
+    {
+      "key": "Content-Type",
+      "value": "application/json"
+    },
+    {
+      "key": "Authorization",
+      "value": "Bearer {{hunterToken}}"
+    }
+  ],
+  "scripts": [
+    {
+      "type": "beforeRequest",
+      "language": "text/javascript",
+      "code": "pm.collectionVariables.set('hunterReadyId',JSON.parse(pm.collectionVariables.get('hunterMemberIds'))[2]);"
+    },
+    {
+      "type": "afterResponse",
+      "language": "text/javascript",
+      "code": "pm.test('HTTP 200',()=>pm.response.to.have.status(200));const s=pm.response.json();if(s.room){pm.collectionVariables.set('hunterCode',s.room.code);if(s.room.revision!==null)pm.collectionVariables.set('hunterRevision',String(s.room.revision));}if(s.game){pm.collectionVariables.set('hunterStep',s.game.stepId??s.game.turn?.stepId??'');if(s.viewer==='moderator')for(const p of s.game.players)pm.collectionVariables.set('hunter_'+p.role,p.id);}"
+    }
+  ],
+  "body": {
+    "type": "json",
+    "content": "{\"type\": \"offlineReady\", \"playerId\": \"{{hunterReadyId}}\", \"code\": \"{{hunterCode}}\", \"requestId\": \"hunter-31\"}"
+  }
+}

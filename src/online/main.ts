@@ -1,3 +1,4 @@
+import { pickTarget, visiblePackIds, type TargetSlot } from './target-picker.ts';
 import type { Snapshot, Mutation } from '../server/types.ts';
 import type { Action, Command, DayTimers, GameEvent, Role } from '../engine/types.ts';
 import { LocalTable, localCatalog, type LocalMutation } from '../offline/table.ts';
@@ -65,7 +66,8 @@ function describeAction(a: Action): string {
     case 'maul': return `Cắn ${a.targets.map(name).join(' và ')}`;
     case 'protect': return `Bảo vệ ${name(a.target)}`;
     case 'inspect': return `Soi ${name(a.target)}`;
-    case 'shoot': return `Bắn ${name(a.target)}`;
+    case 'hold': return 'Giữ lại phát bắn';
+    case 'shoot': return `${snapshot?.game && (snapshot.viewer === 'moderator' ? snapshot.game.rulesVersion === 'classic-core-v13' && !snapshot.game.settings?.hunterActiveShot : snapshot.game.hunterMode === 'passive') ? 'Ghim' : 'Bắn'} ${name(a.target)}`;
     case 'mimic': return `Nhân bản ${name(a.target)}`;
     case 'bond': return `Liên kết với ${name(a.target)}`;
     case 'pair': return `Kết duyên ${a.targets.map(name).join(' và ')}`;
@@ -93,6 +95,9 @@ function eventText(e: GameEvent): string {
     case 'feared-by': return `${name(d.actor)} đã chọn bạn; bạn sẽ chết theo nếu người đó chết.`;
     case 'death-bond': return `Liên kết: ${name(d.target)}.`;
     case 'mimic-target': return `Bạn chọn nhân bản ${name(d.target)}.`;
+    case 'hunter-fired': return `${name(d.actor)} dùng phát bắn vào ${name(d.target)}.`;
+    case 'hunter-marked': return `${name(d.actor)} ghim ${name(d.target)} trong đêm ${e.night}.`;
+    case 'hunter-shot': return `Thợ săn ${name(d.hunter)} kéo ${name(d.target)} chết theo.`;
     case 'action-confirmed': return `${name(d.actor)}: ${describeAction(d.action as Action)}.`;
     case 'death': return `${name(d.player)} chết (${(d.causes as string[]).map(c => ({ bite: 'cắn', poison: 'độc', shot: 'bắn', heartbreak: 'tình nhân', explosion: 'nổ', verdict: 'phán quyết', companion: 'bạn đồng hành', fear: 'Virginia', sacrifice: 'hy sinh', 'delayed-bite': 'vết cắn cũ' })[c] ?? c).join(', ')}).`;
     case 'bite-blocked': return `${name(d.target)} được chặn đòn cắn.`;
@@ -115,7 +120,7 @@ const moon = '<svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M
 const DAY_PHASE_NAMES: Record<string, string> = { discussion: 'Thảo luận', nomination: 'Vote chỉ người', defense: 'Thanh minh', finalvote: 'Biểu quyết sống/chết' };
 const DAY_PHASES = ['discussion', 'nomination', 'defense', 'finalvote'] as const;
 const DEFAULT_DAY_TIMERS: Record<string, number> = { discussion: 300, nomination: 15, defense: 30, finalvote: 15 };
-const lobbySettings = { witchSeesBite: false, dayTimers: { ...DEFAULT_DAY_TIMERS }, skipVoteDays: 0 };
+const lobbySettings = { hunterActiveShot: false, witchSeesBite: false, dayTimers: { ...DEFAULT_DAY_TIMERS }, skipVoteDays: 0 };
 let serverOffset = 0;
 const fmtClock = (ms: number) => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 function tickCountdowns() {
@@ -148,6 +153,71 @@ function preset() {
   if (n >= 7) deck.hunter = 1;
   deck.villager = n - Object.values(deck).reduce((a, b) => a + b, 0);
 }
+let activeTargetSlot = '';
+function targetingView() {
+  if (!snapshot?.game || snapshot.room.phase !== 'playing') return null;
+  if (snapshot.viewer === 'moderator') return snapshot.room.simplified && !['day', 'review', 'ended'].includes(snapshot.game.step) ? simpleView(snapshot.game) : null;
+  const g = snapshot.game, t = g.turn;
+  return t?.awake && (!t.sleepReady || editingWolfStep === t.stepId) ? g : null;
+}
+function pickerSlots(): TargetSlot[] {
+  return [...app.querySelectorAll<HTMLElement>('[data-target-slot]')].map(el => ({ id: el.dataset.targetSlot!, targets: JSON.parse(el.dataset.targets!), optional: el.dataset.optional === 'true' }));
+}
+function mountTargetPicker(phaseKey: string) {
+  const view = targetingView();
+  if (!view) return;
+  const ids = ['target', 'target2', 'first', 'second', 'healTarget', 'poison', 'convert'];
+  for (const id of ids) {
+    const select = app.querySelector<HTMLSelectElement>(`select#${id}`);
+    if (!select) continue;
+    if (select.disabled) { const hidden = document.createElement('input'); hidden.type = 'hidden'; hidden.id = id; hidden.value = ''; const note = document.createElement('p'); note.className = 'muted'; note.textContent = 'Đã hết thuốc độc.'; select.parentElement!.replaceWith(hidden, note); continue; }
+    const label = select.parentElement!, text = label.firstChild?.textContent?.trim() ?? 'Mục tiêu';
+    const choices = [...select.options], optional = choices.some(o => o.value === '');
+    const selected = formMemory.get(`${phaseKey}:${id}`);
+    const value = typeof selected === 'string' && choices.some(o => o.value === selected) ? selected : '';
+    const field = document.createElement('div'); field.className = 'avatar-target-field'; field.dataset.targetSlot = id;
+    field.dataset.targets = JSON.stringify(choices.filter(o => o.value).map(o => o.value)); field.dataset.optional = String(optional);
+    const hidden = document.createElement('input'); hidden.type = 'hidden'; hidden.id = id; hidden.value = value;
+    const slot = document.createElement('button'); slot.type = 'button'; slot.className = 'target-slot'; slot.dataset.action = 'target-slot'; slot.dataset.slot = id;
+    const caption = document.createElement('span'); caption.textContent = text;
+    const selectedName = document.createElement('strong'); selectedName.dataset.targetName = id;
+    slot.append(caption, selectedName); field.append(hidden, slot);
+    if (optional) {
+      const clear = document.createElement('button'); clear.type = 'button'; clear.className = 'text-button target-clear'; clear.dataset.action = 'target-clear'; clear.dataset.slot = id;
+      clear.textContent = choices.find(o => !o.value)?.textContent ?? 'Bỏ chọn'; field.append(clear);
+    }
+    label.replaceWith(field);
+  }
+  const slots = pickerSlots();
+  if (!slots.some(s => s.id === activeTargetSlot)) activeTargetSlot = slots[0]?.id ?? '';
+  if (slots.length) {
+    const help = document.createElement('p'); help.className = 'muted target-help'; help.textContent = 'Bấm avatar trên bàn để chọn mục tiêu, rồi xác nhận.';
+    app.querySelector('.avatar-target-field')?.before(help);
+  }
+  updateTargetPicker();
+}
+function updateTargetPicker() {
+  const slots = pickerSlots(), active = slots.find(s => s.id === activeTargetSlot);
+  const values = Object.fromEntries(slots.map(s => [s.id, app.querySelector<HTMLInputElement>(`#${s.id}`)?.value ?? '']));
+  for (const el of app.querySelectorAll<HTMLElement>('[data-target-slot]')) {
+    const id = el.dataset.targetSlot!, chosen = values[id];
+    el.querySelector<HTMLElement>('[data-target-name]')!.textContent = chosen ? name(chosen) : el.dataset.optional === 'true' ? 'Chưa chọn · không dùng' : 'Bấm avatar để chọn';
+    const button = el.querySelector<HTMLButtonElement>('.target-slot')!;
+    button.classList.toggle('active', id === activeTargetSlot); button.setAttribute('aria-pressed', String(id === activeTargetSlot));
+  }
+  for (const avatar of app.querySelectorAll<HTMLButtonElement>('[data-action="pick-target"]')) {
+    const id = avatar.dataset.playerId!, allowed = !!active?.targets.includes(id);
+    const selected = Object.values(values).includes(id);
+    avatar.setAttribute('aria-disabled', String(!allowed)); avatar.setAttribute('aria-pressed', String(selected));
+    avatar.closest('.seat')?.classList.toggle('target-selected', selected);
+    avatar.closest('.seat')?.classList.toggle('target-available', allowed);
+  }
+  const sacrifice = app.querySelector<HTMLInputElement>('#sacrifice')?.checked;
+  const healing = app.querySelector<HTMLInputElement>('#heal')?.checked;
+  const ready = sacrifice || slots.every(s => s.optional || s.id === 'healTarget' && !healing || !!values[s.id]);
+  const submit = app.querySelector<HTMLButtonElement>('[data-action="submit"], [data-action="simple-submit"]');
+  if (submit) submit.disabled = busy || !!pending || !ready;
+}
 // Bàn tròn: sáng là sống, mờ là đã chết. Thứ tự người chơi là vòng ghế cố định.
 function roundTable(players: { id: string; name: string; alive: boolean }[], opts: { draggable?: boolean; hub?: string; recentDeaths?: string[]; readyPlayers?: string[] } = {}) {
   const n = players.length;
@@ -156,9 +226,13 @@ function roundTable(players: { id: string; name: string; alive: boolean }[], opt
     const x = 50 + 39 * Math.cos(angle), y = 50 + 39 * Math.sin(angle);
     const left = snapshot?.room.members.find(m => m.id === p.id)?.left;
     const manage = snapshot?.viewer === 'moderator' && !snapshot.controller;
+    const view = targetingView();
+    const picking = !!view && !!view.turn?.targets.length;
+    const packView = snapshot?.viewer === 'player' ? snapshot.game : view;
+    const packMate = visiblePackIds(packView, snapshot?.viewer === 'moderator' && !!snapshot.room.simplified).includes(p.id);
     const recent = !left && !p.alive && opts.recentDeaths?.includes(p.id);
     const drag = opts.draggable ? 'data-drag="1"' : '';
-    return `<div class="seat${left ? ' left' : ''}${p.alive ? '' : ' dead'}${recent ? ' recently-dead' : ''}${opts.readyPlayers && !opts.readyPlayers.includes(p.id) ? ' awaiting-ready' : ''}" data-id="${esc(p.id)}" data-seat="${i + 1}" style="--x:${x.toFixed(2)}%;--y:${y.toFixed(2)}%" ${drag}>${manage ? `<button type="button" id="seat-${p.id}" class="avatar" data-action="seat-menu" data-player-id="${p.id}" aria-label="Cài đặt ${esc(p.name)}" aria-haspopup="menu" aria-expanded="${memberMenu?.id === p.id}" ${left ? 'disabled' : ''}>` : '<span class="avatar">'}${esc(initial(p.name))}${opts.readyPlayers?.includes(p.id) ? `<span class="ready-check">${icon('check')}</span>` : ''}${recent ? `<span class="death-mark" role="img" aria-label="Chết đêm gần nhất" title="Chết đêm gần nhất"><img src="${deathBloodX}" alt="" aria-hidden="true" decoding="async"></span>` : ''}${manage ? '</button>' : '</span>'}<span class="sname">${esc(p.name)}</span>${left ? '<small class="left-label">Đã rời</small>' : ''}</div>`;
+    return `<div class="seat${packMate ? ' pack-mate' : ''}${left ? ' left' : ''}${p.alive ? '' : ' dead'}${recent ? ' recently-dead' : ''}${opts.readyPlayers && !opts.readyPlayers.includes(p.id) ? ' awaiting-ready' : ''}" data-id="${esc(p.id)}" data-seat="${i + 1}" style="--x:${x.toFixed(2)}%;--y:${y.toFixed(2)}%" ${drag}>${picking ? `<button type="button" class="avatar" data-action="pick-target" data-player-id="${p.id}" aria-label="Chọn ${esc(p.name)}">` : manage ? `<button type="button" id="seat-${p.id}" class="avatar" data-action="seat-menu" data-player-id="${p.id}" aria-label="Cài đặt ${esc(p.name)}" aria-haspopup="menu" aria-expanded="${memberMenu?.id === p.id}" ${left ? 'disabled' : ''}>` : '<span class="avatar">'}${esc(initial(p.name))}${opts.readyPlayers?.includes(p.id) ? `<span class="ready-check">${icon('check')}</span>` : ''}${recent ? `<span class="death-mark" role="img" aria-label="Chết đêm gần nhất" title="Chết đêm gần nhất"><img src="${deathBloodX}" alt="" aria-hidden="true" decoding="async"></span>` : ''}${manage || picking ? '</button>' : '</span>'}${manage && picking ? `<button type="button" class="seat-settings" data-action="seat-menu" data-player-id="${p.id}" aria-label="Cài đặt ${esc(p.name)}">${icon('settings')}</button>` : ''}<span class="sname">${esc(p.name)}</span>${left ? '<small class="left-label">Đã rời</small>' : ''}</div>`;
   }).join('');
   return `<div class="table${n === 0 ? ' vacant' : ''}${n > 12 ? ' dense' : ''}" data-table="${n}">${seats}${n === 0 ? Array.from({ length: 8 }, (_, i) => `<span class="empty-seat" style="--angle:${i * 45}deg">${icon('user')}</span>`).join('') : ''}<div class="hub">${opts.hub ?? `<strong>${n}</strong><span>người chơi</span>`}</div></div>`;
 }
@@ -219,7 +293,7 @@ function modalHtml() {
   } else if (modal === 'deck') {
     inner = `<div class="modal-title"><h3>Bộ vai</h3>${button('preset', icon('shuffle') + ' Gợi ý', false, 'class="text-button"')}</div><p class="muted">Số thẻ cần bằng số người chơi.</p><div class="deck">${catalog.map(r => `<label>${esc(r.name)}<input id="deck-${r.id}" data-role="${r.id}" ${busy || pending ? 'disabled' : ''} type="number" min="0" max="30" value="${deck[r.id] ?? 0}" inputmode="numeric"></label>`).join('')}</div>`;
   } else if (modal === 'settings' && snapshot?.viewer === 'moderator' && !snapshot.game) {
-    inner = `<h3>Cài đặt</h3>${localMode ? `<label class="check"><input id="local-simplified" type="checkbox" ${localSimplified ? 'checked' : ''}><span>Tối giản thao tác ban đêm<small>Quản trò nhập trực tiếp. Một lựa chọn chung cho bầy Sói.</small></span></label>` : ''}<label class="check"><input id="witch-sees-bite" type="checkbox" ${lobbySettings.witchSeesBite ? 'checked' : ''}><span>Phù thủy thấy nạn nhân<small>Tắt: Phù thủy chỉ chọn dùng/giữ thuốc, máy chủ cứu không lộ tên. Người Bảo vệ chặn cắn luôn được giấu.</small></span></label><h4>Đồng hồ ban ngày</h4><div class="timer-fields">${DAY_PHASES.map(p => `<label>${DAY_PHASE_NAMES[p]} (giây)<input id="day-${p}" type="number" min="5" max="3600" value="${lobbySettings.dayTimers[p]}" inputmode="numeric"></label>`).join('')}</div><h4>Bỏ phiếu trắng</h4><label>Số ngày được không loại ai (0–30)<input id="skip-vote-days" type="number" min="0" max="30" value="${lobbySettings.skipVoteDays}" inputmode="numeric"></label><p class="muted">0 = sáng nào cũng phải vote loại một người. Hết lượt bỏ qua, mỗi sáng phải chọn một người để vote.</p>`;
+    inner = `<h3>Cài đặt</h3>${localMode ? `<label class="check"><input id="local-simplified" type="checkbox" ${localSimplified ? 'checked' : ''}><span>Tối giản thao tác ban đêm<small>Quản trò nhập trực tiếp. Một lựa chọn chung cho bầy Sói.</small></span></label>` : ''}<label class="check"><input id="witch-sees-bite" type="checkbox" ${lobbySettings.witchSeesBite ? 'checked' : ''}><span>Phù thủy thấy nạn nhân<small>Tắt: Phù thủy chỉ chọn dùng/giữ thuốc, máy chủ cứu không lộ tên. Người Bảo vệ chặn cắn luôn được giấu.</small></span></label><label class="check"><input id="hunter-active-shot" type="checkbox" ${lobbySettings.hunterActiveShot ? 'checked' : ''}><span>Thợ săn bắn chủ động<small>Tắt: ghim mỗi đêm, chết đêm thì kéo mục tiêu chết theo. Bật: một phát cả ván; trúng phe Sói thì sống, bắn sai thì cả hai chết.</small></span></label><h4>Đồng hồ ban ngày</h4><div class="timer-fields">${DAY_PHASES.map(p => `<label>${DAY_PHASE_NAMES[p]} (giây)<input id="day-${p}" type="number" min="5" max="3600" value="${lobbySettings.dayTimers[p]}" inputmode="numeric"></label>`).join('')}</div><h4>Bỏ phiếu trắng</h4><label>Số ngày được không loại ai (0–30)<input id="skip-vote-days" type="number" min="0" max="30" value="${lobbySettings.skipVoteDays}" inputmode="numeric"></label><p class="muted">0 = sáng nào cũng phải vote loại một người. Hết lượt bỏ qua, mỗi sáng phải chọn một người để vote.</p>`;
   } else if (modal === 'rolepeek' && g) {
     inner = roleInfo(g);
   } else if (modal === 'inspect-result' && g) {
@@ -296,7 +370,7 @@ function chatPanel(g: Extract<Snapshot, { viewer: 'player' }>['game']): string {
 function roleInfo(g: Extract<Snapshot, { viewer: 'player' }>['game']) {
   if (!g) return '';
   const self = g.self;
-  return `<div class="modal-role"><div class="card-hero">${cardImage(self.role, roleName(self.role))}</div><h3>${esc(roleName(self.role))}</h3><p class="team-chip">${self.team === 'wolves' ? 'Phe Sói' : self.team === 'lovers' ? 'Phe Tình nhân' : 'Phe Dân'}</p><p class="role-desc">${esc(roleById(self.role)?.description ?? '')}</p></div>`;
+  return `<div class="modal-role"><div class="card-hero">${cardImage(self.role, roleName(self.role))}</div><h3>${esc(roleName(self.role))}</h3><p class="team-chip">${self.team === 'wolves' ? 'Phe Sói' : self.team === 'lovers' ? 'Phe Tình nhân' : 'Phe Dân'}</p>${self.role === 'hunter' ? `<p class="muted">${esc(self.description)}</p>` : ''}<p class="role-desc">${esc(roleById(self.role)?.description ?? '')}</p></div>`;
 }
 function roleRevealOverlay(g: Extract<Snapshot, { viewer: 'player' }>['game']) {
   if (!g) return '';
@@ -334,7 +408,8 @@ function lobby(s: Snapshot) {
 function hubLabel(step: string, night: number) { return step === 'ended' ? 'Kết thúc' : step === 'day' ? 'Ban ngày' : step === 'review' ? 'Chưa công bố' : `Đêm ${night}`; }
 function actionForm(g: NonNullable<Extract<Snapshot, { viewer: 'player' }>['game']>): string {
   const t = g.turn!;
-      let form = `<label>Chọn một người<select id="target">${options(t.targets)}</select></label>`;
+      let form = `<label>${t.ability === 'hunter' && g.hunterMode === 'passive' ? 'Ghim một người đêm nay' : 'Chọn một người'}<select id="target">${options(t.targets)}</select></label>`;
+      if (t.ability === 'hunter' && g.hunterMode === 'active') form = `<p class="muted">Một phát trong cả ván. Bắn sai phe Sói thì cả hai chết.</p><label>Bắn ai đêm nay?<select id="target">${options(t.targets, 'Giữ lại phát bắn')}</select></label>`;
       if (t.ability === 'wolves') {
         const plan = t.wolfPlan!;
         form = plan.maxTargets === 0 ? '<p class="big-note">Đêm nay bầy không cắn.</p>' : `<p class="big-note">Chọn ${plan.minTargets === plan.maxTargets ? plan.minTargets : `${plan.minTargets}–${plan.maxTargets}`} nạn nhân.${plan.adjacentPair ? ' Hai nạn nhân phải ngồi cạnh nhau.' : ''}</p>${form}${plan.maxTargets > 1 ? `<label>Người thứ hai<select id="target2">${options(t.targets, plan.minTargets > 1 ? 'Chọn người thứ hai' : 'Chỉ chọn một người')}</select></label>` : ''}${plan.canOfferSacrifice || plan.sacrificeTarget ? `<label class="check"><input id="sacrifice" type="checkbox">${plan.canOfferSacrifice ? 'Tự đề nghị hy sinh' : `Đồng ý hy sinh ${esc(name(plan.sacrificeTarget))}`}</label>` : ''}`;
@@ -347,7 +422,7 @@ function actionForm(g: NonNullable<Extract<Snapshot, { viewer: 'player' }>['game
 }
 function simpleView(g: NonNullable<Extract<Snapshot, { viewer: 'moderator' }>['game']>) {
   const ids = actors(g);
-  const id = g.step === 'wolves' ? ids.find(id => g.players.find(p => p.id === id)?.role === 'wolf_cub') ?? ids[0] : ids[0];
+  const id = g.step === 'wolves' ? ids.find(id => g.players.find(p => p.id === id)?.role === 'wolf_cub') ?? ids[0] : ids.find(id => !Object.hasOwn(g.actions, id));
   return id ? playerView(g, id) : null;
 }
 function player(s: Extract<Snapshot, { viewer: 'player' }>) {
@@ -361,7 +436,7 @@ function player(s: Extract<Snapshot, { viewer: 'player' }>) {
     : `<div class="rest-box"><p>${g.phase === 'ended' ? esc(winnerText(g.winner!)) : alive ? 'Cả làng thức dậy.' : 'Bạn đã rời cuộc chơi.'}</p>${dayInfo}</div>`;
   if (t) {
     if (!t.awake) controls = '<p class="muted">Quản trò đang gọi bạn.</p>';
-    else if (t.sleepReady && editingWolfStep !== t.stepId) controls = `<div class="rest-box sent"><span class="receipt">ĐÃ GỬI</span><p>${esc(describeAction(t.action!))}</p><p class="muted">${t.ability === 'hunter' ? 'Chờ công bố kết quả.' : 'Mời bạn đi ngủ.'}</p>${t.ability === 'wolves' ? button('edit-wolf', 'Đổi lựa chọn', false, 'class="quiet"') : ''}</div>`;
+    else if (t.sleepReady && editingWolfStep !== t.stepId) controls = `<div class="rest-box sent"><span class="receipt">ĐÃ GỬI</span><p>${esc(describeAction(t.action!))}</p><p class="muted">${t.ability === 'hunter' && !g.hunterMode ? 'Chờ công bố kết quả.' : 'Mời bạn đi ngủ.'}</p>${t.ability === 'wolves' ? button('edit-wolf', 'Đổi lựa chọn', false, 'class="quiet"') : ''}</div>`;
     else {
       const form = actionForm(g);
       controls = `<div class="action-box">${t.submitted ? `<p class="pack-status">Đã gửi: ${esc(describeAction(t.action!))}${t.action?.type === 'sacrifice' ? ' · chờ quản trò xác nhận' : ' · chờ bầy thống nhất'}</p>` : ''}${form}${button('submit', t.submitted ? 'Cập nhật lựa chọn' : 'Xác nhận', false, 'class="primary wide"')}</div>`;
@@ -390,7 +465,7 @@ function moderator(s: Extract<Snapshot, { viewer: 'moderator' }>) {
   const allDone = g.progress.length > 0 && done === g.progress.length;
   if (g.step === 'review') controls = g.resolved ? `<div class="review-result"><span class="eyebrow">CHƯA CÔNG BỐ</span><p class="big-note">${g.pendingDeaths.length ? `Người chết: ${g.pendingDeaths.map(name).map(esc).join(', ')}.` : 'Đêm nay không ai chết.'}</p></div>${button('publish', 'Gọi cả làng thức dậy', false, 'class="primary wide"')}` : button('resolve', 'Tổng kết diễn biến đêm', false, 'class="primary wide"');
   else if (g.step === 'day') {
-    const skipBudget = g.rulesVersion === 'classic-core-v12' ? g.settings?.skipVoteDays : undefined;
+    const skipBudget = ['classic-core-v12', 'classic-core-v13'].includes(g.rulesVersion) ? g.settings?.skipVoteDays : undefined;
     const skipLeft = skipBudget === undefined ? null : skipBudget - (g.daySkipsUsed ?? 0);
     const canSkip = skipLeft === null || skipLeft > 0;
     const verdictBlock = g.verdictDone ? button('nextNight', 'Bắt đầu đêm tiếp', false, 'class="primary wide"')
@@ -399,13 +474,13 @@ function moderator(s: Extract<Snapshot, { viewer: 'moderator' }>) {
     controls = `${dayPhaseBar(g.dayPhase ?? null)}${dayClockHtml(g.dayPhase ?? null, g.dayPhaseEndsAt ?? null, true)}<div class="day-buttons">${button('phase-start', clockRunning ? 'Bấm lại' : 'Bắt đầu giờ', !g.dayPhase, 'class="secondary wide"')}${button('phase-next', 'Pha tiếp', !g.dayPhase)}</div>${verdictBlock}`;
   }
   else if (g.step === 'ended') controls = `<div class="positive">${esc(winnerText(g.winner!))}</div>`;
-  else controls = `<div class="progress-head"><span>${done}/${g.progress.length} đã gửi</span></div><ul class="progress-list">${g.progress.map(p => `<li class="${p.submitted ? 'complete' : ''}"><strong>${esc(name(p.id))}</strong><small>${p.submitted ? esc(describeAction(g.actions[p.id])) : p.awake ? 'Đang chọn' : 'Chờ thức'}</small></li>`).join('') || '<li class="empty">Không ai cần hành động — chốt để qua.</li>'}</ul>${allDone && g.step !== 'wolves' && MODERATOR_SCRIPTS[g.step].sleep ? `<p class="sleep-cue">“${esc(MODERATOR_SCRIPTS[g.step].sleep)}”</p>` : ''}${button('advance', 'Gọi vai tiếp', !g.progress.every(p => p.submitted), 'class="primary wide"')}`;
+  else controls = `<div class="progress-head"><span>${done}/${g.progress.length} đã gửi</span></div><ul class="progress-list">${g.progress.map(p => `<li class="${p.submitted ? 'complete' : ''}"><strong>${esc(name(p.id))}</strong><small>${p.submitted ? esc(describeAction(g.actions[p.id])) : p.awake ? 'Đang chọn' : 'Chờ thức'}</small></li>`).join('') || '<li class="empty">Không ai cần hành động — chốt để qua.</li>'}</ul>${allDone && g.step !== 'wolves' && MODERATOR_SCRIPTS[g.step].sleep ? `<p class="sleep-cue">“${esc((g.step === 'hunter' && g.rulesVersion === 'classic-core-v13' ? 'Thợ săn đi ngủ.' : MODERATOR_SCRIPTS[g.step].sleep))}”</p>` : ''}${button('advance', 'Gọi vai tiếp', !g.progress.every(p => p.submitted), 'class="primary wide"')}`;
   if (s.room.simplified && !['day', 'review', 'ended'].includes(g.step)) {
     const view = simpleView(g);
     controls = s.room.inspection != null ? button('local-result', 'Xem kết quả soi', false, 'class="primary wide"')
       : view ? `<p class="muted">${g.step === 'wolves' ? 'Nhập lựa chọn chung của bầy Sói.' : esc(name(view.self.id))}</p>${actionForm(view)}${button('simple-submit', 'Xác nhận', false, 'class="primary wide"')}` : '';
   }
-  return `<section class="panel moderator-controls"><span class="eyebrow">${g.step === 'ended' ? 'KẾT THÚC' : g.step === 'day' ? 'BAN NGÀY' : 'ĐÊM ' + g.night}</span><h2>${esc(g.step === 'review' ? 'Tổng kết đêm' : g.step === 'day' ? 'Cả làng thảo luận' : g.step === 'wolves' ? 'Bầy Sói' : g.step === 'ended' ? 'Kết thúc' : roleName(g.step))}</h2><blockquote>${esc(s.room.simplified && !['day', 'review', 'ended'].includes(g.step) ? ({ guard: 'Bảo vệ chọn ai?', seer: 'Tiên tri soi ai?', wolves: 'Bầy Sói cắn ai?', witch: 'Phù thủy dùng thuốc nào?', hunter: 'Thợ săn bắn ai?' } as Record<string, string>)[g.step] ?? `Nhập lựa chọn của ${roleName(g.step)}.` : MODERATOR_SCRIPTS[g.step].wake)}</blockquote>${controls}${offlineQueue(s)}</section>
+  return `<section class="panel moderator-controls"><span class="eyebrow">${g.step === 'ended' ? 'KẾT THÚC' : g.step === 'day' ? 'BAN NGÀY' : 'ĐÊM ' + g.night}</span><h2>${esc(g.step === 'review' ? 'Tổng kết đêm' : g.step === 'day' ? 'Cả làng thảo luận' : g.step === 'wolves' ? 'Bầy Sói' : g.step === 'ended' ? 'Kết thúc' : roleName(g.step))}</h2><blockquote>${esc(s.room.simplified && !['day', 'review', 'ended'].includes(g.step) ? ({ guard: 'Bảo vệ chọn ai?', seer: 'Tiên tri soi ai?', wolves: 'Bầy Sói cắn ai?', witch: 'Phù thủy dùng thuốc nào?', hunter: g.rulesVersion === 'classic-core-v13' ? g.settings?.hunterActiveShot ? 'Thợ săn bắn ai, hay giữ lại phát bắn?' : 'Thợ săn ghim ai đêm nay?' : 'Thợ săn bắn ai?' } as Record<string, string>)[g.step] ?? `Nhập lựa chọn của ${roleName(g.step)}.` : g.step === 'hunter' && g.rulesVersion === 'classic-core-v13' ? (g.settings?.hunterActiveShot ? 'Thợ săn thức dậy, chọn bắn hoặc giữ lại phát bắn duy nhất.' : 'Thợ săn thức dậy, ghim một người cho đêm nay rồi đi ngủ.') : MODERATOR_SCRIPTS[g.step].wake)}</blockquote>${controls}${offlineQueue(s)}</section>
     <section class="table-stage"><div class="section-heading"><h2>Bàn chơi</h2><span class="live-label">${g.players.length - g.publicDead.length}/${g.players.length} còn sống</span></div>${roundTable(g.players.map(p => ({ id: p.id, name: p.name, alive: !g.publicDead.includes(p.id) })), { hub: hubLabel(g.step, g.night), recentDeaths: latestNightDeaths(g.events) })}</section>
     <nav class="game-utilities" aria-label="Công cụ quản trò">${foldTrigger('secret', 'Sổ tay bí mật')}${foldTrigger('feed', 'Vừa nhận', done ? String(done) : '')}</nav>`;
 }
@@ -435,6 +510,8 @@ function render() {
     const value = formMemory.get(`${phaseKey}:${el.id}`); if (value === undefined) continue;
     if (el.type === 'checkbox') (el as HTMLInputElement).checked = Boolean(value); else if (el.tagName !== 'SELECT' || [...(el as HTMLSelectElement).options].some(o => o.value === value)) el.value = String(value);
   }
+  if (previousKey !== phaseKey) activeTargetSlot = '';
+  mountTargetPicker(phaseKey);
   updateDeck(); positionMemberMenu();
   const dialogBody = app.querySelector('.modal-body');
   if (dialogBody && previousModal === modal) dialogBody.scrollTop = modalScroll;
@@ -602,6 +679,7 @@ const value = (id: string) => document.querySelector<HTMLInputElement | HTMLSele
 function ownAction(view = snapshot?.viewer === 'player' ? snapshot.game : null): Action {
   if (!view?.turn) throw new Error('Chưa đến lượt của bạn.');
   const g = view, t = g.turn!;
+  if (t.ability === 'hunter' && g.hunterMode === 'active' && !value('target')) return { type: 'hold' };
   if (t.ability === 'wolves') {
     if (!t.wolfPlan!.maxTargets) return { type: 'fast' };
     if (document.querySelector<HTMLInputElement>('#sacrifice')?.checked) return { type: 'sacrifice', target: t.wolfPlan!.canOfferSacrifice ? g.self.id : t.wolfPlan!.sacrificeTarget! };
@@ -621,7 +699,9 @@ app.addEventListener('change', e => {
   if (input.id === 'notebook-night') { notebookNight = input.value; notebookScroll.chat = notebookScroll.history = 0; render(); }
 });
 app.addEventListener('input', e => { const input = e.target as HTMLInputElement;
+  if (input.id === 'heal' || input.id === 'sacrifice') updateTargetPicker();
   if (input.id === 'local-simplified') localSimplified = input.checked;
+  if (input.id === 'hunter-active-shot') lobbySettings.hunterActiveShot = input.checked;
   if (input.id === 'witch-sees-bite') lobbySettings.witchSeesBite = input.checked;
   const phase = input.id.startsWith('day-') ? input.id.slice(4) : '';
   if (DAY_PHASES.includes(phase as typeof DAY_PHASES[number])) lobbySettings.dayTimers[phase] = Number(input.value);
@@ -631,6 +711,17 @@ app.addEventListener('click', async e => {
   const el = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-action]'); if (!el || el.disabled) return;
   const action = el.dataset.action!;
   try {
+    if (action === 'target-slot') { activeTargetSlot = el.dataset.slot!; updateTargetPicker(); return; }
+    if (action === 'pick-target' || action === 'target-clear') {
+      const slots = pickerSlots(), slot = action === 'target-clear' ? el.dataset.slot! : activeTargetSlot;
+      const values = Object.fromEntries(slots.map(s => [s.id, value(s.id)]));
+      const view = targetingView();
+      const next = pickTarget(slots, values, slot, action === 'target-clear' ? '' : el.dataset.playerId!, ['wolves', 'cupid', 'mentalist'].includes(view?.turn?.ability ?? ''));
+      if (next) { for (const [id, selected] of Object.entries(next)) app.querySelector<HTMLInputElement>(`#${id}`)!.value = selected;
+        const empty = slots.find(s => s.id !== slot && !next[s.id]); if (empty && action !== 'target-clear') activeTargetSlot = empty.id;
+        updateTargetPicker(); }
+      return;
+    }
     if (action === 'local-result') { modal = 'local-inspect-result'; render(); return; }
     if ((action === 'simple-submit' || action === 'simple-ack') && snapshot?.viewer === 'moderator' && snapshot.game && localMode) {
       const g = snapshot.game;
@@ -729,7 +820,7 @@ app.addEventListener('click', async e => {
         return Number.isSafeInteger(n) && n >= 5 && n <= 3600 ? n : DEFAULT_DAY_TIMERS[p];
       };
       const dayTimers: DayTimers = { discussion: getTimer('discussion'), nomination: getTimer('nomination'), defense: getTimer('defense'), finalvote: getTimer('finalvote') };
-      await mutate({ ...(localMode ? { type: 'localStart' as const, simplified: localSimplified } : { type: 'start' as const }), code, requestId: random(), expectedRevision: snapshot.room.revision!, settings: { witchSeesBite: lobbySettings.witchSeesBite, dayTimers, skipVoteDays: Math.max(0, Math.min(30, Math.trunc(lobbySettings.skipVoteDays) || 0)) }, roles: catalog.flatMap(r => Array.from({ length: deck[r.id] ?? 0 }, () => r.id)) }); return;
+      await mutate({ ...(localMode ? { type: 'localStart' as const, simplified: localSimplified } : { type: 'start' as const }), code, requestId: random(), expectedRevision: snapshot.room.revision!, settings: { hunterActiveShot: lobbySettings.hunterActiveShot, witchSeesBite: lobbySettings.witchSeesBite, dayTimers, skipVoteDays: Math.max(0, Math.min(30, Math.trunc(lobbySettings.skipVoteDays) || 0)) }, roles: catalog.flatMap(r => Array.from({ length: deck[r.id] ?? 0 }, () => r.id)) }); return;
     }
     const step = snapshot.viewer === 'moderator' ? snapshot.game?.stepId : snapshot.game?.turn?.stepId;
     if (!step) return;

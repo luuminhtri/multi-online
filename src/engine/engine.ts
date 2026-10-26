@@ -18,7 +18,7 @@ export function actors(g: Game): string[] {
   if (g.step === 'cupid') return g.night === 1 && !g.lovers ? g.players.filter(p => p.alive && p.role === 'cupid').map(p => p.id) : [];
   if (g.step === 'doppelganger') return g.night === 1 ? g.players.filter(p => p.alive && p.role === 'doppelganger').map(p => p.id) : [];
   if (g.step === 'dire_wolf' || g.step === 'virginia_woolf') return g.players.filter(p => p.alive && p.role === g.step && p.deathBond === null).map(p => p.id);
-  if (g.step === 'hunter') return g.activeHunterId ? [g.activeHunterId] : [];
+  if (g.step === 'hunter') return g.rulesVersion === 'classic-core-v13' ? g.players.filter(p => p.alive && p.role === 'hunter' && (!g.settings?.hunterActiveShot || p.resources.hunterShot > 0)).map(p => p.id) : g.activeHunterId ? [g.activeHunterId] : [];
   const role = g.step;
   return g.players.filter(p => p.alive && p.role === role).map(p => p.id);
 }
@@ -38,7 +38,8 @@ function nextOpening(g: Game, after?: Step): Step {
 }
 export function createGame(id: string, roster: { id: string; name: string; role: Role }[], settings: GameSettings = { witchSeesBite: true }): Game {
   requireRule(typeof settings?.witchSeesBite === 'boolean' &&
-    Object.keys(settings).every(k => k === 'witchSeesBite' || k === 'dayTimers' || k === 'skipVoteDays'), 'INVALID_SETTINGS');
+    Object.keys(settings).every(k => k === 'witchSeesBite' || k === 'dayTimers' || k === 'skipVoteDays' || k === 'hunterActiveShot'), 'INVALID_SETTINGS');
+  requireRule(settings.hunterActiveShot === undefined || typeof settings.hunterActiveShot === 'boolean', 'INVALID_SETTINGS');
   const dayTimers = { ...RULES.defaultDayTimers, ...(settings.dayTimers ?? {}) };
   requireRule(Object.keys(dayTimers).length === 4 &&
     Object.values(dayTimers).every(v => Number.isSafeInteger(v) && v >= 5 && v <= 3600), 'INVALID_SETTINGS');
@@ -55,10 +56,10 @@ export function createGame(id: string, roster: { id: string; name: string; role:
   requireRule(wolves > 0 && wolves < roster.length - wolves, 'UNBALANCED_START');
   const startStep = roster.some(p => p.role === 'cupid') ? 'cupid' : roster.some(p => p.role === 'doppelganger') ? 'doppelganger' : roster.some(p => p.role === 'dire_wolf') ? 'dire_wolf' : roster.some(p => p.role === 'virginia_woolf') ? 'virginia_woolf' : 'guard';
   return {
-    schemaVersion: 7, settings: { witchSeesBite: settings.witchSeesBite, dayTimers, skipVoteDays }, id, rulesVersion: RULES.version, revision: 0, night: 1, step: startStep, stepSequence: 0,
+    schemaVersion: 8, settings: { witchSeesBite: settings.witchSeesBite, hunterActiveShot: settings.hunterActiveShot ?? false, dayTimers, skipVoteDays }, id, rulesVersion: RULES.version, revision: 0, night: 1, step: startStep, stepSequence: 0,
     players: roster.map(p => ({ ...p, name: p.name.trim(), initialRole: p.role,
       team: baseTeam(p.role), alive: true,
-      lastProtected: null, delayedDeathNight: null, alphaUsed: false, deathBond: null, knownWolves: [], cursedTransformed: false, doppelgangerTarget: null,
+      hunterMark: null, lastProtected: null, delayedDeathNight: null, alphaUsed: false, deathBond: null, knownWolves: [], cursedTransformed: false, doppelgangerTarget: null,
       resources: {
         heal: p.role === 'witch' ? 1 : 0,
         poison: p.role === 'witch' ? 1 : 0,
@@ -98,8 +99,9 @@ function checkDoppelgangerInheritance(g: Game, deadIds: string[]) {
       // A personal bond is not copied from the dead target. Set up the newly
       // inherited linking role at the next opening, even after night one.
       p.deathBond = null;
+      p.hunterMark = null;
       p.knownWolves = [];
-      if (p.role === 'hunter') p.resources.hunterShot = 1;
+      if (p.role === 'hunter' && g.rulesVersion !== 'classic-core-v13') p.resources.hunterShot = 1;
       event(g, 'doppelganger-inherited', { actor: p.id, newRole: p.role, from: victim.id });
       event(g, 'role-inherited', { newRole: p.role, roleName: ROLES[p.role].name }, p.id);
     }
@@ -160,6 +162,10 @@ function applyDeaths(g: Game, causes: Map<string, string[]>): string[] {
     }
     const deceased = g.players.find(p => p.id === id)!;
     if (deceased.role === 'virginia_woolf' && deceased.deathBond?.kind === 'revenge') mark(deceased.deathBond.target, ['fear']);
+    if (g.rulesVersion === 'classic-core-v13' && g.step !== 'day' && !g.settings?.hunterActiveShot && deceased.role === 'hunter' && deceased.hunterMark?.night === g.night && g.players.some(p => p.id === deceased.hunterMark!.target && p.alive)) {
+      event(g, 'hunter-shot', { hunter: id, target: deceased.hunterMark.target });
+      mark(deceased.hunterMark.target, ['shot']);
+    }
     if (deceased.role === 'mad_bomber') {
       const neighbors = livingNeighbors(g, id);
       event(g, 'bomb-exploded', { actor: id, targets: neighbors });
@@ -180,6 +186,7 @@ function announceDeaths(g: Game, dead: string[]) {
   g.events.at(-1)!.audience = 'public';
 }
 function queueHunters(g: Game, dead: string[]) {
+  if (g.rulesVersion === 'classic-core-v13') return;
   for (const id of dead) {
     const p = g.players.find(p => p.id === id)!;
     if (p.role === 'hunter' && p.resources.hunterShot > 0 && !g.pendingHunters.includes(id) && g.activeHunterId !== id) {
@@ -284,6 +291,11 @@ function applyAction(g: Game, actorId: string, a: Action) {
     requireRule(a.heal || a.healTarget === undefined, 'INVALID_HEAL_TARGET');
     if (a.poison !== null) { requireRule(p.resources.poison > 0, 'NO_POISON_AVAILABLE'); target(g, a.poison); }
   } else if (g.step === 'hunter') {
+    if (g.rulesVersion === 'classic-core-v13' && g.settings?.hunterActiveShot && a.type === 'hold') {
+      Object.defineProperty(g.actions, actorId, { value: structuredClone(a), enumerable: true, writable: true, configurable: true });
+      event(g, 'action-confirmed', { actor: actorId, action: structuredClone(a) });
+      return;
+    }
     requireRule(a.type === 'shoot' && typeof a.target === 'string', 'WRONG_ABILITY');
     requireRule(a.target !== actorId, 'SELF_TARGET');
     target(g, a.target);
@@ -341,7 +353,7 @@ function advance(g: Game) {
     move(g, nextOpening(g, 'doppelganger'));
     return;
   }
-  if (g.step === 'hunter') {
+  if (g.step === 'hunter' && g.rulesVersion !== 'classic-core-v13') {
     const expected = actors(g);
     requireRule(expected.length > 0 && Object.hasOwn(g.actions, expected[0]), 'WAITING_FOR_ACTIONS');
     const action = g.actions[expected[0]];
@@ -360,12 +372,23 @@ function advance(g: Game) {
     return;
   }
 
-  const steps = NIGHT_STEPS.filter(step => ['guard', 'seer', 'wolves', 'witch'].includes(step) || g.players.some(p => p.role === step));
+  const steps = NIGHT_STEPS.filter(step => (step !== 'hunter' || g.rulesVersion === 'classic-core-v13') && ( ['guard', 'seer', 'wolves', 'witch'].includes(step) || g.players.some(p => p.role === step)));
   const index = steps.indexOf(g.step);
   requireRule(index >= 0, 'WRONG_PHASE');
   const expected = actors(g);
   requireRule(expected.every(id => Object.hasOwn(g.actions, id)), 'WAITING_FOR_ACTIONS');
   const actions = expected.map(id => g.actions[id]);
+  if (g.step === 'hunter') {
+    for (const id of expected) {
+      const action = g.actions[id];
+      const hunter = g.players.find(p => p.id === id)!;
+      if (action.type === 'hold') { hunter.hunterMark = null; continue; }
+      requireRule(action.type === 'shoot', 'INVALID_ACTION');
+      hunter.hunterMark = { target: action.target, night: g.night, active: !!g.settings?.hunterActiveShot, hitWolf: g.players.find(p => p.id === action.target)!.team === 'wolves' };
+      if (g.settings?.hunterActiveShot) hunter.resources.hunterShot = 0;
+      event(g, g.settings?.hunterActiveShot ? 'hunter-fired' : 'hunter-marked', { actor: id, target: action.target });
+    }
+  }
   if (g.step === 'guard' && expected[0]) {
     const action = actions[0];
     requireRule(action?.type === 'protect', 'INVALID_ACTION');
@@ -429,6 +452,15 @@ function resolve(g: Game) {
   }
   for (const p of g.players) {
     if (p.alive && p.delayedDeathNight !== null && p.delayedDeathNight <= g.night) kill(p.id, 'delayed-bite');
+  }
+  if (g.rulesVersion === 'classic-core-v13' && g.settings?.hunterActiveShot) {
+    for (const p of g.players) {
+      const mark = p.hunterMark;
+      if (mark?.active && mark.night === g.night) {
+        kill(mark.target, 'shot');
+        if (!mark.hitWolf) kill(p.id, 'hunter-miss');
+      }
+    }
   }
   g.pendingDeaths = applyDeaths(g, causes);
   g.resolved = true;
@@ -498,6 +530,7 @@ export function withdrawPlayer(input: Game, id: string): Game {
   requireRule(p, 'UNKNOWN_PLAYER');
   p.alive = false;
   p.resources.hunterShot = 0;
+  p.hunterMark = null;
   g.awake = g.awake.filter(v => v !== id);
   delete g.actions[id];
   if (g.step === 'wolves') g.actions = {}; // Consensus must reflect the remaining pack/targets.
@@ -513,6 +546,7 @@ export function withdrawPlayer(input: Game, id: string): Game {
   g.biteTargets = g.biteTargets.filter(v => v !== id);
   g.biteTarget = g.biteTargets[0] ?? null;
   for (const key of ['protectedTarget', 'healTarget', 'poisonTarget', 'alphaTarget', 'sacrificedCubId'] as const) if (g[key] === id) g[key] = null;
+  for (const other of g.players) if (other.hunterMark?.target === id) other.hunterMark = null;
   g.pendingDeaths = g.pendingDeaths.filter(v => v !== id);
   g.pendingHunters = g.pendingHunters.filter(v => v !== id);
   if (!g.publicDead.includes(id)) g.publicDead.push(id);
@@ -532,7 +566,8 @@ function moderatorCommand(g: Game, cmd: Command, now: number) {
       // Day clocks exist from v11/schema6 onward. Deadlines use server time
       // and only signal; the moderator still transitions every phase manually.
       requireRule((g.rulesVersion === 'classic-core-v11' && g.schemaVersion === 6) ||
-        (g.rulesVersion === RULES.version && g.schemaVersion === 7), 'DAY_PHASE_UNAVAILABLE');
+        (g.rulesVersion === 'classic-core-v12' && g.schemaVersion === 7) ||
+        (g.rulesVersion === RULES.version && g.schemaVersion === 8), 'DAY_PHASE_UNAVAILABLE');
       requireRule(g.step === 'day' && !g.winner, 'WRONG_PHASE');
       const phases = RULES.dayPhases;
       if (cmd.action === 'start') {
@@ -548,6 +583,7 @@ function moderatorCommand(g: Game, cmd: Command, now: number) {
     }
     case 'publish': {
       requireRule(g.step === 'review' && g.resolved, 'NOT_READY_TO_PUBLISH');
+      if (g.rulesVersion === 'classic-core-v13') for (const p of g.players) if (!p.alive && p.role === 'hunter') p.resources.hunterShot = 0;
       publishDeaths(g, g.pendingDeaths);
       publishRoleChanges(g);
       event(g, 'morning', { dead: [...g.pendingDeaths] });
@@ -559,7 +595,7 @@ function moderatorCommand(g: Game, cmd: Command, now: number) {
     }
     case 'verdict': {
       requireRule(g.step === 'day' && !g.verdictDone, 'WRONG_PHASE');
-      if (cmd.target === null && g.rulesVersion === RULES.version) {
+      if (cmd.target === null && ['classic-core-v12', 'classic-core-v13'].includes(g.rulesVersion)) {
         // From v12 a no-execution morning spends the pre-game skip budget.
         requireRule((g.daySkipsUsed ?? 0) < g.settings!.skipVoteDays!, 'VOTE_REQUIRED');
         g.daySkipsUsed = (g.daySkipsUsed ?? 0) + 1;
@@ -592,6 +628,7 @@ function moderatorCommand(g: Game, cmd: Command, now: number) {
     }
     case 'nextNight':
       requireRule(g.step === 'day' && g.verdictDone, 'VERDICT_REQUIRED');
+      for (const p of g.players) p.hunterMark = null;
       g.night++; g.resolved = false; g.pendingDeaths = []; g.verdictDone = false;
       g.biteTargets = []; g.sacrificedCubId = null; g.alphaTarget = g.alphaActorId = null;
       g.biteTarget = g.protectedTarget = g.healTarget = g.poisonTarget = null;
@@ -603,12 +640,12 @@ export function dispatch(input: Game, principal: Principal, request: Request, no
   // Version pairs are accepted exactly, including legacy snapshots. Old games
   // keep playing forever; chat requires v10/schema5, day clocks require v11/6.
   requireRule(input.rulesVersion === 'classic-core-v8' || input.rulesVersion === 'classic-core-v9' ||
-    input.rulesVersion === 'classic-core-v10' || input.rulesVersion === 'classic-core-v11' ||
+    input.rulesVersion === 'classic-core-v10' || input.rulesVersion === 'classic-core-v11' || input.rulesVersion === 'classic-core-v12' ||
     input.rulesVersion === RULES.version, 'UNSUPPORTED_RULES_VERSION');
   const expectedSchema = input.rulesVersion === 'classic-core-v8' ? 3
     : input.rulesVersion === 'classic-core-v9' ? 4
     : input.rulesVersion === 'classic-core-v10' ? 5
-    : input.rulesVersion === 'classic-core-v11' ? 6 : 7;
+    : input.rulesVersion === 'classic-core-v11' ? 6 : input.rulesVersion === 'classic-core-v12' ? 7 : 8;
   requireRule(input.schemaVersion === expectedSchema, 'UNSUPPORTED_SCHEMA_VERSION');
   requireRule(input.rulesVersion === 'classic-core-v8' || typeof input.settings?.witchSeesBite === 'boolean', 'INVALID_SETTINGS');
   requireRule(request.gameId === input.id && typeof request.id === 'string' && request.id.length > 0 && request.id.length <= 128, 'INVALID_REQUEST');
@@ -645,7 +682,8 @@ function applyChat(g: Game, principal: Principal, raw: string) {
   requireRule(principal.kind === 'player', 'PLAYER_REQUIRED');
   requireRule((g.rulesVersion === 'classic-core-v10' && g.schemaVersion === 5) ||
     (g.rulesVersion === 'classic-core-v11' && g.schemaVersion === 6) ||
-    (g.rulesVersion === RULES.version && g.schemaVersion === 7), 'CHAT_UNAVAILABLE');
+    (g.rulesVersion === 'classic-core-v12' && g.schemaVersion === 7) ||
+        (g.rulesVersion === RULES.version && g.schemaVersion === 8), 'CHAT_UNAVAILABLE');
   requireRule(g.step === 'wolves', 'WRONG_PHASE');
   requireRule(actors(g).includes(principal.playerId), 'NOT_YOUR_TURN');
   requireRule(g.awake.includes(principal.playerId), 'NOT_AWAKE');

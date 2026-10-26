@@ -19,6 +19,7 @@ export function token(v: unknown): string { requireApi(typeof v === 'string' && 
 function action(v: unknown): Action {
   const a = object(v);
   switch (a.type) {
+    case 'hold': keys(a, ['type']); return { type: 'hold' };
     case 'fast': keys(a, ['type']); return { type: 'fast' };
     case 'convert': keys(a, ['type', 'target']); return { type: 'convert', target: a.target === null ? null : text(a.target, 80) };
     case 'protect': case 'inspect': case 'bite': case 'shoot': case 'mimic': case 'bond': case 'sacrifice':
@@ -74,8 +75,9 @@ export function parseMutation(v: unknown): Mutation {
     requireApi(roles.every(r => Object.hasOwn(ROLES, r)), 'UNSUPPORTED_ROLE');
     let settings;
     if (o.settings !== undefined) {
-      const s = object(o.settings); keys(s, ['witchSeesBite', 'dayTimers', 'skipVoteDays']);
+      const s = object(o.settings); keys(s, ['witchSeesBite', 'dayTimers', 'skipVoteDays', 'hunterActiveShot']);
       requireApi(typeof s.witchSeesBite === 'boolean', 'INVALID_SETTINGS');
+      requireApi(s.hunterActiveShot === undefined || typeof s.hunterActiveShot === 'boolean', 'INVALID_SETTINGS');
       let skipVoteDays;
       if (s.skipVoteDays !== undefined) {
         requireApi(typeof s.skipVoteDays === 'number' && Number.isSafeInteger(s.skipVoteDays) && s.skipVoteDays >= 0 && s.skipVoteDays <= 30, 'INVALID_SETTINGS');
@@ -89,7 +91,7 @@ export function parseMutation(v: unknown): Mutation {
         const pick = (k: string) => t[k] as number;
         dayTimers = { discussion: pick('discussion'), nomination: pick('nomination'), defense: pick('defense'), finalvote: pick('finalvote') } as DayTimers;
       }
-      settings = { witchSeesBite: s.witchSeesBite, ...(dayTimers ? { dayTimers } : {}), ...(skipVoteDays !== undefined ? { skipVoteDays } : {}) };
+      settings = { witchSeesBite: s.witchSeesBite, ...(s.hunterActiveShot !== undefined ? { hunterActiveShot: s.hunterActiveShot as boolean } : {}), ...(dayTimers ? { dayTimers } : {}), ...(skipVoteDays !== undefined ? { skipVoteDays } : {}) };
     }
     return { type: 'start', requestId, code, expectedRevision, roles: roles as Role[], ...(settings ? { settings } : {}) };
   }

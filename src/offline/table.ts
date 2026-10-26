@@ -90,14 +90,14 @@ export class LocalTable {
         if (['seer', 'aura_seer', 'mystic_seer', 'mentalist'].includes(g.step)) g = this.command(g, { type: 'advance' });
       } else {
         ensure(saved.inspection === null, 'Hãy xác nhận kết quả soi trước.');
-        let ids = actors(g); ensure(ids.length > 0, 'Không có vai đang hành động.');
+        let ids = actors(g); if (g.step === 'hunter' && g.rulesVersion === 'classic-core-v13') ids = ids.filter(id => !Object.hasOwn(g.actions, id)).slice(0, 1); ensure(ids.length > 0, 'Không có vai đang hành động.');
         if (operation.action.type === 'sacrifice') ids = [...ids].sort((a, b) => Number(b === (operation.action as { target: string }).target) - Number(a === (operation.action as { target: string }).target));
         for (const id of ids) {
           g = this.command(g, { type: 'wake' }, id);
           g = this.command(g, { type: 'act', action: operation.action }, id);
         }
         if (['seer', 'aura_seer', 'mystic_seer', 'mentalist'].includes(g.step)) saved.inspection = [...g.events].reverse().find(e => ['inspection', 'aura-inspection', 'mystic-inspection', 'alignment-comparison'].includes(e.type))!.id;
-        else g = this.command(g, { type: 'advance' });
+        else if (actors(g).every(id => Object.hasOwn(g.actions, id))) g = this.command(g, { type: 'advance' });
       }
       r.game = saved.inspection === null ? this.settle(g) : g;
     } else if (operation.type === 'addOffline') {

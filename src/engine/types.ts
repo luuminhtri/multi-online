@@ -9,6 +9,7 @@ export interface Player {
   role: Role;
   team: Team;
   alive: boolean;
+  hunterMark?: { target: string; night: number; active?: boolean; hitWolf?: boolean } | null;
   lastProtected: string | null;
   delayedDeathNight: number | null;
   alphaUsed: boolean;
@@ -24,6 +25,7 @@ export type Action =
   | { type: 'compare'; targets: [string, string] }
   | { type: 'bond'; target: string }
   | { type: 'fast' }
+  | { type: 'hold' }
   | { type: 'bite'; target: string }
   | { type: 'maul'; targets: string[] }
   | { type: 'sacrifice'; target: string }
@@ -58,9 +60,9 @@ export interface GameEvent {
 }
 export interface Game {
   // v8/schema3 through v10/schema5 snapshots retain their original rules; new
-  // games use v12/schema7 (day clocks since v11, mandatory-vote budget since
+  // games use v13/schema8 (Hunter mode); v12/schema7 (day clocks since v11, mandatory-vote budget since
   // v12). Older optional fields exist only in later schemas.
-  schemaVersion: 3 | 4 | 5 | 6 | 7;
+  schemaVersion: 3 | 4 | 5 | 6 | 7 | 8;
   settings?: GameSettings;
   id: string;
   rulesVersion: string;
@@ -101,7 +103,7 @@ export interface Game {
   events: GameEvent[];
   receipts: Record<string, { fingerprint: string; revision: number }>;
 }
-export interface GameSettings { witchSeesBite: boolean; dayTimers?: DayTimers; skipVoteDays?: number; }
+export interface GameSettings { witchSeesBite: boolean; hunterActiveShot?: boolean; dayTimers?: DayTimers; skipVoteDays?: number; }
 // Pack chat: recipients are computed by the engine at send time (awake pack
 // members only). Sleepers and undiscovered Dream Wolves are never recipients.
 export interface ChatMessage { id: number; night: number; from: string; recipients: string[]; text: string; }

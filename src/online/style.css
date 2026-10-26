@@ -435,3 +435,5 @@ blockquote { margin: 20px 0; padding: 0 0 0 14px; border-left: 1px solid #bdab80
 .seat.pack-mate button.avatar:hover:enabled { border-color: #d76861; }
 
 .avatar-target-field.single-target .target-slot { border: 0; padding: 4px 0; }
+
+.sending-notice { border-color: var(--line); color: var(--muted); }

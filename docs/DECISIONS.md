@@ -285,3 +285,7 @@ Mặc định bị động, ghim mỗi đêm; chết đêm mọi nguyên nhân k
 ## D72 — Chọn mục tiêu avatar và nhận đồng đội
 
 Theo yêu cầu: avatar chọn mục tiêu đêm, giữ Xác nhận riêng. Nhiều mục tiêu có từng ô chọn; viền vàng đánh dấu mục tiêu. Viền đỏ chỉ lấy pack projection được phép biết khi Sói thức, không suy từ dữ liệu vai quản trò. Người sống giữ sáng khi offline/chưa ready. Menu quản lý có nút riêng khi avatar đang chọn mục tiêu ở chế độ tối giản.
+
+## D73 — Vùng API và xác nhận thao tác
+
+Vercel Function đặt sin1 (Singapore), cùng vùng Supabase thay vì mặc định iad1. Cấu hình trong vercel.json để deploy không quay về vùng xa. Đang gửi là trạng thái bình thường, chỉ hiển thị nút gửi lại khi đã mất xác nhận; retry giữ nguyên requestId/capability. Client chờ tối đa 12 giây để bao phủ hai lượt storage timeout 5 giây và độ trễ mạng. Thành công dùng snapshot ACK ngay, không GET lập tức; polling thường vẫn tiếp tục, lỗi 4xx đã hủy pending thì refresh để phục hồi trạng thái.

@@ -504,7 +504,7 @@ function render() {
   app.dataset.modal = modal ?? '';
   const overlay = snapshot?.viewer === 'player' && snapshot.game && snapshot.game.phase !== 'ended'
     ? roleRevealOverlay(snapshot.game) : '';
-  app.innerHTML = `<header><a class="brand" href="/">${moon}<span>MA SÓI</span></a><div class="connection ${failed ? 'offline' : ''}" role="status" title="${esc(status)}"><span>${esc(status)}</span></div></header>${localMode ? '' : debug?.header(storage, code, busy || !!pending) ?? ''}${notice ? `<div class="notice" role="status">${esc(notice)}</div>` : ''}${pending ? `<div class="notice">Đang chờ gửi lại — bấm “Thử gửi lại”.<button type="button" data-action="retry" ${busy ? 'disabled' : ''}>Thử gửi lại</button></div>` : ''}
+  app.innerHTML = `<header><a class="brand" href="/">${moon}<span>MA SÓI</span></a><div class="connection ${failed ? 'offline' : ''}" role="status" title="${esc(status)}"><span>${esc(status)}</span></div></header>${localMode ? '' : debug?.header(storage, code, busy || !!pending) ?? ''}${notice ? `<div class="notice" role="status">${esc(notice)}</div>` : ''}${pending ? busy ? '<div class="notice sending-notice" role="status">Đang gửi thao tác… Vui lòng chờ máy chủ xác nhận.</div>' : `<div class="notice" role="status">Thao tác chưa được xác nhận. Bạn có thể thử gửi lại.<button type="button" data-action="retry">Thử gửi lại</button></div>` : ''}
     ${snapshot ? `<div class="room-heading"><div class="room-identity"><span class="eyebrow">${snapshot.controller ? 'DÙNG MÁY QUẢN TRÒ · ' + esc(snapshot.me.name) : snapshot.viewer === 'moderator' ? localMode ? 'QUẢN TRÒ · MỘT MÁY' : 'QUẢN TRÒ' : esc(snapshot.me.name)}</span><h1><span class="room-prefix">${localMode ? 'Bàn' : 'Phòng'}</span> <span id="room-code">${snapshot.room.code}</span></h1></div><nav class="room-tools" aria-label="Công cụ phòng">${snapshot.controller ? button('return-moderator', icon('close') + '<span>Quản trò</span>', false, 'class="tool-button" aria-label="Đóng màn người chơi, quay lại quản trò"') : `${localMode ? '' : iconButton('copy', 'copy', 'Sao chép link mời')}${button('refresh', icon('refresh') + '<span>Làm mới</span>', false, 'class="tool-button" aria-label="Làm mới trạng thái phòng"')}${button('modal-open', icon('cards') + '<span>Vai</span>', false, 'class="tool-button" data-modal="catalog" aria-label="Danh sách vai"')}${snapshot.viewer === 'moderator' && !snapshot.game ? modalButton('settings', 'settings', 'Cài đặt') : ''}${snapshot.viewer === 'moderator' ? button('exit-room', icon('exit') + '<span>Thoát phòng</span>', false, 'class="tool-button"') : ''}`}</nav></div><main class="grid ${!snapshot.game ? 'lobby-layout' : snapshot.viewer === 'moderator' ? 'moderator-layout' : 'player-layout'}">${!snapshot.game ? lobby(snapshot) : snapshot.viewer === 'moderator' ? moderator(snapshot) : player(snapshot)}</main>` : switchingView ? `<main class="switching-view" role="status">Đang chuyển màn hình…</main>` : `<main class="welcome"><div class="welcome-mark" aria-hidden="true">${moon}</div><h1>Ma Sói</h1><div class="entry-tabs" role="tablist" aria-label="Vào bàn chơi">${button('entry-join', 'Vào phòng', false, `id="tab-join" role="tab" aria-selected="${entryMode === 'join'}" aria-controls="entry-panel"`)}${button('entry-create', 'Tạo phòng', false, `id="tab-create" role="tab" aria-selected="${entryMode === 'create'}" aria-controls="entry-panel"`)}</div><section id="entry-panel" class="entry-panel" role="tabpanel" aria-labelledby="tab-${entryMode}">${entryMode === 'create' ? `${button('toggle-mode', '<span class="mode-indicator" aria-hidden="true"></span><span class="mode-label mode-online">Online</span><span class="mode-label mode-offline">Offline</span>', false, `id="create-mode" class="mode-switch" role="switch" aria-label="Chế độ offline" aria-checked="${localMode}"`)}${button('create', `Tạo ${localMode ? 'bàn' : 'phòng'} ${icon('arrow')}`, false, 'class="primary wide"')}${localTable.lastCode() ? button('resume-local', 'Tiếp tục bàn đã lưu trên máy', false, 'class="secondary wide"') : ''}` : `<label>Mã phòng<input id="join-code" maxlength="6" inputmode="numeric" value="${esc(code)}" placeholder="••••••" autocomplete="off"></label><label>Tên của bạn<input id="join-name" maxlength="40" autocomplete="nickname" placeholder="Tên hoặc Biệt danh"></label>${debug?.joinOption() ?? '<p class="muted">Đổi máy: nhập mã phòng và đúng tên cũ để tiếp tục.</p>'}${button('join', `Vào phòng ${icon('arrow')}`, false, 'class="primary wide"')}`}</section></main>`}${overlay}${overlay ? '' : wakeOverlay(snapshot)}${modalHtml()}${memberMenuHtml()}`;
   for (const el of app.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input[id],select[id]')) {
     if (el.dataset.role) continue;
@@ -588,7 +588,9 @@ async function request(body?: LocalMutation, capability?: string, room?: string)
       throw Object.assign(error, { status: 409 });
     }
   }
-  const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), 7000);
+  // A storage write may involve two bounded 5s upstream calls. Do not label
+  // it lost before the server has had time to return its acknowledgement.
+  const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), 12000);
   try {
     const response = await fetch(`/api/room${body ? '' : room ? `?code=${encodeURIComponent(room)}${proxyPlayerId ? `&offlinePlayerId=${encodeURIComponent(proxyPlayerId)}` : ''}` : '?config=1'}`, {
       method: body ? 'POST' : 'GET', headers: { ...(capability ? { Authorization: `Bearer ${capability}` } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}) },
@@ -654,7 +656,7 @@ function schedule() { clearTimeout(poll); if (sessionMoved || localMode) return;
 async function sendPending() {
   if (!pending || busy) return false;
   let success = false;
-  busy = true; render();
+  busy = true; notice = ''; render();
   try {
     const s: Snapshot = await request(pending.operation, pending.token);
     if (pending.operation.type === 'setDeck') deckDirty = false;
@@ -665,7 +667,13 @@ async function sendPending() {
     if (statusCode && statusCode < 500) { pending = null; persist(); }
     notice = statusCode ? (e as Error).message : 'Chưa nhận được xác nhận từ máy chủ. Giữ thao tác và thử gửi lại.';
     failed = !statusCode || statusCode >= 500;
-  } finally { busy = false; render(); schedule(); if (!pending) void refresh(); }
+    if (failed) status = 'Chờ gửi lại';
+  } finally {
+    busy = false; render(); schedule();
+    // Successful writes already return the authoritative snapshot. An extra
+    // immediate GET doubles storage work without making that ACK more current.
+    if (!success && !pending) void refresh();
+  }
   return success;
 }
 async function mutate(operation: LocalMutation, capability = capabilityFor(code)) {

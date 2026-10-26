@@ -189,6 +189,7 @@ function mountTargetPicker(phaseKey: string) {
     label.replaceWith(field);
   }
   const slots = pickerSlots();
+  if (slots.length === 1) app.querySelector('.avatar-target-field')?.classList.add('single-target');
   if (!slots.some(s => s.id === activeTargetSlot)) activeTargetSlot = slots[0]?.id ?? '';
   if (slots.length) {
     const help = document.createElement('p'); help.className = 'muted target-help'; help.textContent = 'Bấm avatar trên bàn để chọn mục tiêu, rồi xác nhận.';

@@ -1,0 +1,17 @@
+$kind: http-request
+name: "Old moderator is revoked"
+order: 1600
+method: GET
+url: "{{baseUrl}}/api/room?code={{sharedCode}}"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{sharedTokenowner}}"
+queryParams:
+  code: "{{sharedCode}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Old owner capability rejected',()=>pm.response.to.have.status(403));

@@ -1,0 +1,35 @@
+$kind: http-example
+name: Malformed or unknown fields/command
+request:
+  url: "{{baseUrl}}/api/room"
+  method: POST
+  headers:
+    - key: Authorization
+      value: Bearer <token>
+      description: "Added as a part of security scheme: bearer"
+    - key: Accept
+      value: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "type": {},
+        "requestId": "jxi9V5lZ5Y-1eDfGmRkpGdVYrNkDJ52ApBy7njvyiRZU8GpasiLgPoeURYp7dWjWb0EB11Z2DZNyXFP31iSo073B3EXJw3OznntpWmWIg0U",
+        "name": "string"
+      }
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "error": {
+          "code": "string",
+          "message": "string",
+          "retryable": true
+        }
+      }
+order: 2000

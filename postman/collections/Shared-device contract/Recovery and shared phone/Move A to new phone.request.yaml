@@ -1,0 +1,25 @@
+$kind: http-request
+name: "Move A to new phone"
+order: 1300
+method: POST
+url: "{{baseUrl}}/api/room"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{sharedTokennewA}}"
+body:
+  type: json
+  content: |-
+    {
+      "type": "join",
+      "requestId": "recover-a",
+      "code": "{{sharedCode}}",
+      "name": "a"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('HTTP 200',()=>pm.response.to.have.status(200));
+      pm.test('Identity and ready preserved',()=>{const s=pm.response.json();pm.expect(s.me.id).to.eql(pm.collectionVariables.get('sharedAId'));pm.expect(s.room.readyPlayerIds.length).to.eql(3);pm.expect(s.room.phase).to.eql('playing');});

@@ -1,0 +1,35 @@
+$kind: http-example
+name: Storage unavailable or conflicts exhausted; retry the same requestId and exact body
+request:
+  url: "{{baseUrl}}/api/room"
+  method: POST
+  headers:
+    - key: Authorization
+      value: Bearer <token>
+      description: "Added as a part of security scheme: bearer"
+    - key: Accept
+      value: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "type": {},
+        "requestId": "MqE4cfg4gNW1Z5CWeiBoiKaRVs6AYdqSb",
+        "name": "strin"
+      }
+response:
+  statusCode: 503
+  statusText: Service Unavailable
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "error": {
+          "code": "string",
+          "message": "string",
+          "retryable": false
+        }
+      }
+order: 8000

@@ -1,0 +1,31 @@
+{
+  "$kind": "http-request",
+  "name": "Required targeted vote",
+  "order": 5800,
+  "method": "POST",
+  "url": "{{baseUrl}}/api/room",
+  "auth": {
+    "type": "noauth"
+  },
+  "headers": [
+    {
+      "key": "Content-Type",
+      "value": "application/json"
+    },
+    {
+      "key": "Authorization",
+      "value": "Bearer {{dayToken}}"
+    }
+  ],
+  "scripts": [
+    {
+      "type": "afterResponse",
+      "language": "text/javascript",
+      "code": "pm.test('HTTP 200',()=>pm.response.to.have.status(200));const s=pm.response.json();if(s.room){pm.collectionVariables.set('voteCode',s.room.code);if(s.room.revision!==null)pm.collectionVariables.set('voteRevision',String(s.room.revision));if(s.game)pm.collectionVariables.set('voteStep',s.game.stepId??s.game.turn?.stepId??'');} pm.test('target eliminated',()=>pm.expect(s.game.publicDead).include(pm.collectionVariables.get('vote_v1')));"
+    }
+  ],
+  "body": {
+    "type": "json",
+    "content": "{\"code\": \"{{voteCode}}\", \"requestId\": \"req-58\", \"type\": \"command\", \"stepId\": \"{{voteStep}}\", \"command\": {\"type\": \"verdict\", \"target\": \"{{vote_v1}}\"}}"
+  }
+}

@@ -1,0 +1,25 @@
+$kind: http-request
+name: "Join B"
+order: 300
+method: POST
+url: "{{baseUrl}}/api/room"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{lobbyTokenB}}"
+body:
+  type: json
+  content: |-
+    {
+      "type": "join",
+      "requestId": "join-B",
+      "code": "{{lobbyCode}}",
+      "name": "B"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('HTTP 200', () => pm.response.to.have.status(200));
+      pm.collectionVariables.set('lobbyRevision', pm.response.json().room.revision);

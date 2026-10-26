@@ -1,0 +1,19 @@
+$kind: http-request
+description: "Use code and a Bearer capability for an authorized snapshot. config=1 is unauthenticated and returns only storage mode and supported catalog. Every response has Cache-Control: no-store. Polling does not write state or disclose secret action counts to players."
+url: "{{baseUrl}}/api/room?code=UAV77S&offlinePlayerId=string"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  - key: code
+    value: UAV77S
+    disabled: false
+  - key: offlinePlayerId
+    value: string
+    disabled: false
+    description: Moderator-only scoped snapshot for one offline member. No moderator UI/data in this returned projection.
+auth:
+  type: noauth
+settings: {}
+examples: ./.resources/Resume your room or obtain public configuration.resources/examples
+order: 1000

@@ -1,0 +1,31 @@
+$kind: http-request
+name: "Transfer guard to moderator phone"
+order: 1600
+method: POST
+url: "{{baseUrl}}/api/room"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{memberTokenowner}}"
+body:
+  type: json
+  content: |-
+    {
+      "type": "setOffline",
+      "requestId": "battery-empty",
+      "code": "{{memberCode}}",
+      "expectedRevision": {{transferRevision}},
+      "playerId": "{{memberguardId}}"
+    }
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      pm.collectionVariables.set('transferRevision',pm.collectionVariables.get('memberRevision'));
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('HTTP 200',()=>pm.response.to.have.status(200));
+      pm.collectionVariables.set('memberRevision',pm.response.json().room.revision);
+      pm.test('Same player now offline',()=>{const s=pm.response.json();pm.expect(s.room.members.find(m=>m.id===pm.collectionVariables.get('memberguardId')).offline).to.eql(true);pm.expect(s.game.players.find(p=>p.id===pm.collectionVariables.get('memberguardId')).role).to.eql('guard');});

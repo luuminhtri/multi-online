@@ -28,13 +28,22 @@ function event(g: Game, type: string, data: Record<string, unknown>, recipient?:
 }
 function move(g: Game, step: Step) {
   g.step = step; g.stepSequence++; g.awake = []; g.actions = {};
+  // Every morning starts fresh: the phase clocks exist but only run once the
+  // moderator presses start.
+  if (step === 'day') { g.dayPhase = 'discussion'; g.dayPhaseEndsAt = null; }
 }
 function nextOpening(g: Game, after?: Step): Step {
   const steps: Step[] = ['cupid', 'doppelganger', 'dire_wolf', 'virginia_woolf'];
   return steps.slice(after ? steps.indexOf(after) + 1 : 0).find(step => actors({ ...g, step }).length > 0) ?? 'guard';
 }
 export function createGame(id: string, roster: { id: string; name: string; role: Role }[], settings: GameSettings = { witchSeesBite: true }): Game {
-  requireRule(typeof settings?.witchSeesBite === 'boolean' && Object.keys(settings).every(k => k === 'witchSeesBite'), 'INVALID_SETTINGS');
+  requireRule(typeof settings?.witchSeesBite === 'boolean' &&
+    Object.keys(settings).every(k => k === 'witchSeesBite' || k === 'dayTimers' || k === 'skipVoteDays'), 'INVALID_SETTINGS');
+  const dayTimers = { ...RULES.defaultDayTimers, ...(settings.dayTimers ?? {}) };
+  requireRule(Object.keys(dayTimers).length === 4 &&
+    Object.values(dayTimers).every(v => Number.isSafeInteger(v) && v >= 5 && v <= 3600), 'INVALID_SETTINGS');
+  const skipVoteDays = settings.skipVoteDays ?? 0;
+  requireRule(Number.isSafeInteger(skipVoteDays) && skipVoteDays >= 0 && skipVoteDays <= 30, 'INVALID_SETTINGS');
   requireRule(id.trim() && roster.length >= 3, 'INVALID_GAME');
   requireRule(new Set(roster.map(p => p.id)).size === roster.length, 'DUPLICATE_ID');
   requireRule(new Set(roster.map(p => p.name.trim().toLocaleLowerCase('vi'))).size === roster.length, 'DUPLICATE_NAME');
@@ -46,7 +55,7 @@ export function createGame(id: string, roster: { id: string; name: string; role:
   requireRule(wolves > 0 && wolves < roster.length - wolves, 'UNBALANCED_START');
   const startStep = roster.some(p => p.role === 'cupid') ? 'cupid' : roster.some(p => p.role === 'doppelganger') ? 'doppelganger' : roster.some(p => p.role === 'dire_wolf') ? 'dire_wolf' : roster.some(p => p.role === 'virginia_woolf') ? 'virginia_woolf' : 'guard';
   return {
-    schemaVersion: 5, settings: { ...settings }, id, rulesVersion: RULES.version, revision: 0, night: 1, step: startStep, stepSequence: 0,
+    schemaVersion: 7, settings: { witchSeesBite: settings.witchSeesBite, dayTimers, skipVoteDays }, id, rulesVersion: RULES.version, revision: 0, night: 1, step: startStep, stepSequence: 0,
     players: roster.map(p => ({ ...p, name: p.name.trim(), initialRole: p.role,
       team: baseTeam(p.role), alive: true,
       lastProtected: null, delayedDeathNight: null, alphaUsed: false, deathBond: null, knownWolves: [], cursedTransformed: false, doppelgangerTarget: null,
@@ -55,7 +64,8 @@ export function createGame(id: string, roster: { id: string; name: string; role:
         poison: p.role === 'witch' ? 1 : 0,
         hunterShot: p.role === 'hunter' ? 1 : 0,
       } })),
-    awake: [], actions: {}, chat: [], wolfDeathOccurred: false, wolvesBlockedNight: null, biteTarget: null,
+    awake: [], actions: {}, chat: [], dayPhase: null, dayPhaseEndsAt: null, daySkipsUsed: 0,
+    wolfDeathOccurred: false, wolvesBlockedNight: null, biteTarget: null,
     biteTargets: [], doubleAttackNight: null, sacrificedCubId: null,
     alphaEligibleNight: null, alphaTarget: null, alphaActorId: null, protectedTarget: null, healTarget: null,
     poisonTarget: null, resolved: false, pendingDeaths: [], publicDead: [], verdictDone: false,
@@ -480,10 +490,62 @@ function checkWinner(g: Game) {
     g.events.at(-1)!.audience = 'public';
   }
 }
-function moderatorCommand(g: Game, cmd: Command) {
+// Administrative withdrawal is not a game death: no chained effects or inheritance.
+// RoomService authorizes the moderator and persists the left-member marker/idempotency.
+export function withdrawPlayer(input: Game, id: string): Game {
+  const g = structuredClone(input);
+  const p = g.players.find(p => p.id === id);
+  requireRule(p, 'UNKNOWN_PLAYER');
+  p.alive = false;
+  p.resources.hunterShot = 0;
+  g.awake = g.awake.filter(v => v !== id);
+  delete g.actions[id];
+  if (g.step === 'wolves') g.actions = {}; // Consensus must reflect the remaining pack/targets.
+  else if (['guard', 'cupid', 'doppelganger', 'dire_wolf', 'virginia_woolf', 'alpha_wolf', 'witch', 'hunter'].includes(g.step)) {
+    for (const [actor, action] of Object.entries(g.actions)) {
+      const affected = ('target' in action && action.target === id) || ('targets' in action && action.targets.includes(id)) || (action.type === 'potion' && (action.healTarget === id || action.poison === id));
+      if (affected) {
+        delete g.actions[actor];
+        if ((g.step === 'dire_wolf' || g.step === 'virginia_woolf') && g.players.find(v => v.id === actor)?.deathBond?.target === id) g.players.find(v => v.id === actor)!.deathBond = null;
+      }
+    }
+  }
+  g.biteTargets = g.biteTargets.filter(v => v !== id);
+  g.biteTarget = g.biteTargets[0] ?? null;
+  for (const key of ['protectedTarget', 'healTarget', 'poisonTarget', 'alphaTarget', 'sacrificedCubId'] as const) if (g[key] === id) g[key] = null;
+  g.pendingDeaths = g.pendingDeaths.filter(v => v !== id);
+  g.pendingHunters = g.pendingHunters.filter(v => v !== id);
+  if (!g.publicDead.includes(id)) g.publicDead.push(id);
+  if (g.lovers?.includes(id)) { g.lovers = null; refreshTeams(g); }
+  event(g, 'player-left', { player: id }); g.events.at(-1)!.audience = 'public';
+  g.stepSequence++; // In-flight forms from before withdrawal must refresh.
+  g.revision++;
+  if (g.activeHunterId === id && g.step === 'hunter') continueHunters(g);
+  else if (g.step !== 'ended' && !(g.step === 'review' && g.resolved)) checkWinner(g);
+  return g;
+}
+function moderatorCommand(g: Game, cmd: Command, now: number) {
   switch (cmd.type) {
     case 'advance': advance(g); break;
     case 'resolve': resolve(g); break;
+    case 'dayPhase': {
+      // Day clocks exist from v11/schema6 onward. Deadlines use server time
+      // and only signal; the moderator still transitions every phase manually.
+      requireRule((g.rulesVersion === 'classic-core-v11' && g.schemaVersion === 6) ||
+        (g.rulesVersion === RULES.version && g.schemaVersion === 7), 'DAY_PHASE_UNAVAILABLE');
+      requireRule(g.step === 'day' && !g.winner, 'WRONG_PHASE');
+      const phases = RULES.dayPhases;
+      if (cmd.action === 'start') {
+        requireRule(g.dayPhase != null, 'DAY_PHASE_DONE');
+        g.dayPhaseEndsAt = now + g.settings!.dayTimers![g.dayPhase] * 1000;
+      } else {
+        const index = g.dayPhase == null ? -1 : phases.indexOf(g.dayPhase);
+        requireRule(index >= 0, 'DAY_PHASE_DONE');
+        g.dayPhase = index < phases.length - 1 ? phases[index + 1] : null;
+        g.dayPhaseEndsAt = null;
+      }
+      break;
+    }
     case 'publish': {
       requireRule(g.step === 'review' && g.resolved, 'NOT_READY_TO_PUBLISH');
       publishDeaths(g, g.pendingDeaths);
@@ -497,6 +559,11 @@ function moderatorCommand(g: Game, cmd: Command) {
     }
     case 'verdict': {
       requireRule(g.step === 'day' && !g.verdictDone, 'WRONG_PHASE');
+      if (cmd.target === null && g.rulesVersion === RULES.version) {
+        // From v12 a no-execution morning spends the pre-game skip budget.
+        requireRule((g.daySkipsUsed ?? 0) < g.settings!.skipVoteDays!, 'VOTE_REQUIRED');
+        g.daySkipsUsed = (g.daySkipsUsed ?? 0) + 1;
+      }
       g.verdictDone = true;
       if (cmd.target !== null) {
         const condemned = target(g, cmd.target);
@@ -532,12 +599,16 @@ function moderatorCommand(g: Game, cmd: Command) {
     default: throw new RuleError('INVALID_COMMAND');
   }
 }
-export function dispatch(input: Game, principal: Principal, request: Request): Game {
+export function dispatch(input: Game, principal: Principal, request: Request, now = Date.now()): Game {
   // Version pairs are accepted exactly, including legacy snapshots. Old games
-  // keep playing forever; only chat requires v10/schema5.
+  // keep playing forever; chat requires v10/schema5, day clocks require v11/6.
   requireRule(input.rulesVersion === 'classic-core-v8' || input.rulesVersion === 'classic-core-v9' ||
+    input.rulesVersion === 'classic-core-v10' || input.rulesVersion === 'classic-core-v11' ||
     input.rulesVersion === RULES.version, 'UNSUPPORTED_RULES_VERSION');
-  const expectedSchema = input.rulesVersion === 'classic-core-v8' ? 3 : input.rulesVersion === 'classic-core-v9' ? 4 : 5;
+  const expectedSchema = input.rulesVersion === 'classic-core-v8' ? 3
+    : input.rulesVersion === 'classic-core-v9' ? 4
+    : input.rulesVersion === 'classic-core-v10' ? 5
+    : input.rulesVersion === 'classic-core-v11' ? 6 : 7;
   requireRule(input.schemaVersion === expectedSchema, 'UNSUPPORTED_SCHEMA_VERSION');
   requireRule(input.rulesVersion === 'classic-core-v8' || typeof input.settings?.witchSeesBite === 'boolean', 'INVALID_SETTINGS');
   requireRule(request.gameId === input.id && typeof request.id === 'string' && request.id.length > 0 && request.id.length <= 128, 'INVALID_REQUEST');
@@ -560,7 +631,7 @@ export function dispatch(input: Game, principal: Principal, request: Request): G
   } else if (cmd.type === 'chat') {
     applyChat(g, principal, cmd.text);
   } else {
-    requireRule(principal.kind === 'moderator', 'MODERATOR_REQUIRED'); moderatorCommand(g, cmd);
+    requireRule(principal.kind === 'moderator', 'MODERATOR_REQUIRED'); moderatorCommand(g, cmd, now);
   }
   g.revision++;
   g.receipts[key] = { fingerprint, revision: g.revision };
@@ -572,7 +643,9 @@ export function dispatch(input: Game, principal: Principal, request: Request): G
 // not pack actors yet, so neither ever receives a message.
 function applyChat(g: Game, principal: Principal, raw: string) {
   requireRule(principal.kind === 'player', 'PLAYER_REQUIRED');
-  requireRule(g.rulesVersion === RULES.version && g.schemaVersion === 5, 'CHAT_UNAVAILABLE');
+  requireRule((g.rulesVersion === 'classic-core-v10' && g.schemaVersion === 5) ||
+    (g.rulesVersion === 'classic-core-v11' && g.schemaVersion === 6) ||
+    (g.rulesVersion === RULES.version && g.schemaVersion === 7), 'CHAT_UNAVAILABLE');
   requireRule(g.step === 'wolves', 'WRONG_PHASE');
   requireRule(actors(g).includes(principal.playerId), 'NOT_YOUR_TURN');
   requireRule(g.awake.includes(principal.playerId), 'NOT_AWAKE');

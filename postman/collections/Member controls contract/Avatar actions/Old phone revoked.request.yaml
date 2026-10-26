@@ -1,0 +1,17 @@
+$kind: http-request
+name: "Old phone revoked"
+order: 1700
+method: GET
+url: "{{baseUrl}}/api/room?code={{memberCode}}"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{memberTokenguard}}"
+queryParams:
+  code: "{{memberCode}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Old phone blocked',()=>pm.response.to.have.status(403));

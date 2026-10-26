@@ -1,0 +1,33 @@
+{
+  "$kind": "http-request",
+  "name": "Leading zeroes accepted",
+  "order": 300,
+  "method": "GET",
+  "url": "{{baseUrl}}/api/room?code=001010",
+  "auth": {
+    "type": "noauth"
+  },
+  "headers": [
+    {
+      "key": "Authorization",
+      "value": "Bearer {{numericToken}}"
+    },
+    {
+      "key": "Content-Type",
+      "value": "application/json"
+    }
+  ],
+  "scripts": [
+    {
+      "type": "afterResponse",
+      "language": "text/javascript",
+      "code": "pm.test('zero and one pass code validation',()=>pm.expect(pm.response.code).to.be.oneOf([200,403,404]));"
+    }
+  ],
+  "queryParams": [
+    {
+      "key": "code",
+      "value": "001010"
+    }
+  ]
+}

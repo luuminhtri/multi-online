@@ -1,0 +1,23 @@
+$kind: http-request
+name: "Ready C"
+order: 1400
+method: POST
+url: "{{baseUrl}}/api/room"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{lobbyTokenC}}"
+body:
+  type: json
+  content: |-
+    {
+      "type": "ready",
+      "requestId": "ready-C",
+      "code": "{{lobbyCode}}"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('HTTP 200', () => pm.response.to.have.status(200));

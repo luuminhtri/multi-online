@@ -1,0 +1,33 @@
+{
+  "$kind": "http-request",
+  "name": "Read numeric room",
+  "order": 200,
+  "method": "GET",
+  "url": "{{baseUrl}}/api/room?code={{numericCode}}",
+  "auth": {
+    "type": "noauth"
+  },
+  "headers": [
+    {
+      "key": "Authorization",
+      "value": "Bearer {{numericToken}}"
+    },
+    {
+      "key": "Content-Type",
+      "value": "application/json"
+    }
+  ],
+  "scripts": [
+    {
+      "type": "afterResponse",
+      "language": "text/javascript",
+      "code": "pm.test('HTTP 200',()=>pm.response.to.have.status(200));pm.test('same code',()=>pm.expect(pm.response.json().room.code).eql(pm.collectionVariables.get('numericCode')));"
+    }
+  ],
+  "queryParams": [
+    {
+      "key": "code",
+      "value": "{{numericCode}}"
+    }
+  ]
+}

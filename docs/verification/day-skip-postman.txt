@@ -1,0 +1,328 @@
+No authorization data found. Please use the `postman login` command.
+Refer:https://learning.postman.com/docs/postman-cli/postman-cli-options/#postman-login
+
+Running your collection...
+postman
+
+Day skip contract
+
+Folder Vote budget
+Sub-folder Create
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 12.45 KB, 6 ms]
+  Pass  HTTP 200
+
+Sub-folder Add A
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 12.54 KB, 3 ms]
+  Pass  HTTP 200
+
+Sub-folder Add B
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 12.63 KB, 2 ms]
+  Pass  HTTP 200
+
+Sub-folder Add C
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 12.72 KB, 2 ms]
+  Pass  HTTP 200
+
+Sub-folder Add D
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 12.81 KB, 2 ms]
+  Pass  HTTP 200
+
+Sub-folder Add E
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 12.9 KB, 2 ms]
+  Pass  HTTP 200
+
+Sub-folder Add F
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 13 KB, 2 ms]
+  Pass  HTTP 200
+
+Sub-folder Add G
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 13.09 KB, 2 ms]
+  Pass  HTTP 200
+
+Sub-folder Reject budget -1
+
+  POST http://127.0.0.1:5174/api/room [400 Bad Request, 413 B, 1 ms]
+  Pass  HTTP 400
+  Pass  INVALID_SETTINGS
+
+Sub-folder Reject budget 31
+
+  POST http://127.0.0.1:5174/api/room [400 Bad Request, 413 B, 1 ms]
+  Pass  HTTP 400
+  Pass  INVALID_SETTINGS
+
+Sub-folder Reject budget 1.5
+
+  POST http://127.0.0.1:5174/api/room [400 Bad Request, 413 B, 1 ms]
+  Pass  HTTP 400
+  Pass  INVALID_SETTINGS
+
+Sub-folder Reject budget 1
+
+  POST http://127.0.0.1:5174/api/room [400 Bad Request, 413 B, 1 ms]
+  Pass  HTTP 400
+  Pass  INVALID_SETTINGS
+
+Sub-folder Deal
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 16.31 KB, 3 ms]
+  Pass  HTTP 200
+  Pass  v12 schema7 with budget 1
+
+Sub-folder Ready 0
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 14.35 KB, 2 ms]
+  Pass  HTTP 200
+
+Sub-folder Ready 1
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 14.27 KB, 2 ms]
+  Pass  HTTP 200
+
+Sub-folder Ready 2
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 14.39 KB, 2 ms]
+  Pass  HTTP 200
+
+Sub-folder Ready 3
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 14.44 KB, 3 ms]
+  Pass  HTTP 200
+
+Sub-folder Ready 4
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 14.39 KB, 3 ms]
+  Pass  HTTP 200
+
+Sub-folder Ready 5
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 14.43 KB, 3 ms]
+  Pass  HTTP 200
+
+Sub-folder Ready 6
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 14.46 KB, 4 ms]
+  Pass  HTTP 200
+
+Sub-folder Read before begin
+
+  GET http://127.0.0.1:5174/api/room?code=9JBLAF [200 OK, 16.57 KB, 2 ms]
+  Pass  HTTP 200
+
+Sub-folder Begin
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 16.57 KB, 3 ms]
+  Pass  HTTP 200
+
+Sub-folder guard wake
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 14.97 KB, 2 ms]
+  Pass  HTTP 200
+
+Sub-folder guard act
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 15.03 KB, 3 ms]
+  Pass  HTTP 200
+
+Sub-folder Read moderator after guard
+
+  GET http://127.0.0.1:5174/api/room?code=9JBLAF [200 OK, 17.4 KB, 2 ms]
+  Pass  HTTP 200
+
+Sub-folder Close guard
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 17.51 KB, 2 ms]
+  Pass  HTTP 200
+
+Sub-folder seer wake
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 14.94 KB, 4 ms]
+  Pass  HTTP 200
+
+Sub-folder seer act
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 15.18 KB, 6 ms]
+  Pass  HTTP 200
+
+Sub-folder Read moderator after seer
+
+  GET http://127.0.0.1:5174/api/room?code=9JBLAF [200 OK, 18.51 KB, 2 ms]
+  Pass  HTTP 200
+
+Sub-folder Close seer
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 18.56 KB, 3 ms]
+  Pass  HTTP 200
+
+Sub-folder wolf wake
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 15.07 KB, 2 ms]
+  Pass  HTTP 200
+
+Sub-folder wolf act
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 15.18 KB, 2 ms]
+  Pass  HTTP 200
+
+Sub-folder Read moderator after wolf
+
+  GET http://127.0.0.1:5174/api/room?code=9JBLAF [200 OK, 19.42 KB, 3 ms]
+  Pass  HTTP 200
+
+Sub-folder Close wolves
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 19.45 KB, 4 ms]
+  Pass  HTTP 200
+
+Sub-folder Close empty witch
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 19.63 KB, 3 ms]
+  Pass  HTTP 200
+
+Sub-folder Resolve
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 19.96 KB, 2 ms]
+  Pass  HTTP 200
+
+Sub-folder Publish
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 20.22 KB, 4 ms]
+  Pass  HTTP 200
+
+Sub-folder Allowed skip
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 20.49 KB, 4 ms]
+  Pass  HTTP 200
+  Pass  one skip spent
+
+Sub-folder Retry skip
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 20.49 KB, 3 ms]
+  Pass  HTTP 200
+  Pass  retry spends no extra skip
+
+Sub-folder Next night
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 20.65 KB, 4 ms]
+  Pass  HTTP 200
+
+Sub-folder guard wake
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 15.08 KB, 4 ms]
+  Pass  HTTP 200
+
+Sub-folder guard act
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 15.14 KB, 3 ms]
+  Pass  HTTP 200
+
+Sub-folder Read moderator after guard
+
+  GET http://127.0.0.1:5174/api/room?code=9JBLAF [200 OK, 21.48 KB, 3 ms]
+  Pass  HTTP 200
+
+Sub-folder Close guard
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 21.55 KB, 4 ms]
+  Pass  HTTP 200
+
+Sub-folder seer wake
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 15.27 KB, 4 ms]
+  Pass  HTTP 200
+
+Sub-folder seer act
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 15.5 KB, 4 ms]
+  Pass  HTTP 200
+
+Sub-folder Read moderator after seer
+
+  GET http://127.0.0.1:5174/api/room?code=9JBLAF [200 OK, 22.56 KB, 2 ms]
+  Pass  HTTP 200
+
+Sub-folder Close seer
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 22.6 KB, 4 ms]
+  Pass  HTTP 200
+
+Sub-folder wolf wake
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 15.22 KB, 2 ms]
+  Pass  HTTP 200
+
+Sub-folder wolf act
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 15.33 KB, 4 ms]
+  Pass  HTTP 200
+
+Sub-folder Read moderator after wolf
+
+  GET http://127.0.0.1:5174/api/room?code=9JBLAF [200 OK, 23.43 KB, 3 ms]
+  Pass  HTTP 200
+
+Sub-folder Close wolves
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 23.47 KB, 3 ms]
+  Pass  HTTP 200
+
+Sub-folder Close empty witch
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 23.65 KB, 3 ms]
+  Pass  HTTP 200
+
+Sub-folder Resolve
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 24 KB, 5 ms]
+  Pass  HTTP 200
+
+Sub-folder Publish
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 24.32 KB, 3 ms]
+  Pass  HTTP 200
+
+Sub-folder Refuse exhausted skip
+
+  POST http://127.0.0.1:5174/api/room [409 Conflict, 396 B, 3 ms]
+  Pass  HTTP 409
+  Pass  VOTE_REQUIRED
+
+Sub-folder Read unchanged verdict
+
+  GET http://127.0.0.1:5174/api/room?code=9JBLAF [200 OK, 24.32 KB, 2 ms]
+  Pass  HTTP 200
+  Pass  refusal preserves verdict and allowance
+
+Sub-folder Required targeted vote
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 24.83 KB, 4 ms]
+  Pass  HTTP 200
+  Pass  target eliminated
+
+------------------------------------------------------------------
+|                         |          executed |           failed |
+--------------------------+-------------------+-------------------
+|              iterations |                 1 |                0 |
+--------------------------+-------------------+-------------------
+|                requests |                58 |                0 |
+--------------------------+-------------------+-------------------
+|            test-scripts |                58 |                0 |
+--------------------------+-------------------+-------------------
+|      prerequest-scripts |                 1 |                0 |
+--------------------------+-------------------+-------------------
+|              assertions |                68 |                0 |
+------------------------------------------------------------------
+| total run duration: 1844 ms                                    |
+------------------------------------------------------------------
+| total data received: 910.41 KB (approx)                        |
+------------------------------------------------------------------
+| average response time: 3 ms [min: 1 ms, max: 6 ms, s.d.: 1 ms] |
+------------------------------------------------------------------

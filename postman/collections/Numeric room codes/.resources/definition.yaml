@@ -1,0 +1,11 @@
+$kind: collection
+description: Same-origin Node server for guest sessions. Browser-generated 256-bit capability sent only in Authorization. Server stores its SHA-256 hash and validates membership. Room data is private and committed with compare-and-swap. No Supabase keys in the browser. No deployment performed.
+variables:
+  baseUrl: http://127.0.0.1:5174
+  bearerToken: ""
+auth:
+  - id: b9e311a5-8f1e-4265-b221-17d1dbee3a2e
+    type: bearer
+    name: bearer auth
+    credentials:
+      token: "{{bearerToken}}"

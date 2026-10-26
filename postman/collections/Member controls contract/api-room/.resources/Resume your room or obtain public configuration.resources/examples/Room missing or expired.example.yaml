@@ -1,0 +1,28 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/room?code=G825Y4&offlinePlayerId=string"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    code: G825Y4
+    offlinePlayerId: string
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 404
+  statusText: Not Found
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "error": {
+          "code": "string",
+          "message": "string",
+          "retryable": true
+        }
+      }
+order: 5000

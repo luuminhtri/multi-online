@@ -1,0 +1,206 @@
+No authorization data found. Please use the `postman login` command.
+Refer:https://learning.postman.com/docs/postman-cli/postman-cli-options/#postman-login
+
+Running your collection...
+postman
+
+Lobby deck contract
+
+Folder Lobby and readiness
+Sub-folder Create lobby
+
+  POST http://127.0.0.1:5175/api/room [200 OK, 12.43 KB, 15 ms]
+  Pass  HTTP 200
+
+Sub-folder Join A
+
+  POST http://127.0.0.1:5175/api/room [200 OK, 12.48 KB, 7 ms]
+  Pass  HTTP 200
+
+Sub-folder Join B
+
+  POST http://127.0.0.1:5175/api/room [200 OK, 12.55 KB, 6 ms]
+  Pass  HTTP 200
+
+Sub-folder Join C
+
+  POST http://127.0.0.1:5175/api/room [200 OK, 12.61 KB, 7 ms]
+  Pass  HTTP 200
+
+Sub-folder Publish selected deck
+
+  POST http://127.0.0.1:5175/api/room [400 Bad Request, 413 B, 943 us]
+  1. HTTP 200
+  2⠄ TypeError in test-script
+
+Sub-folder Player sees selected roles and source copy
+
+  GET http://127.0.0.1:5175/api/room?code=DNCLLN [200 OK, 12.61 KB, 1 ms]
+  Pass  HTTP 200
+  3. Selected only and verbatim Witch description
+
+Sub-folder Player cannot edit deck
+
+  POST http://127.0.0.1:5175/api/room [400 Bad Request, 413 B, 892 us]
+  4. Moderator required
+
+Sub-folder Retry publish is idempotent
+
+  POST http://127.0.0.1:5175/api/room [400 Bad Request, 413 B, 786 us]
+  5. HTTP 200
+  6⠄ TypeError in test-script
+
+Sub-folder Deal enters ready phase
+
+  POST http://127.0.0.1:5175/api/room [400 Bad Request, 413 B, 813 us]
+  7. HTTP 200
+  8⠄ TypeError in test-script
+
+Sub-folder Reject early begin
+
+  POST http://127.0.0.1:5175/api/room [400 Bad Request, 413 B, 822 us]
+  9. Not ready
+
+Sub-folder Reject early engine action
+
+  POST http://127.0.0.1:5175/api/room [409 Conflict, 410 B, 1 ms]
+ 10. Game cannot run yet
+
+Sub-folder Ready A
+
+  POST http://127.0.0.1:5175/api/room [409 Conflict, 365 B, 1 ms]
+ 11. HTTP 200
+
+Sub-folder Ready B
+
+  POST http://127.0.0.1:5175/api/room [409 Conflict, 365 B, 1 ms]
+ 12. HTTP 200
+
+Sub-folder Ready C
+
+  POST http://127.0.0.1:5175/api/room [409 Conflict, 365 B, 1 ms]
+ 13. HTTP 200
+
+Sub-folder Moderator sees all ready
+
+  GET http://127.0.0.1:5175/api/room?code=DNCLLN [200 OK, 12.63 KB, 1 ms]
+  Pass  HTTP 200
+ 14. Three ready
+
+Sub-folder Begin after acknowledgements
+
+  POST http://127.0.0.1:5175/api/room [400 Bad Request, 413 B, 538 us]
+ 15. HTTP 200
+ 16⠄ TypeError in test-script
+
+Sub-folder Reject deck edits after deal
+
+  POST http://127.0.0.1:5175/api/room [400 Bad Request, 413 B, 585 us]
+ 17. Deck locked
+
+---------------------------------------------------------------------
+|                         |           executed |             failed |
+--------------------------+--------------------+---------------------
+|              iterations |                  1 |                  0 |
+--------------------------+--------------------+---------------------
+|                requests |                 17 |                  0 |
+--------------------------+--------------------+---------------------
+|            test-scripts |                 17 |                  4 |
+--------------------------+--------------------+---------------------
+|      prerequest-scripts |                  2 |                  0 |
+--------------------------+--------------------+---------------------
+|              assertions |                 19 |                 13 |
+---------------------------------------------------------------------
+| total run duration: 421 ms                                        |
+---------------------------------------------------------------------
+| total data received: 75.35 KB (approx)                            |
+---------------------------------------------------------------------
+| average response time: 3 ms [min: 538 us, max: 15 ms, s.d.: 3 ms] |
+---------------------------------------------------------------------
+
+   #  failure         detail                                                                    
+                                                                                                
+ 01.  AssertionError  HTTP 200                                                                  
+                      expected response to have status code 200 but got 400                     
+                      at assertion:0 in test-script                                             
+                      inside "Lobby and readiness / Publish selected deck"                      
+                                                                                                
+ 02.  TypeError                                                                                 
+                      Cannot read properties of undefined (reading 'revision')                  
+                      at test-script                                                            
+                      inside "Lobby and readiness / Publish selected deck"                      
+                                                                                                
+ 03.  AssertionError  Selected only and verbatim Witch description                              
+                      expected {} to deeply equal { wolf: 1, witch: 1, villager: 1 }            
+                      at assertion:1 in test-script                                             
+                      inside "Lobby and readiness / Player sees selected roles and source copy" 
+                                                                                                
+ 04.  AssertionError  Moderator required                                                        
+                      expected response to have status code 403 but got 400                     
+                      at assertion:0 in test-script                                             
+                      inside "Lobby and readiness / Player cannot edit deck"                    
+                                                                                                
+ 05.  AssertionError  HTTP 200                                                                  
+                      expected response to have status code 200 but got 400                     
+                      at assertion:0 in test-script                                             
+                      inside "Lobby and readiness / Retry publish is idempotent"                
+                                                                                                
+ 06.  TypeError                                                                                 
+                      Cannot read properties of undefined (reading 'revision')                  
+                      at test-script                                                            
+                      inside "Lobby and readiness / Retry publish is idempotent"                
+                                                                                                
+ 07.  AssertionError  HTTP 200                                                                  
+                      expected response to have status code 200 but got 400                     
+                      at assertion:0 in test-script                                             
+                      inside "Lobby and readiness / Deal enters ready phase"                    
+                                                                                                
+ 08.  TypeError                                                                                 
+                      Cannot read properties of undefined (reading 'revision')                  
+                      at test-script                                                            
+                      inside "Lobby and readiness / Deal enters ready phase"                    
+                                                                                                
+ 09.  AssertionError  Not ready                                                                 
+                      expected response to have status code 409 but got 400                     
+                      at assertion:0 in test-script                                             
+                      inside "Lobby and readiness / Reject early begin"                         
+                                                                                                
+ 10.  AssertionError  Game cannot run yet                                                       
+                      expected 'GAME_NOT_STARTED' to deeply equal 'GAME_AWAITING_READY'         
+                      at assertion:0 in test-script                                             
+                      inside "Lobby and readiness / Reject early engine action"                 
+                                                                                                
+ 11.  AssertionError  HTTP 200                                                                  
+                      expected response to have status code 200 but got 409                     
+                      at assertion:0 in test-script                                             
+                      inside "Lobby and readiness / Ready A"                                    
+                                                                                                
+ 12.  AssertionError  HTTP 200                                                                  
+                      expected response to have status code 200 but got 409                     
+                      at assertion:0 in test-script                                             
+                      inside "Lobby and readiness / Ready B"                                    
+                                                                                                
+ 13.  AssertionError  HTTP 200                                                                  
+                      expected response to have status code 200 but got 409                     
+                      at assertion:0 in test-script                                             
+                      inside "Lobby and readiness / Ready C"                                    
+                                                                                                
+ 14.  AssertionError  Three ready                                                               
+                      expected +0 to deeply equal 3                                             
+                      at assertion:1 in test-script                                             
+                      inside "Lobby and readiness / Moderator sees all ready"                   
+                                                                                                
+ 15.  AssertionError  HTTP 200                                                                  
+                      expected response to have status code 200 but got 400                     
+                      at assertion:0 in test-script                                             
+                      inside "Lobby and readiness / Begin after acknowledgements"               
+                                                                                                
+ 16.  TypeError                                                                                 
+                      Cannot read properties of undefined (reading 'revision')                  
+                      at test-script                                                            
+                      inside "Lobby and readiness / Begin after acknowledgements"               
+                                                                                                
+ 17.  AssertionError  Deck locked                                                               
+                      expected response to have status code 409 but got 400                     
+                      at assertion:0 in test-script                                             
+                      inside "Lobby and readiness / Reject deck edits after deal"               

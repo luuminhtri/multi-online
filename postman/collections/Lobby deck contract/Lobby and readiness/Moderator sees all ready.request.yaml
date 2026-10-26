@@ -1,0 +1,19 @@
+$kind: http-request
+name: "Moderator sees all ready"
+order: 1500
+method: GET
+url: "{{baseUrl}}/api/room?code={{lobbyCode}}"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{lobbyTokenowner}}"
+queryParams:
+  code: "{{lobbyCode}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('HTTP 200', () => pm.response.to.have.status(200));
+      pm.collectionVariables.set('lobbyRevision', pm.response.json().room.revision);
+      pm.test('Three ready',()=>pm.expect(pm.response.json().room.readyPlayerIds.length).to.eql(3));

@@ -1,0 +1,28 @@
+$kind: http-request
+name: "Proxy cannot advance as moderator"
+order: 1700
+method: POST
+url: "{{baseUrl}}/api/room"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{sharedTokennewOwner}}"
+body:
+  type: json
+  content: |-
+    {
+      "type": "offlineCommand",
+      "requestId": "illegal-proxy",
+      "code": "{{sharedCode}}",
+      "playerId": "{{sharedBId}}",
+      "stepId": "{{sharedStep}}",
+      "command": {
+        "type": "advance"
+      }
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Player principal enforced',()=>{pm.response.to.have.status(403);pm.expect(pm.response.json().error.code).to.eql('MODERATOR_REQUIRED');});

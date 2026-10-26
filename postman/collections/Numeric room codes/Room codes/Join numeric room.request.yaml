@@ -1,0 +1,36 @@
+{
+  "$kind": "http-request",
+  "name": "Join numeric room",
+  "order": 500,
+  "method": "POST",
+  "url": "{{baseUrl}}/api/room",
+  "auth": {
+    "type": "noauth"
+  },
+  "headers": [
+    {
+      "key": "Authorization",
+      "value": "Bearer {{numericToken}}"
+    },
+    {
+      "key": "Content-Type",
+      "value": "application/json"
+    }
+  ],
+  "scripts": [
+    {
+      "type": "beforeRequest",
+      "language": "text/javascript",
+      "code": "pm.collectionVariables.set('numericToken',(pm.variables.replaceIn('{{$guid}}')+pm.variables.replaceIn('{{$guid}}')).replace(/-/g,''));"
+    },
+    {
+      "type": "afterResponse",
+      "language": "text/javascript",
+      "code": "pm.test('HTTP 200',()=>pm.response.to.have.status(200));pm.test('player joined numeric code',()=>{pm.expect(pm.response.json().viewer).eql('player');pm.expect(pm.response.json().room.code).eql(pm.collectionVariables.get('numericCode'))});"
+    }
+  ],
+  "body": {
+    "type": "json",
+    "content": "{\"type\": \"join\", \"requestId\": \"join\", \"code\": \"{{numericCode}}\", \"name\": \"Numeric player\"}"
+  }
+}

@@ -1,0 +1,25 @@
+$kind: http-request
+name: "Reject deck edits after deal"
+order: 1700
+method: POST
+url: "{{baseUrl}}/api/room"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{lobbyTokenowner}}"
+body:
+  type: json
+  content: |-
+    {
+      "type": "setDeck",
+      "requestId": "after-deal",
+      "code": "{{lobbyCode}}",
+      "expectedRevision": {{lobbyRevision}},
+      "roles": []
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Deck locked',()=>{pm.response.to.have.status(409);pm.expect(pm.response.json().error.code).to.eql('ROOM_ALREADY_STARTED');});

@@ -1,0 +1,57 @@
+No authorization data found. Please use the `postman login` command.
+Refer:https://learning.postman.com/docs/postman-cli/postman-cli-options/#postman-login
+
+Running your collection...
+postman
+
+Numeric room codes
+
+Folder Room codes
+Sub-folder Create numeric room
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 12.44 KB, 45 ms]
+  Pass  HTTP 200
+  Pass  six digits
+
+Sub-folder Read numeric room
+
+  GET http://127.0.0.1:5174/api/room?code=449590 [200 OK, 12.44 KB, 3 ms]
+  Pass  HTTP 200
+  Pass  same code
+
+Sub-folder Leading zeroes accepted
+
+  GET http://127.0.0.1:5174/api/room?code=001010 [404 Not Found, 380 B, 2 ms]
+  Pass  zero and one pass code validation
+
+Sub-folder Reject short code
+
+  GET http://127.0.0.1:5174/api/room?code=12345 [400 Bad Request, 365 B, 1 ms]
+  Pass  HTTP 400
+  Pass  INVALID_ROOM_CODE
+
+Sub-folder Join numeric room
+
+  POST http://127.0.0.1:5174/api/room [200 OK, 12.55 KB, 3 ms]
+  Pass  HTTP 200
+  Pass  player joined numeric code
+
+---------------------------------------------------------------------
+|                         |           executed |             failed |
+--------------------------+--------------------+---------------------
+|              iterations |                  1 |                  0 |
+--------------------------+--------------------+---------------------
+|                requests |                  5 |                  0 |
+--------------------------+--------------------+---------------------
+|            test-scripts |                  5 |                  0 |
+--------------------------+--------------------+---------------------
+|      prerequest-scripts |                  2 |                  0 |
+--------------------------+--------------------+---------------------
+|              assertions |                  9 |                  0 |
+---------------------------------------------------------------------
+| total run duration: 295 ms                                        |
+---------------------------------------------------------------------
+| total data received: 36.92 KB (approx)                            |
+---------------------------------------------------------------------
+| average response time: 11 ms [min: 1 ms, max: 45 ms, s.d.: 17 ms] |
+---------------------------------------------------------------------

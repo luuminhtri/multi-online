@@ -1,0 +1,27 @@
+$kind: http-request
+name: "Add offline B"
+order: 300
+method: POST
+url: "{{baseUrl}}/api/room"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{sharedTokenowner}}"
+body:
+  type: json
+  content: |-
+    {
+      "type": "addOffline",
+      "requestId": "add-B",
+      "code": "{{sharedCode}}",
+      "expectedRevision": {{sharedRevision}},
+      "name": "B"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('HTTP 200',()=>pm.response.to.have.status(200));
+      pm.collectionVariables.set('sharedRevision',pm.response.json().room.revision);
+      pm.collectionVariables.set('sharedBId',pm.response.json().room.members.find(m=>m.name==='B').id);

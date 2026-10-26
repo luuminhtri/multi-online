@@ -11,6 +11,9 @@ export function publicView(g: Game) {
   return {
     gameId: g.id, night: g.night,
     phase: g.step === 'ended' ? 'ended' : (g.step === 'day' || g.step === 'hunter') ? 'day' : 'night',
+    // Day phase names and deadlines are public; clocks only count down.
+    dayPhase: g.step === 'day' ? g.dayPhase ?? null : null,
+    dayEndsAt: g.step === 'day' ? g.dayPhaseEndsAt ?? null : null,
     winner: g.winner,
     players: g.players.map(p => ({ id: p.id, name: p.name, alive: !g.publicDead.includes(p.id) })),
     announcements: structuredClone(g.events.filter(e => e.audience === 'public').map((e, i) => ({ ...e, id: i + 1 }))),

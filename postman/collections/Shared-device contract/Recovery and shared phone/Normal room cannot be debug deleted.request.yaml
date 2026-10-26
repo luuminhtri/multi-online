@@ -1,0 +1,17 @@
+$kind: http-request
+name: "Normal room cannot be debug deleted"
+order: 1800
+method: DELETE
+url: "{{baseUrl}}/api/room?code={{sharedCode}}"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{sharedTokennewOwner}}"
+queryParams:
+  code: "{{sharedCode}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Debug disabled',()=>{pm.response.to.have.status(404);pm.expect(pm.response.json().error.code).to.eql('DEBUG_UNAVAILABLE');});

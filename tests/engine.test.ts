@@ -18,7 +18,7 @@ function act(g: Game, id: string, action: Action): Game {
   return command(g, { type: 'act', action }, { kind: 'player', playerId: id });
 }
 function night(protect: string, bite: string, heal = false, poison: string | null = null): Game {
-  let g = createGame('test', roster);
+  let g = createGame('test', roster, { witchSeesBite: true, skipVoteDays: 30 });
   g = act(g, 'g', { type: 'protect', target: protect });
   g = command(g, { type: 'advance' });
   g = act(g, 's', { type: 'inspect', target: 'w' });
@@ -36,7 +36,7 @@ test('protection blocks bite, but not poison; original input is unchanged', () =
   const poisoned = night('a', 'a', false, 'a');
   assert.deepEqual(poisoned.pendingDeaths, ['a']);
   assert.deepEqual(poisoned.events.find(e => e.type === 'death')!.data.causes, ['poison']);
-  const original = createGame('test', roster), before = structuredClone(original);
+  const original = createGame('test', roster, { witchSeesBite: true, skipVoteDays: 30 }), before = structuredClone(original);
   act(original, 'g', { type: 'protect', target: 'a' }); assert.deepEqual(original, before);
 });
 test('healing does not cancel poison; both potions consumed exactly once', () => {
@@ -65,7 +65,7 @@ test('views cannot mutate canonical state', () => {
   assert.equal(playerView(g, 's').messages[0].data.isWolf, true);
 });
 test('retries are idempotent even after changing steps; reused ID with changed payload fails', () => {
-  let g = createGame('test', roster);
+  let g = createGame('test', roster, { witchSeesBite: true, skipVoteDays: 30 });
   const request = { id: 'same', gameId: g.id, stepId: stepId(g), command: { type: 'wake' } as Command };
   const who: Principal = { kind: 'player', playerId: 'g' };
   g = dispatch(g, who, request); assert.deepEqual(dispatch(g, who, request), g);
@@ -76,7 +76,7 @@ test('retries are idempotent even after changing steps; reused ID with changed p
   rejects(() => dispatch(g, who, { ...request, id: 'late' }), 'STALE_STEP');
 });
 test('server role and turn boundaries; skip action is rejected and roles must act', () => {
-  const g = createGame('test', roster);
+  const g = createGame('test', roster, { witchSeesBite: true, skipVoteDays: 30 });
   rejects(() => command(g, { type: 'advance' }), 'WAITING_FOR_ACTIONS');
   rejects(() => command(g, { type: 'advance' }, { kind: 'player', playerId: 'g' }), 'MODERATOR_REQUIRED');
   rejects(() => act(g, 'a', { type: 'protect', target: 'b' } as Action), 'NOT_YOUR_TURN');
@@ -107,7 +107,7 @@ test('guard cannot repeat consecutive nights, but may protect again on night 3',
   assert.equal(g.actions['g'].type, 'protect');
 });
 test('wolves must agree and may revise before moderator closes their step', () => {
-  let g = createGame('pack', [...roster, { id: 'w2', name: 'Sói 2', role: 'wolf' }]);
+  let g = createGame('pack', [...roster, { id: 'w2', name: 'Sói 2', role: 'wolf' }], { witchSeesBite: true, skipVoteDays: 30 });
   g = act(g, 'g', { type: 'protect', target: 'g' }); g = command(g, { type: 'advance' });
   g = act(g, 's', { type: 'inspect', target: 'a' }); g = command(g, { type: 'advance' });
   g = act(g, 'w', { type: 'bite', target: 'a' }); g = act(g, 'w2', { type: 'bite', target: 'b' });
@@ -133,7 +133,7 @@ test('no roles present in a step can be advanced; wolf parity ends after daytime
     { id: 'b', name: 'Bình', role: 'villager' },
     { id: 'c', name: 'Chi', role: 'villager' },
   ];
-  let g = createGame('small', fourRoster);
+  let g = createGame('small', fourRoster, { witchSeesBite: true, skipVoteDays: 30 });
   g = command(g, { type: 'advance' }); // guard step (absent)
   g = command(g, { type: 'advance' }); // seer step (absent)
   g = act(g, 'w', { type: 'bite', target: 'c' }); g = command(g, { type: 'advance' });
@@ -145,7 +145,7 @@ test('no roles present in a step can be advanced; wolf parity ends after daytime
   assert.equal(g.winner, 'wolves'); assert.equal(g.step, 'ended');
 });
 test('witch can choose not to use potions, and still wakes up when potions are exhausted', () => {
-  let g = createGame('potions', roster);
+  let g = createGame('potions', roster, { witchSeesBite: true, skipVoteDays: 30 });
   g = act(g, 'g', { type: 'protect', target: 'g' }); g = command(g, { type: 'advance' });
   g = act(g, 's', { type: 'inspect', target: 'a' }); g = command(g, { type: 'advance' });
   g = act(g, 'w', { type: 'bite', target: 'a' }); g = command(g, { type: 'advance' });
@@ -169,7 +169,7 @@ test('witch can choose not to use potions, and still wakes up when potions are e
   assert.equal(g.winner, 'village');
 });
 test('witch waking up with 0 potions can submit empty potion action to avoid leaking state', () => {
-  let g = createGame('empty_potions', roster);
+  let g = createGame('empty_potions', roster, { witchSeesBite: true, skipVoteDays: 30 });
   g.players.find(p => p.id === 'h')!.resources = { heal: 0, poison: 0, hunterShot: 0 };
   g = act(g, 'g', { type: 'protect', target: 'g' }); g = command(g, { type: 'advance' });
   g = act(g, 's', { type: 'inspect', target: 'w' }); g = command(g, { type: 'advance' });
@@ -209,7 +209,7 @@ test('cupid pairs players on night 1; cross-team lovers form 3rd party; heartbre
     { id: 'a', name: 'An', role: 'villager' },
     { id: 'b', name: 'Bình', role: 'villager' },
   ];
-  let g = createGame('cupid_game', cupidRoster);
+  let g = createGame('cupid_game', cupidRoster, { witchSeesBite: true, skipVoteDays: 30 });
   assert.equal(g.step, 'cupid');
   // Cupid pairs wolf 'w' and villager 'a'
   rejects(() => act(g, 'c', { type: 'pair', targets: ['a', 'a'] }), 'SELF_TARGET');
@@ -247,7 +247,7 @@ test('hunter shoots on night death; cascading shot can trigger lover heartbreak'
     { id: 'a', name: 'An', role: 'villager' },
     { id: 'b', name: 'Bình', role: 'villager' },
   ];
-  let g = createGame('hunter_game', hunterRoster);
+  let g = createGame('hunter_game', hunterRoster, { witchSeesBite: true, skipVoteDays: 30 });
   // Night 1: Cupid pairs 'a' and 'b'
   g = act(g, 'c', { type: 'pair', targets: ['a', 'b'] });
   g = command(g, { type: 'advance' });
@@ -280,7 +280,7 @@ test('mixed lovers win when only the two lovers survive', () => {
     { id: 'c', name: 'Cupid', role: 'cupid' },
     { id: 'a', name: 'An', role: 'villager' },
   ];
-  let g = createGame('lover_win', loverRoster);
+  let g = createGame('lover_win', loverRoster, { witchSeesBite: true, skipVoteDays: 30 });
   // Cupid pairs 'w' and 'a'
   g = act(g, 'c', { type: 'pair', targets: ['w', 'a'] });
   g = command(g, { type: 'advance' });
@@ -304,7 +304,7 @@ test('cursed survives wolf bite and transforms into a wolf from the next night',
     { id: 'a', name: 'An', role: 'villager' },
     { id: 'b', name: 'Bình', role: 'villager' },
   ];
-  let g = createGame('cursed_game', cursedRoster);
+  let g = createGame('cursed_game', cursedRoster, { witchSeesBite: true, skipVoteDays: 30 });
   // Night 1: Seer inspects cursed -> not a wolf yet
   g = command(g, { type: 'advance' }); // guard absent
   g = act(g, 's', { type: 'inspect', target: 'cur' }); g = command(g, { type: 'advance' });
@@ -348,7 +348,7 @@ test('cursed dies normally when poisoned by witch', () => {
     { id: 'h', name: 'Phù thủy', role: 'witch' },
     { id: 'a', name: 'An', role: 'villager' },
   ];
-  let g = createGame('cursed_poison', cursedPoisonRoster);
+  let g = createGame('cursed_poison', cursedPoisonRoster, { witchSeesBite: true, skipVoteDays: 30 });
   g = command(g, { type: 'advance' }); // guard
   g = command(g, { type: 'advance' }); // seer
   g = act(g, 'w', { type: 'bite', target: 'a' }); g = command(g, { type: 'advance' });
@@ -367,7 +367,7 @@ test('doppelganger mimics seer on night 1 and inherits seer role when seer dies'
     { id: 'a', name: 'An', role: 'villager' },
     { id: 'b', name: 'Bình', role: 'villager' },
   ];
-  let g = createGame('dp_game', dpRoster);
+  let g = createGame('dp_game', dpRoster, { witchSeesBite: true, skipVoteDays: 30 });
   // Night 1 starts with doppelganger (since no cupid)
   assert.equal(g.step, 'doppelganger');
   rejects(() => act(g, 'dp', { type: 'mimic', target: 'dp' }), 'SELF_TARGET');

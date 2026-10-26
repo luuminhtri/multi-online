@@ -125,3 +125,13 @@ test('a wolf who joins the pack later does not read chat from before it knew the
   const mate = playerView(g, 'w2');
   assert.deepEqual(mate.packChat.items.map(i => i.text), ['bí mật đêm nay']);
 });
+
+test('saved v10 and v11 games retain pack chat with their original version', () => {
+  for (const [rulesVersion, schemaVersion] of [['classic-core-v10', 5], ['classic-core-v11', 6]] as const) {
+    let g = wolvesStep(); g.rulesVersion = rulesVersion; g.schemaVersion = schemaVersion;
+    delete g.settings!.skipVoteDays; delete g.daySkipsUsed;
+    g = cmd(cmd(g, { type: 'wake' }, 'w1'), { type: 'chat', text: 'Cắn S?' }, 'w1');
+    assert.equal(playerView(g, 'w1').packChat.items.at(-1)!.text, 'Cắn S?');
+    assert.equal(g.rulesVersion, rulesVersion); assert.equal(g.schemaVersion, schemaVersion);
+  }
+});

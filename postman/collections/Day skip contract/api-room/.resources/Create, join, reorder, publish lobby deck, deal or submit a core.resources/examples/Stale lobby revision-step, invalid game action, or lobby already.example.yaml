@@ -1,0 +1,35 @@
+$kind: http-example
+name: Stale lobby revision/step, invalid game action, or lobby already started
+request:
+  url: "{{baseUrl}}/api/room"
+  method: POST
+  headers:
+    - key: Authorization
+      value: Bearer <token>
+      description: "Added as a part of security scheme: bearer"
+    - key: Accept
+      value: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "type": {},
+        "requestId": "HymvrjjdFhrZ3OIHLTGFPBxPeu9-rWh51IecsZGrdTi2yVcsesw8JmM_hSm0DE9T8i",
+        "name": "strin"
+      }
+response:
+  statusCode: 409
+  statusText: Conflict
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "error": {
+          "code": "string",
+          "message": "string",
+          "retryable": false
+        }
+      }
+order: 6000

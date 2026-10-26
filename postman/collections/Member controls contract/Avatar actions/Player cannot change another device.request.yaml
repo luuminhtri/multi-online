@@ -1,0 +1,25 @@
+$kind: http-request
+name: "Player cannot change another device"
+order: 1500
+method: POST
+url: "{{baseUrl}}/api/room"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{memberTokenhunter}}"
+body:
+  type: json
+  content: |-
+    {
+      "type": "setOffline",
+      "requestId": "forbidden",
+      "code": "{{memberCode}}",
+      "expectedRevision": {{memberRevision}},
+      "playerId": "{{memberguardId}}"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Moderator required',()=>{pm.response.to.have.status(403);pm.expect(pm.response.json().error.code).to.eql('MODERATOR_REQUIRED');});

@@ -1,0 +1,24 @@
+$kind: http-request
+name: "Join observer"
+order: 200
+method: POST
+url: "{{debugUrl}}/api/room"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{sharedTokenA}}"
+body:
+  type: json
+  content: |-
+    {
+      "type": "join",
+      "requestId": "debug-join",
+      "code": "{{sharedCode}}",
+      "name": "Observer"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('HTTP 200',()=>pm.response.to.have.status(200));

@@ -73,3 +73,12 @@ test('saved HTML extraction reproduces all card descriptions and image URLs', as
   assert.deepEqual(new Set(audit.locations.map((r: { group: string; name: string }) => JSON.stringify([r.group, r.name]))),
     new Set(ROLE_CATALOG.map(r => JSON.stringify([r.source.group, r.source.name]))));
 });
+
+
+test('display catalog descriptions preserve cards.json verbatim for all supported roles', async () => {
+  const { supportedCatalog } = await import('../src/server/rooms.ts');
+  const { ROLE_DESCRIPTIONS } = await import('../src/catalog/descriptions.ts');
+  const data = JSON.parse(readFileSync(new URL('../cards.json', import.meta.url), 'utf8'));
+  for (const entry of ROLE_CATALOG) assert.equal(ROLE_DESCRIPTIONS[entry.id], data[entry.source.group]['Deck of cards'][entry.source.name].Description, entry.id);
+  for (const role of supportedCatalog()) assert.equal(role.description, ROLE_DESCRIPTIONS[role.id], role.id);
+});

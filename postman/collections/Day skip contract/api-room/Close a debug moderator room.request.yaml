@@ -1,0 +1,12 @@
+$kind: http-request
+description: Only debug server and owner. Schedules in-memory deletion after a 2-second reload grace; an owner read cancels it. 90-second owner heartbeat lease handles abrupt exits. Normal rooms cannot be deleted by this endpoint. Debug data never uses persistent storage.
+url: "{{baseUrl}}/api/room?code=string"
+method: DELETE
+queryParams:
+  - key: code
+    value: string
+    disabled: false
+    description: "(Required) "
+settings: {}
+examples: ./.resources/Close a debug moderator room.resources/examples
+order: 3000

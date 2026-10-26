@@ -1,0 +1,17 @@
+$kind: http-request
+name: "Guest cannot delete"
+order: 300
+method: DELETE
+url: "{{debugUrl}}/api/room?code={{sharedCode}}"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{sharedTokenA}}"
+queryParams:
+  code: "{{sharedCode}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Owner required',()=>pm.response.to.have.status(403));

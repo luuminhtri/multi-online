@@ -1,6 +1,6 @@
-# Luật classic-core-v10
+# Luật classic-core-v12
 
-Mặc định của dự án, không khẳng định là luật Ma Sói phổ quát. Chỉ có tùy chọn Phù thủy và chat bầy theo yêu cầu mới của người dùng. Ván mới v10 có **27 vai**, schema **5**; ván v9/schema4 và v8/schema3 đã lưu giữ luật cũ đến hết ván (v9 không có chat bầy). Dữ liệu cards.json vẫn là nguồn thô, không tự quyết định hành vi runtime.
+Mặc định của dự án, không khẳng định là luật Ma Sói phổ quát. Có tùy chọn Phù thủy, chat bầy và đồng hồ ban ngày theo yêu cầu của người dùng. Ván mới v12 có **27 vai**, schema **7**; ván v11/schema6 (không giới hạn bỏ vote), v10/schema5 (không đồng hồ), v9/schema4 (không chat) và v8/schema3 đã lưu giữ luật cũ đến hết ván. Dữ liệu cards.json vẫn là nguồn thô, không tự quyết định hành vi runtime.
 
 ## Vai nền và thông tin
 
@@ -10,7 +10,7 @@ Mặc định của dự án, không khẳng định là luật Ma Sói phổ qu
 | Dân | Không có hành động đêm. |
 | Tiên tri | Bắt buộc soi một người sống khác mình. Lycan hiện Sói, Wolf-man hiện không phải Sói; các Sói thật khác hiện Sói, kể cả phe tình nhân. |
 | Bảo vệ | Bắt buộc bảo vệ một người sống, được tự bảo vệ, không cùng người hai đêm liền. Chỉ chặn cắn; không chặn độc, nổ, bắn, đau buồn hoặc vết thương cũ. |
-| Phù thủy | Một cứu/một độc cho cả ván, tự cứu/tự độc và dùng cả hai cùng đêm được phép. Bật xem nạn nhân (mặc định): còn cứu thì chỉ thấy mục tiêu cắn không được Bảo vệ chặn, không được cứu người đã bị lọc. Tắt xem nạn nhân: chỉ gửi dùng/giữ thuốc; máy chủ cứu tối đa một nạn nhân chưa được bảo vệ theo thứ tự ghế. Đã dùng là tốn thuốc kể cả không có nạn nhân; phản hồi không lộ tên/số nạn nhân. Hết thuốc vẫn được gọi và xác nhận không dùng thuốc. |
+| Phù thủy | Một cứu/một độc cho cả ván, tự cứu/tự độc và dùng cả hai cùng đêm được phép. Bật xem nạn nhân: còn cứu thì chỉ thấy mục tiêu cắn không được Bảo vệ chặn, không được cứu người đã bị lọc. Tắt xem nạn nhân: chỉ gửi dùng/giữ thuốc; máy chủ cứu tối đa một nạn nhân chưa được bảo vệ theo thứ tự ghế. Đã dùng là tốn thuốc kể cả không có nạn nhân; phản hồi không lộ tên/số nạn nhân. Hết thuốc vẫn được gọi và xác nhận không dùng thuốc. |
 | Thợ săn | Chết do mọi nguyên nhân đang hỗ trợ thì bắn một người sống khác mình, một lần. Chết đêm chỉ bắn sau công bố. Không còn mục tiêu thì kết thúc phản ứng để xét hòa; xử lý hết chuỗi bắn mới xét thắng. |
 | Cupid | Đêm đầu chọn hai người khác nhau, được chọn mình. Hai người biết tên nhau, không tự biết vai. Một người chết kéo theo người còn lại. |
 | Kẻ bị nguyền | Cắn không chặn sẽ sống và hóa Sói tại công bố sáng, tham gia từ lượt bầy đêm sau. Nếu cũng chết do nguyên nhân khác cùng đợt thì không chuyển. Cứu/bảo vệ chặn chuyển đổi. |
@@ -77,11 +77,18 @@ Khi tạo ván: tối thiểu ba người, ít nhất một Sói thật và số
 - Sau khi quản trò chốt lượt, chat khép lại: chỉ còn đọc lịch sử trong mục riêng; tin nhắn chỉ hiện với người được nhận, người ngoài không thấy qua bất kỳ view nào. Quản trò xem toàn bộ chat kèm số đêm.
 - Giới hạn: tối đa 200 ký tự sau khi lọc khoảng trắng hai đầu và ký tự điều khiển; cả ván tối đa 200 tin. Gửi lại cùng mã yêu cầu không tạo tin trùng. Chat là nội dung người chơi sinh ra — không dùng làm bằng chứng luật, chỉ quản trò và người nhận xem.
 
+## Ban ngày và đồng hồ (v11)
+
+- Buổi sáng chạy theo bốn pha cố định: **Thảo luận → Vote chỉ người → Thanh minh → Biểu quyết sống/chết**. Phiếu vẫn diễn ra ngoài app (D40); app chỉ hiển thị pha và đồng hồ.
+- Mặc định: 300 giây thảo luận, 15 giây vote chỉ người, 30 giây thanh minh, 15 giây biểu quyết. Quản trò chỉnh từng giá trị (5–3600 giây) trong cài đặt lobby trước khi chia vai, lưu cùng snapshot và không đổi giữa ván.
+- Mỗi sáng pha về "Thảo luận" và đồng hồ ở trạng thái chưa bấm; quản trò bấm "Bắt đầu đồng hồ" để chạy, được bấm lại (reset) cùng pha; "Sang phần tiếp" chuyển pha theo thứ tự và xóa đồng hồ; hết các pha thì còn nút phán quyết. Hết giờ chỉ **báo hiệu** trên mọi máy — chuyển pha và phán quyết vẫn hoàn toàn do quản trò (tự chuyển bước chưa chốt).
+- Deadline tính theo giờ máy chủ và được gửi kèm snapshot; máy khách chỉ hiển thị, không quyết định kết quả. Pha và hạn là thông tin công khai. Ván v10/schema5 trở về trước không có lệnh đồng hồ (`DAY_PHASE_UNAVAILABLE`).
+
 ## Schema và tương thích
 
-Ván mới dùng v10/schemaVersion=5, lưu settings.witchSeesBite và mảng chat cùng snapshot. Quản trò chọn khi start, không đổi giữa ván. createGame mặc định true để tương thích caller cũ; API kiểm boolean và từ chối trường lạ.
+Ván mới dùng v12/schemaVersion=7, lưu settings (witchSeesBite, dayTimers, skipVoteDays), daySkipsUsed, chat và pha ban ngày. skipVoteDays là số nguyên 0–30, mặc định 0; mỗi phán quyết không loại ai dùng một lượt, hết lượt máy chủ từ chối VOTE_REQUIRED. Ngân sách tính tổng cả ván, không bắt buộc sử dụng ở những ngày đầu. Phiếu vẫn diễn ra ngoài app. Hoàng tử vẫn giữ ngoại lệ sống sau phán quyết theo luật vai.
 
-Handler riêng giữ nguyên v8/schema3 (Phù thủy thấy cả mục tiêu được bảo vệ) và v9/schema4 (settings Phù thủy, không có chat). Không nâng nhãn hoặc thay thuốc/lựa chọn đã ghi nhận của ván cũ. Chỉ chấp nhận đúng cặp v8/3, v9/4 hoặc v10/5 có settings hợp lệ; bản cũ hơn vẫn bị từ chối. Room schema1 không đổi vì Game có version riêng. Muốn áp dụng luật mới thì tạo ván mới.
+Giữ nguyên cặp v8/3, v9/4, v10/5, v11/6 đã lưu; không tự nâng version hay thay luật giữa ván. Ván v10 vẫn có chat, v11 vẫn có chat và đồng hồ; v11 trở về trước không giới hạn phán quyết trống. Room schema hiện là 4, độc lập Game schema; không cần SQL migration cho field trong Game JSON. Muốn áp dụng giới hạn mới phải tạo ván mới.
 
 Game.biteTargets là thông tin quản trò. Private view biteTargets luôn rỗng khi tắt hiển thị/hết cứu; khi bật, bỏ người được Bảo vệ. biteTarget chỉ có giá trị nếu đúng một người trong danh sách đã lọc. Hai người được thấy thì Phù thủy phải chọn healTarget; chế độ ẩn từ chối mọi healTarget, kể cả đoán đúng, để không dò nạn nhân. Một thuốc cứu tối đa một người.
 
@@ -119,3 +126,11 @@ Hy sinh Sói con yêu cầu mọi Sói sống đồng ý; khi còn Sói ngủ th
 ### Schema 3
 
 Thêm Game.wolfDeathOccurred, Player.deathBond và Player.knownWolves. Trạng thái nguồn cards.json và catalog source-map-v2 không đổi. Snapshot v7/schema2 không được tự đổi nhãn; tạo ván sandbox mới. Chưa có dữ liệu ván thật cần migration; nếu giữ snapshot cũ trong tương lai phải có handler/migration có kiểm thử riêng.
+
+## Rút người do nghỉ giữa ván (D59, thao tác quản trị)
+
+Quản trò rút riêng người nghỉ, giữ nguyên vị trí các ghế còn lại. Đây không phải một cái chết theo kỹ năng: không chết theo tình nhân/liên kết, không nổ bom/bắn/kế thừa/thưởng cắn của Sói con hoặc kích hoạt Sói chiêm bao. Người rút không còn hành động/mục tiêu hoặc tham gia điều kiện thắng. Thông tin đã soi và hiệu ứng đã chốt không tự hoàn tác; phiếu Sói đang chọn được đặt lại để đồng thuận theo bàn còn lại. Kết quả đêm chưa công bố vẫn giữ kín. Luật/schema ván cũ giữ nguyên; hành động quản trị được ghi bằng sự kiện public player-left.
+
+### Mặc định giao diện tạo ván (D66)
+
+Cài đặt Phù thủy thấy nạn nhân mặc định **tắt** cho ván mới tạo qua giao diện, cả online và bàn một máy. Quản trò được bật lại trước chia vai. Ván đang chơi giữ settings đã lưu. Caller engine/API cũ không gửi settings vẫn giữ mặc định tương thích riêng của engine; giao diện luôn gửi boolean đã chọn.

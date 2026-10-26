@@ -50,3 +50,46 @@ Xét điều kiện thắng tại các mốc luật cho phép, gồm phe/điều
 ## Ngoại lệ cần hỗ trợ
 
 Rớt mạng, gửi trùng, tải lại, đến muộn, đổi thiết bị, quản trò mất kết nối, mất âm thanh, người rời ván và sửa hành động. Việc khôi phục không được tiết lộ vai cho người chỉ biết mã phòng. Thao tác sửa sau khi thông tin đã lộ phải cảnh báo giới hạn hoàn tác.
+
+## Trình bày cập nhật — 2026-10-26 (D48–D50)
+
+- Trang đầu chọn tab Tạo phòng hoặc Vào phòng; hỗ trợ Enter gửi form.
+- Lobby quản trò: mã phòng và công cụ sao chép, Làm mới, Vai, Cài đặt ở thanh trên; bàn chơi ở vùng chính. Bộ vai hiện tóm tắt và số thẻ/người; bấm bút để chỉnh, Gợi ý nằm trong pop-up. Bắt đầu chỉ bật khi đủ ít nhất 3 người và đúng số thẻ.
+- Trong ván: vùng hành động riêng cạnh bàn trên desktop, phía trên bàn trên mobile. Khi chọn hành động/chat, bàn thu gọn để nhường chỗ; vai cá nhân, tin riêng, diễn biến/sổ tay mở khi bấm. Pop-up giữ focus và trở lại nút mở khi đóng.
+- Sau công bố sáng, X đỏ ở những người trong morning công khai mới nhất; người chết từ trước mờ. Giữ dấu này đến lần công bố sáng kế tiếp (kể cả trong đêm đang diễn ra); không dựa vào kết quả còn bí mật. Sáng không ai chết thì không còn X.
+
+## Trước đêm đầu — D52–D54 (2026-10-26)
+
+1. Quản trò chỉnh bộ vai và bấm Lưu bộ vai; mọi máy xem đúng các vai/số lượng đó qua nút Vai. Chỉnh sửa chưa lưu là bản nháp, không chia bài được.
+2. Quản trò bấm Chia vai: tạo ván, chia bí mật nhưng chưa cho chạy hành động đêm.
+3. Mỗi người đọc ảnh/mô tả nguyên văn cards.json và bấm Tôi đã đọc và sẵn sàng. Tab quản trò làm sáng ghế người đó và cập nhật Sẵn sàng x/y.
+4. Khi đủ y/y, quản trò bấm Bắt đầu. Máy chủ kiểm mọi người đã xác nhận và đúng revision rồi mới mở bước đầu tiên. Phiên cũ có ván đang chơi tiếp tục luật/schema Game cũ, không bị bắt về bước đọc vai.
+
+## Đổi máy và dùng chung máy — D55–D58
+
+- Đổi máy ở chế độ thường: Vào phòng → mã phòng + tên cũ → tiếp tục cùng người/vai; máy cũ không còn quyền. Quản trò cũng có thể tiếp tục theo tên quản trò.
+- Lobby quản trò: Thêm người → nhập tên người không có điện thoại. Người đó tham gia ghế và bộ vai như mọi người.
+- Sau Chia vai: mục Dùng máy quản trò liệt kê các người chưa xem vai. Mở một người → chỉ hiện vai/người đó → xác nhận → đóng và trở về quản trò. Lặp cho người tiếp theo; người online tự xác nhận trên máy riêng.
+- Trong đêm: người dùng chung máy được gọi tự mở player form trên máy quản trò. Quản trò bấm thức/chọn/gửi theo cử chỉ của người chơi; gửi xong về bảng quản trò. Nếu quay về thủ công thì không tự mở lại cùng bước, có thể chọn người đó trong danh sách để tiếp tục/sửa. Người online không bị điều khiển qua proxy.
+- Debug: rời tab quản trò xóa phòng trong RAM sau grace 2 giây. Reload nhanh hủy đóng; mất tín hiệu thoát có lease 90 giây. Chế độ thường giữ phòng theo thời hạn cũ.
+- Chi tiết thẻ: X trở lại danh sách, X ở danh sách đóng pop-up.
+
+## Quản lý bằng avatar — D59
+
+Bấm (không kéo) avatar ở máy quản trò để mở menu cạnh ghế. Chọn Chuyển sang offline khi máy người đó hết pin; máy cũ bị ngắt, người đó giữ vai/ready/lựa chọn hiện tại và vào luồng thao tác thay. Người đã offline có tùy chọn này vô hiệu.
+
+Chọn Rời khỏi trò chơi → xác nhận ngay trong pop-up. Trước chia xóa ghế; sau chia giữ ghế mờ có chữ Đã rời, không đưa vào lượt/target/quorum và không cho tiếp tục phiên cũ. Chỉ rút người đó, không chạy hiệu ứng chết; nếu người cuối của một phe rút thì xét kết thúc theo người còn lại, chờ công bố nếu còn đêm đã xử lý chưa công khai. Kéo avatar vẫn xếp ghế trong lobby và không bật menu.
+
+## Bổ sung ngày 2026-10-26 — D60
+
+- Diễn biến: Đêm N: [tên] đã chết; Sáng N: [tên] bị vote chết; không có người chết ghi Không có ai chết.
+- Tiên tri xem kết quả trong popup lớn: Sói nền đỏ, không phải Sói nền xanh; bấm Đã rõ, kể cả khi dùng máy quản trò.
+- Cài đặt trước chia vai: tổng số ngày được không loại ai, 0–30 (mặc định 0). Mỗi phán quyết trống trừ một lượt; hết lượt phải chọn người. Giữ ngoại lệ vai Hoàng tử. Ván cũ giữ luật cũ; ván mới v12/schema7. Phiếu vẫn ngoài app.
+
+## Bàn một máy, không có Internet (D61)
+
+Tạo phòng → chọn Offline → Tạo bàn → Thêm người offline → chọn/Lưu bộ vai → Cài đặt (tối giản mặc định bật) → Chia vai. Quản trò có thể đưa máy lần lượt xem vai hoặc bắt đầu ngay, không chờ ready từng máy.
+
+Ban đêm tối giản: mỗi vai có form chọn và một nút Xác nhận, tự sang vai tiếp. Tiên tri dừng ở kết quả tới Đã rõ · Vai tiếp. Bầy Sói chỉ có một form chung cho các Sói thực sự đang được hành động; vẫn tuân theo Sói ngủ, bệnh bầy, kỹ năng cắn đặc biệt. Vai vắng tự bỏ qua; tới review tự tổng kết, quản trò bấm công bố. Ngày và phản ứng Thợ săn giữ quy trình luật cũ. Tắt tối giản thì giữ luồng thao tác từng người bằng máy quản trò.
+
+Tải lại `?local=...` giữ nguyên bước, hành động và kết quả chờ; trang đầu có Tiếp tục bàn đã lưu trên máy. Mở bản build một lần có mạng để trình duyệt tải và lưu sẵn app. Không xóa dữ liệu trình duyệt nếu còn cần bản lưu.

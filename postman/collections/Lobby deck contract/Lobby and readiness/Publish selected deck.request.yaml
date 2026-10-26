@@ -1,0 +1,35 @@
+$kind: http-request
+name: "Publish selected deck"
+order: 500
+method: POST
+url: "{{baseUrl}}/api/room"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{lobbyTokenowner}}"
+body:
+  type: json
+  content: |-
+    {
+      "type": "setDeck",
+      "requestId": "publish-deck",
+      "code": "{{lobbyCode}}",
+      "expectedRevision": {{publishRevision}},
+      "roles": [
+        "wolf",
+        "witch",
+        "villager"
+      ]
+    }
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      pm.collectionVariables.set('publishRevision',pm.collectionVariables.get('lobbyRevision'));
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('HTTP 200', () => pm.response.to.have.status(200));
+      pm.collectionVariables.set('lobbyRevision', pm.response.json().room.revision);
+      pm.test('No assignment before deal',()=>pm.expect(pm.response.json().game).to.eql(null));

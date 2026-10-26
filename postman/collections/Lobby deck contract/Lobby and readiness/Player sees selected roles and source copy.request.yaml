@@ -1,0 +1,18 @@
+$kind: http-request
+name: "Player sees selected roles and source copy"
+order: 600
+method: GET
+url: "{{baseUrl}}/api/room?code={{lobbyCode}}"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{lobbyTokenA}}"
+queryParams:
+  code: "{{lobbyCode}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('HTTP 200', () => pm.response.to.have.status(200));
+      pm.test('Selected only and verbatim Witch description',()=>{const s=pm.response.json();pm.expect(s.deck).to.eql({wolf:1,witch:1,villager:1});pm.expect(s.game).to.eql(null);pm.expect(s.catalog.find(r=>r.id==='witch').description).to.eql("Phù thủy sẽ có hai bình thuốc. Một bình thuốc để cứu 1 người và một bình thuốc để giết 1 người. Trong đêm, Quản trò sẽ cho Phù Thủy biết ai sẽ bị giết trong đêm và hỏi xem Phù thủy có muốn sử dụng quyền năng nào hay không. Có thể dùng cả hai bình thuốc này vào cùng 1 đêm, nhưng mỗi bình chỉ dùng một lần.");});

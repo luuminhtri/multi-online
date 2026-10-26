@@ -1,0 +1,19 @@
+$kind: http-request
+name: "Read all acknowledgements"
+order: 1100
+method: GET
+url: "{{baseUrl}}/api/room?code={{sharedCode}}"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{sharedTokenowner}}"
+queryParams:
+  code: "{{sharedCode}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('HTTP 200',()=>pm.response.to.have.status(200));
+      pm.collectionVariables.set('sharedRevision',pm.response.json().room.revision);
+      pm.test('3 of 3 ready',()=>pm.expect(pm.response.json().room.readyPlayerIds.length).to.eql(3));

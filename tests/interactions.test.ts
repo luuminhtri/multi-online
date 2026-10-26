@@ -14,7 +14,7 @@ function act(g: Game, id: string, action: Action): Game {
 }
 function game(extra: Record<string, Role> = {}) {
   const roles: Record<string, Role> = { w: 'wolf', a: 'villager', b: 'villager', z: 'villager', ...extra };
-  return createGame('interactions', Object.entries(roles).map(([id, role]) => ({ id, name: id, role })));
+  return createGame('interactions', Object.entries(roles).map(([id, role]) => ({ id, name: id, role })), { witchSeesBite: true, skipVoteDays: 30 });
 }
 function pair(g: Game, x: string, y: string): Game {
   return cmd(act(g, 'c', { type: 'pair', targets: [x, y] }), { type: 'advance' });
@@ -165,7 +165,7 @@ test('a simultaneous final batch with no legal hunter target finishes as a draw'
     { id: 'w', name: 'w', role: 'wolf' }, { id: 'c', name: 'c', role: 'cupid' },
     { id: 'h', name: 'h', role: 'hunter' }, { id: 'd', name: 'd', role: 'doppelganger' },
     { id: 't', name: 't', role: 'witch' },
-  ]);
+  ], { witchSeesBite: true, skipVoteDays: 30 });
   g = mimic(pair(g, 'd', 't'), 'h');
   g = dawn(g, 'h');
   g = cmd(act(g, 'h', { type: 'shoot', target: 'c' }), { type: 'advance' });

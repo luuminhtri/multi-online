@@ -1,0 +1,21 @@
+$kind: http-request
+name: "Deleted after exit grace"
+order: 500
+method: GET
+url: "{{debugUrl}}/api/room?code={{sharedCode}}"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{sharedTokenA}}"
+queryParams:
+  code: "{{sharedCode}}"
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      setTimeout(()=>{},2300);
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Room removed',()=>pm.response.to.have.status(404));

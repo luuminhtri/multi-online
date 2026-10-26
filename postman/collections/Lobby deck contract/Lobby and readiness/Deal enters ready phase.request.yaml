@@ -1,0 +1,31 @@
+$kind: http-request
+name: "Deal enters ready phase"
+order: 900
+method: POST
+url: "{{baseUrl}}/api/room"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{lobbyTokenowner}}"
+body:
+  type: json
+  content: |-
+    {
+      "type": "start",
+      "requestId": "deal",
+      "code": "{{lobbyCode}}",
+      "expectedRevision": {{lobbyRevision}},
+      "roles": [
+        "wolf",
+        "witch",
+        "villager"
+      ]
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('HTTP 200', () => pm.response.to.have.status(200));
+      pm.collectionVariables.set('lobbyRevision', pm.response.json().room.revision);
+      pm.test('Wait for readiness',()=>{pm.expect(pm.response.json().room.phase).to.eql('ready');pm.expect(pm.response.json().room.readyPlayerIds).to.eql([]);});pm.collectionVariables.set('lobbyStep',pm.response.json().game.stepId);

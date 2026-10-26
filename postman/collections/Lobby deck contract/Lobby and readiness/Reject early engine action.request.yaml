@@ -1,0 +1,27 @@
+$kind: http-request
+name: "Reject early engine action"
+order: 1100
+method: POST
+url: "{{baseUrl}}/api/room"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{lobbyTokenowner}}"
+body:
+  type: json
+  content: |-
+    {
+      "type": "command",
+      "requestId": "early-command",
+      "code": "{{lobbyCode}}",
+      "stepId": "{{lobbyStep}}",
+      "command": {
+        "type": "advance"
+      }
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Game cannot run yet',()=>{pm.response.to.have.status(409);pm.expect(pm.response.json().error.code).to.eql('GAME_AWAITING_READY');});

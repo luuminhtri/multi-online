@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Ma Sói room API",
-    "version": "0.3.0",
+    "version": "0.8.0",
     "description": "Same-origin Node server for guest sessions. Browser-generated 256-bit capability sent only in Authorization. Server stores its SHA-256 hash and validates membership. Room data is private and committed with compare-and-swap. No Supabase keys in the browser. No deployment performed."
   },
   "servers": [
@@ -33,7 +33,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "pattern": "^[A-Z2-9]{6}$"
+              "pattern": "^(?:[0-9]{6}|[A-Z2-9]{6})$"
             }
           },
           {
@@ -42,6 +42,14 @@
             "schema": {
               "const": "1"
             }
+          },
+          {
+            "name": "offlinePlayerId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Moderator-only scoped snapshot for one offline member. No moderator UI/data in this returned projection."
           }
         ],
         "responses": {
@@ -155,7 +163,7 @@
       },
       "post": {
         "operationId": "mutateRoom",
-        "summary": "Create/join/reorder/deal or submit an authenticated core command",
+        "summary": "Create, join, reorder, publish lobby deck, deal or submit a core command",
         "requestBody": {
           "required": true,
           "content": {
@@ -176,6 +184,30 @@
                   },
                   {
                     "$ref": "#/components/schemas/Command"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SetDeck"
+                  },
+                  {
+                    "$ref": "#/components/schemas/Ready"
+                  },
+                  {
+                    "$ref": "#/components/schemas/Begin"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AddOffline"
+                  },
+                  {
+                    "$ref": "#/components/schemas/OfflineReady"
+                  },
+                  {
+                    "$ref": "#/components/schemas/OfflineCommand"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SetOffline"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RemoveMember"
                   }
                 ]
               }
@@ -264,6 +296,32 @@
             }
           }
         }
+      },
+      "delete": {
+        "operationId": "closeDebugRoom",
+        "summary": "Close a debug moderator room",
+        "description": "Only debug server and owner. Schedules in-memory deletion after a 2-second reload grace; an owner read cancels it. 90-second owner heartbeat lease handles abrupt exits. Normal rooms cannot be deleted by this endpoint. Debug data never uses persistent storage.",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Debug close scheduled"
+          },
+          "403": {
+            "description": "Moderator required"
+          },
+          "404": {
+            "description": "Not debug mode or no room"
+          }
+        }
       }
     }
   },
@@ -311,7 +369,7 @@
           },
           "code": {
             "type": "string",
-            "pattern": "^[A-Z2-9]{6}$"
+            "pattern": "^(?:[0-9]{6}|[A-Z2-9]{6})$"
           },
           "name": {
             "type": "string",
@@ -325,7 +383,8 @@
           "code",
           "name"
         ],
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "Normal mode: room code + same normalized name resumes existing player or moderator on a new device, rotating the capability and invalidating the old device; preserves identity/role/actions/readiness. Unknown name cannot join a dealt room. Debug mode retains duplicate-name rejection."
       },
       "Reorder": {
         "type": "object",
@@ -339,7 +398,7 @@
           },
           "code": {
             "type": "string",
-            "pattern": "^[A-Z2-9]{6}$"
+            "pattern": "^(?:[0-9]{6}|[A-Z2-9]{6})$"
           },
           "expectedRevision": {
             "type": "integer",
@@ -376,7 +435,7 @@
           },
           "code": {
             "type": "string",
-            "pattern": "^[A-Z2-9]{6}$"
+            "pattern": "^(?:[0-9]{6}|[A-Z2-9]{6})$"
           },
           "expectedRevision": {
             "type": "integer",
@@ -401,7 +460,8 @@
           "expectedRevision",
           "roles"
         ],
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "Deal secret roles and enter ready phase. Does not permit night actions yet. Each player must send ready, then moderator sends begin."
       },
       "Command": {
         "type": "object",
@@ -415,7 +475,7 @@
           },
           "code": {
             "type": "string",
-            "pattern": "^[A-Z2-9]{6}$"
+            "pattern": "^(?:[0-9]{6}|[A-Z2-9]{6})$"
           },
           "stepId": {
             "type": "string",
@@ -423,7 +483,7 @@
           },
           "command": {
             "type": "object",
-              "description": "Validated core command: wake, act (all supported abilities), chat (pack-only, v10/schema5 games), advance, resolve, publish, verdict or nextNight. Sender identity is derived from Bearer token; actor/principal fields are forbidden."
+            "description": "Validated core command: wake, act (all supported abilities), chat (pack-only), dayPhase start/next (day clocks, v11/schema6 games), advance, resolve, publish, verdict or nextNight. Sender identity is derived from Bearer token; actor/principal fields are forbidden."
           }
         },
         "required": [
@@ -474,12 +534,13 @@
           "viewVersion",
           "storage",
           "serverTime",
-          "catalog"
+          "catalog",
+          "deck"
         ],
         "properties": {
           "room": {
             "type": "object",
-            "description": "Code, phase, expiry, public member IDs/names/seats. Revision is visible only to moderator or while in lobby; null for players during a game."
+            "description": "Code, phase, expiry, public member IDs/names/seats. Revision is visible only to moderator or while in lobby; null for players during a game. Phase is lobby, ready, playing, or ended. readyPlayerIds is public and contains only acknowledgements; does not disclose roles. Members have offline:boolean. debug:boolean is set by the server. Room schema 3 supports shared-device membership, legacy 1/2 migrate on write. Members have optional left status; ready quorum excludes left members. Room schema 4 preserves v1/v2/v3 snapshots with migration on write."
           },
           "me": {
             "type": "object",
@@ -517,14 +578,41 @@
               "type": "object",
               "description": "Supported role IDs, names, descriptions and optional card image URL from the source deck; no assigned roles.",
               "properties": {
-                "id": { "type": "string" },
-                "name": { "type": "string" },
-                "description": { "type": "string" },
-                "image": { "type": "string", "nullable": true }
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Verbatim Description from cards.json via stable catalog source mapping; display text does not redefine executable rules."
+                },
+                "image": {
+                  "type": "string",
+                  "nullable": true
+                }
               },
-              "required": ["id", "name", "description", "image"],
+              "required": [
+                "id",
+                "name",
+                "description",
+                "image"
+              ],
               "additionalProperties": false
             }
+          },
+          "deck": {
+            "type": "object",
+            "description": "Public selected composition (role ID to count), including lobby before dealing. Empty object when not selected. Never exposes which player holds which role. Legacy room schema 1 reads an empty lobby deck until the first write migrates it to schema 2.",
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "controller": {
+            "const": "moderator",
+            "description": "Present only on a moderator-scoped offline player snapshot. Credentials remain moderator-only."
           }
         },
         "additionalProperties": false
@@ -537,11 +625,293 @@
             "type": "boolean",
             "default": true,
             "description": "Moderator chooses before dealing. True reveals only bites not blocked by Guard while a heal potion remains. False hides all victim identities; using a heal spends it even with no victim and saves at most one unprotected bite target, first in seat order."
+          },
+          "dayTimers": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Day phase clocks in seconds (5-3600), chosen by the moderator before dealing and fixed for the game. Clocks run on server time and only signal; the moderator transitions every phase manually.",
+            "properties": {
+              "discussion": {
+                "type": "integer",
+                "minimum": 5,
+                "maximum": 3600
+              },
+              "nomination": {
+                "type": "integer",
+                "minimum": 5,
+                "maximum": 3600
+              },
+              "defense": {
+                "type": "integer",
+                "minimum": 5,
+                "maximum": 3600
+              },
+              "finalvote": {
+                "type": "integer",
+                "minimum": 5,
+                "maximum": 3600
+              }
+            },
+            "required": [
+              "discussion",
+              "nomination",
+              "defense",
+              "finalvote"
+            ]
+          },
+          "skipVoteDays": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 30,
+            "default": 0,
+            "description": "Total number of mornings allowed to end without an execution, chosen before dealing. Each null verdict consumes one allowance. At zero remaining, null verdict returns VOTE_REQUIRED (409). Legacy games through v11 keep unlimited skips."
           }
         },
         "required": [
           "witchSeesBite"
         ]
+      },
+      "SetDeck": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "const": "setDeck"
+          },
+          "requestId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,128}$"
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^(?:[0-9]{6}|[A-Z2-9]{6})$"
+          },
+          "expectedRevision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 0,
+            "maxItems": 30
+          }
+        },
+        "required": [
+          "type",
+          "requestId",
+          "code",
+          "expectedRevision",
+          "roles"
+        ],
+        "additionalProperties": false,
+        "description": "Moderator publishes lobby deck composition before dealing. Empty and incomplete decks allowed (max 30 supported roles); no assignment is made. Lobby-only, revision checked, idempotent retry."
+      },
+      "Ready": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "const": "ready"
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^(?:[0-9]{6}|[A-Z2-9]{6})$"
+          },
+          "requestId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,128}$"
+          }
+        },
+        "required": [
+          "type",
+          "code",
+          "requestId"
+        ],
+        "additionalProperties": false,
+        "description": "Player acknowledges own assigned role. Only before moderator begins. Server records readiness from authenticated identity, never client playerId."
+      },
+      "Begin": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "const": "begin"
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^(?:[0-9]{6}|[A-Z2-9]{6})$"
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "expectedRevision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "type",
+          "code",
+          "requestId",
+          "expectedRevision"
+        ],
+        "additionalProperties": false,
+        "description": "Moderator begins only once all assigned players have acknowledged. Before this, engine commands are rejected with GAME_AWAITING_READY."
+      },
+      "AddOffline": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "const": "addOffline"
+          },
+          "requestId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,128}$"
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^(?:[0-9]{6}|[A-Z2-9]{6})$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "expectedRevision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "type",
+          "requestId",
+          "code",
+          "name",
+          "expectedRevision"
+        ],
+        "additionalProperties": false,
+        "description": "Moderator adds a shared-device player in lobby; member counts toward deck/ready quorum."
+      },
+      "OfflineReady": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "const": "offlineReady"
+          },
+          "requestId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,128}$"
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^(?:[0-9]{6}|[A-Z2-9]{6})$"
+          },
+          "playerId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "requestId",
+          "code",
+          "playerId"
+        ],
+        "additionalProperties": false,
+        "description": "Moderator acknowledges the shown role of an offline member; cannot proxy an online member."
+      },
+      "OfflineCommand": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "const": "offlineCommand"
+          },
+          "requestId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,128}$"
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^(?:[0-9]{6}|[A-Z2-9]{6})$"
+          },
+          "playerId": {
+            "type": "string"
+          },
+          "stepId": {
+            "type": "string"
+          },
+          "command": {
+            "type": "object",
+            "description": "Validated core command: wake, act (all supported abilities), chat (pack-only), dayPhase start/next (day clocks, v11/schema6 games), advance, resolve, publish, verdict or nextNight. Sender identity is derived from Bearer token; actor/principal fields are forbidden."
+          }
+        },
+        "required": [
+          "type",
+          "requestId",
+          "code",
+          "playerId",
+          "stepId",
+          "command"
+        ],
+        "additionalProperties": false,
+        "description": "Moderator submits as an offline player. Same engine principal, step, targets and retry rules as online; no moderator commands through this proxy."
+      },
+      "SetOffline": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "const": "setOffline"
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "expectedRevision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "playerId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "requestId",
+          "code",
+          "expectedRevision",
+          "playerId"
+        ],
+        "additionalProperties": false,
+        "description": "Moderator converts an existing active member to shared-device control, preserving identity, role, readiness and actions. Revokes the prior device. Allowed after dealing and during a turn."
+      },
+      "RemoveMember": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "const": "removeMember"
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "expectedRevision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "playerId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "requestId",
+          "code",
+          "expectedRevision",
+          "playerId"
+        ],
+        "additionalProperties": false,
+        "description": "Moderator withdraws a player. In lobby removes the membership; after dealing retains the seat, marks left, excludes the player and ready quorum without death chains, Hunter, bombs, inheritance or wolf-death effects. Public left event. Settles winner without exposing unresolved night deaths. Cannot resume a withdrawn in-game identity by name."
       }
     }
   }

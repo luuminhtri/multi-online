@@ -1,0 +1,23 @@
+$kind: http-request
+name: "Online A acknowledges"
+order: 1000
+method: POST
+url: "{{baseUrl}}/api/room"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{sharedTokenA}}"
+body:
+  type: json
+  content: |-
+    {
+      "type": "ready",
+      "requestId": "ready-a",
+      "code": "{{sharedCode}}"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('HTTP 200',()=>pm.response.to.have.status(200));

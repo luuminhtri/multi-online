@@ -1,0 +1,31 @@
+{
+  "$kind": "http-request",
+  "name": "Reject budget 1.5",
+  "order": 1100,
+  "method": "POST",
+  "url": "{{baseUrl}}/api/room",
+  "auth": {
+    "type": "noauth"
+  },
+  "headers": [
+    {
+      "key": "Content-Type",
+      "value": "application/json"
+    },
+    {
+      "key": "Authorization",
+      "value": "Bearer {{dayToken}}"
+    }
+  ],
+  "scripts": [
+    {
+      "type": "afterResponse",
+      "language": "text/javascript",
+      "code": "pm.test('HTTP 400',()=>pm.response.to.have.status(400));pm.test('INVALID_SETTINGS',()=>pm.expect(pm.response.json().error.code).eql('INVALID_SETTINGS'));"
+    }
+  ],
+  "body": {
+    "type": "json",
+    "content": "{\"code\": \"{{voteCode}}\", \"requestId\": \"req-11\", \"type\": \"start\", \"expectedRevision\": {{voteRevision}}, \"roles\": [\"wolf\", \"guard\", \"seer\", \"villager\", \"villager\", \"villager\", \"villager\"], \"settings\": {\"witchSeesBite\": true, \"skipVoteDays\": 1.5}}"
+  }
+}

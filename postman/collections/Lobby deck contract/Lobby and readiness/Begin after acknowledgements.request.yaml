@@ -1,0 +1,26 @@
+$kind: http-request
+name: "Begin after acknowledgements"
+order: 1600
+method: POST
+url: "{{baseUrl}}/api/room"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{lobbyTokenowner}}"
+body:
+  type: json
+  content: |-
+    {
+      "type": "begin",
+      "requestId": "begin",
+      "code": "{{lobbyCode}}",
+      "expectedRevision": {{lobbyRevision}}
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('HTTP 200', () => pm.response.to.have.status(200));
+      pm.collectionVariables.set('lobbyRevision', pm.response.json().room.revision);
+      pm.test('Playing',()=>pm.expect(pm.response.json().room.phase).to.eql('playing'));

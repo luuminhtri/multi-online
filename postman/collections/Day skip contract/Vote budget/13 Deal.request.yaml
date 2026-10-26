@@ -1,0 +1,31 @@
+{
+  "$kind": "http-request",
+  "name": "Deal",
+  "order": 1300,
+  "method": "POST",
+  "url": "{{baseUrl}}/api/room",
+  "auth": {
+    "type": "noauth"
+  },
+  "headers": [
+    {
+      "key": "Content-Type",
+      "value": "application/json"
+    },
+    {
+      "key": "Authorization",
+      "value": "Bearer {{dayToken}}"
+    }
+  ],
+  "scripts": [
+    {
+      "type": "afterResponse",
+      "language": "text/javascript",
+      "code": "pm.test('HTTP 200',()=>pm.response.to.have.status(200));const s=pm.response.json();if(s.room){pm.collectionVariables.set('voteCode',s.room.code);if(s.room.revision!==null)pm.collectionVariables.set('voteRevision',String(s.room.revision));if(s.game)pm.collectionVariables.set('voteStep',s.game.stepId??s.game.turn?.stepId??'');} pm.test('v12 schema7 with budget 1',()=>{pm.expect(s.game.rulesVersion).eql('classic-core-v12');pm.expect(s.game.schemaVersion).eql(7);pm.expect(s.game.settings.skipVoteDays).eql(1)});s.game.players.forEach((p,i)=>{pm.collectionVariables.set('vote_p'+i,p.id);if(p.role!=='villager')pm.collectionVariables.set('vote_'+p.role,p.id)});s.game.players.filter(p=>p.role==='villager').forEach((p,i)=>pm.collectionVariables.set('vote_v'+i,p.id));"
+    }
+  ],
+  "body": {
+    "type": "json",
+    "content": "{\"code\": \"{{voteCode}}\", \"requestId\": \"req-13\", \"type\": \"start\", \"expectedRevision\": {{voteRevision}}, \"roles\": [\"wolf\", \"guard\", \"seer\", \"villager\", \"villager\", \"villager\", \"villager\"], \"settings\": {\"witchSeesBite\": true, \"skipVoteDays\": 1}}"
+  }
+}

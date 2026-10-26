@@ -1,0 +1,31 @@
+{
+  "$kind": "http-request",
+  "name": "Refuse exhausted skip",
+  "order": 5600,
+  "method": "POST",
+  "url": "{{baseUrl}}/api/room",
+  "auth": {
+    "type": "noauth"
+  },
+  "headers": [
+    {
+      "key": "Content-Type",
+      "value": "application/json"
+    },
+    {
+      "key": "Authorization",
+      "value": "Bearer {{dayToken}}"
+    }
+  ],
+  "scripts": [
+    {
+      "type": "afterResponse",
+      "language": "text/javascript",
+      "code": "pm.test('HTTP 409',()=>pm.response.to.have.status(409));pm.test('VOTE_REQUIRED',()=>pm.expect(pm.response.json().error.code).eql('VOTE_REQUIRED'));"
+    }
+  ],
+  "body": {
+    "type": "json",
+    "content": "{\"code\": \"{{voteCode}}\", \"requestId\": \"req-56\", \"type\": \"command\", \"stepId\": \"{{voteStep}}\", \"command\": {\"type\": \"verdict\", \"target\": null}}"
+  }
+}

@@ -1,0 +1,29 @@
+$kind: http-request
+name: "Create lobby"
+order: 100
+method: POST
+url: "{{baseUrl}}/api/room"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{lobbyTokenowner}}"
+body:
+  type: json
+  content: |-
+    {
+      "type": "create",
+      "requestId": "create-lobby",
+      "name": "Postman lobby"
+    }
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      const random=()=> (pm.variables.replaceIn('{{$guid}}')+pm.variables.replaceIn('{{$guid}}')).replace(/-/g,''); for(const id of ['owner','A','B','C']) pm.collectionVariables.set('lobbyToken'+id, random());
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('HTTP 200', () => pm.response.to.have.status(200));
+      pm.collectionVariables.set('lobbyCode',pm.response.json().room.code);
+      pm.collectionVariables.set('lobbyRevision', pm.response.json().room.revision);

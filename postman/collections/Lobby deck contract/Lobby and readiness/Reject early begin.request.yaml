@@ -1,0 +1,24 @@
+$kind: http-request
+name: "Reject early begin"
+order: 1000
+method: POST
+url: "{{baseUrl}}/api/room"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{lobbyTokenowner}}"
+body:
+  type: json
+  content: |-
+    {
+      "type": "begin",
+      "requestId": "early",
+      "code": "{{lobbyCode}}",
+      "expectedRevision": {{lobbyRevision}}
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Not ready',()=>{pm.response.to.have.status(409);pm.expect(pm.response.json().error.code).to.eql('PLAYERS_NOT_READY');});

@@ -1,0 +1,7 @@
+.storage { font: 10px/1.6 ui-monospace, monospace; letter-spacing: .12em; color: var(--muted); padding-bottom: 6px; }
+/* Chế độ thử 1 tab */
+.test-bar { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; gap: 6px; overflow-x: auto; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; margin: 6px 0; }
+.test-bar > span { font: 9px ui-monospace, monospace; letter-spacing: .1em; color: var(--accent); flex: 0 0 auto; }
+.test-bar button { min-height: 34px; min-width: 38px; padding: 4px 12px; margin: 0; font-size: 13px; flex: 0 0 auto; background: transparent; }
+.test-bar button.active { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.test-bar button.quiet { border: 0; margin-left: auto; text-decoration: underline; }

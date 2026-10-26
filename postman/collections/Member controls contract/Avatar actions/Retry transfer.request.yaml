@@ -1,0 +1,26 @@
+$kind: http-request
+name: "Retry transfer"
+order: 1800
+method: POST
+url: "{{baseUrl}}/api/room"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{memberTokenowner}}"
+body:
+  type: json
+  content: |-
+    {
+      "type": "setOffline",
+      "requestId": "battery-empty",
+      "code": "{{memberCode}}",
+      "expectedRevision": {{transferRevision}},
+      "playerId": "{{memberguardId}}"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('HTTP 200',()=>pm.response.to.have.status(200));
+      pm.collectionVariables.set('memberRevision',pm.response.json().room.revision);

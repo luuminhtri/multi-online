@@ -9,7 +9,7 @@ import type { Action, Command, Game, Role } from '../src/engine/types.ts';
 
 function make(extra: Record<string, Role> = {}) {
   return createGame('expanded', Object.entries({ w: 'wolf', a: 'villager', b: 'villager', c: 'villager', e: 'villager', f: 'villager', ...extra } as Record<string, Role>)
-    .map(([id, role]) => ({ id, name: id, role })));
+    .map(([id, role]) => ({ id, name: id, role })), { witchSeesBite: true, skipVoteDays: 30 });
 }
 function cmd(g: Game, command: Command, id?: string): Game {
   return dispatch(g, id ? { kind: 'player', playerId: id } : { kind: 'moderator' },
@@ -97,7 +97,7 @@ test('wolf-man shares pack and consensus but cannot be bitten by any wolf', () =
 });
 
 test('a wolf-man alone can start the game and survives normal-wolf elimination', () => {
-  let g = createGame('wm', [{ id: 'wm', name: 'wm', role: 'wolf_man' }, { id: 'a', name: 'a', role: 'villager' }, { id: 'b', name: 'b', role: 'villager' }]);
+  let g = createGame('wm', [{ id: 'wm', name: 'wm', role: 'wolf_man' }, { id: 'a', name: 'a', role: 'villager' }, { id: 'b', name: 'b', role: 'villager' }], { witchSeesBite: true, skipVoteDays: 30 });
   g = dawn(g, { bite: 'a' });
   assert.equal(g.winner, 'wolves');
   g = dawn(make({ wm: 'wolf_man' }));
@@ -198,7 +198,7 @@ test('Prince publicly reveals and survives verdict repeatedly; poison and heartb
 
 test('bomber uses nearest surviving circular seats and excludes already eliminated seats', () => {
   const roles: Role[] = ['wolf', 'villager', 'mad_bomber', 'villager', 'villager', 'villager', 'villager'];
-  let g = createGame('seats', roles.map((role, i) => ({ id: String(i), name: String(i), role })));
+  let g = createGame('seats', roles.map((role, i) => ({ id: String(i), name: String(i), role })), { witchSeesBite: true, skipVoteDays: 30 });
   assert.deepEqual(livingNeighbors(g, '2'), ['1', '3']);
   g = dawn(g, { bite: '1' });
   g = cmd(g, { type: 'verdict', target: '2' });
@@ -214,7 +214,7 @@ test('bomb cascades into lover death and hunter reaction before checking winner'
   let g = createGame('chain', [
     ['w', 'wolf'], ['h', 'hunter'], ['bomb', 'mad_bomber'], ['a', 'villager'],
     ['b', 'villager'], ['c', 'villager'], ['cu', 'cupid'],
-  ].map(([id, role]) => ({ id, name: id, role: role as Role })));
+  ].map(([id, role]) => ({ id, name: id, role: role as Role })), { witchSeesBite: true, skipVoteDays: 30 });
   g = dawn(g, { bite: 'bomb' });
   assert.deepEqual(new Set(g.publicDead), new Set(['bomb', 'h', 'a', 'b']));
   assert.equal(g.activeHunterId, 'h');
@@ -227,7 +227,7 @@ test('mimic inherits new role after bomber secondary death and joins correct nex
   let g = createGame('inherit-bomb', [
     ['w', 'wolf'], ['a', 'villager'], ['bomb', 'mad_bomber'], ['m', 'mystic_seer'],
     ['b', 'villager'], ['d', 'doppelganger'], ['e', 'villager'],
-  ].map(([id, role]) => ({ id, name: id, role: role as Role })));
+  ].map(([id, role]) => ({ id, name: id, role: role as Role })), { witchSeesBite: true, skipVoteDays: 30 });
   g = dawn(g, { bite: 'bomb', actions: { d: { type: 'mimic', target: 'm' } } });
   assert.equal(p(g, 'd').role, 'mystic_seer');
   assert.equal(p(g, 'd').alive, true);
@@ -242,7 +242,7 @@ test('all 27 runtime roles complete 100 seeded games with automatic death chains
     const roster = (Object.keys(ROLES) as Role[]).map((role, i) => ({ id: `p${i}`, name: `n${i}`, role }));
     // Shuffle seating as well as actions; bomber must not depend on role ordering.
     for (let i = roster.length - 1; i > 0; i--) { const j = pick(Array.from({ length: i + 1 }, (_, k) => k)); [roster[i], roster[j]] = [roster[j], roster[i]]; }
-    let g = createGame(`seed-${seed}`, roster);
+    let g = createGame(`seed-${seed}`, roster, { witchSeesBite: true, skipVoteDays: 30 });
     for (let n = 0; g.step !== 'ended' && n < 800; n++) {
       const input = g, before = structuredClone(g);
       const privateBefore = new Map(g.players.map(p => [p.id, playerView(g, p.id)]));

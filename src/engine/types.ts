@@ -36,6 +36,7 @@ export type Command =
   | { type: 'wake' }
   | { type: 'act'; action: Action }
   | { type: 'chat'; text: string }
+  | { type: 'dayPhase'; action: 'start' | 'next' }
   | { type: 'advance' }
   | { type: 'resolve' }
   | { type: 'publish' }
@@ -56,9 +57,10 @@ export interface GameEvent {
   data: Record<string, unknown>;
 }
 export interface Game {
-  // v8/schema3 and v9/schema4 snapshots retain their original rules; new games
-  // use v10/schema5 with pack chat. Chat is optional because v9 games predate it.
-  schemaVersion: 3 | 4 | 5;
+  // v8/schema3 through v10/schema5 snapshots retain their original rules; new
+  // games use v12/schema7 (day clocks since v11, mandatory-vote budget since
+  // v12). Older optional fields exist only in later schemas.
+  schemaVersion: 3 | 4 | 5 | 6 | 7;
   settings?: GameSettings;
   id: string;
   rulesVersion: string;
@@ -70,6 +72,10 @@ export interface Game {
   awake: string[];
   actions: Record<string, Action>;
   chat?: ChatMessage[];
+  dayPhase?: DayPhase | null;
+  dayPhaseEndsAt?: number | null;
+  // No-execution mornings used so far (v12 budget from settings.skipVoteDays).
+  daySkipsUsed?: number;
   wolfDeathOccurred: boolean;
   wolvesBlockedNight: number | null;
   // biteTarget is a compatibility alias for the first committed target.
@@ -95,7 +101,10 @@ export interface Game {
   events: GameEvent[];
   receipts: Record<string, { fingerprint: string; revision: number }>;
 }
-export interface GameSettings { witchSeesBite: boolean; }
+export interface GameSettings { witchSeesBite: boolean; dayTimers?: DayTimers; skipVoteDays?: number; }
 // Pack chat: recipients are computed by the engine at send time (awake pack
 // members only). Sleepers and undiscovered Dream Wolves are never recipients.
 export interface ChatMessage { id: number; night: number; from: string; recipients: string[]; text: string; }
+// Day phase clocks run on server time; the moderator starts each one manually.
+export type DayPhase = 'discussion' | 'nomination' | 'defense' | 'finalvote';
+export interface DayTimers { discussion: number; nomination: number; defense: number; finalvote: number; }

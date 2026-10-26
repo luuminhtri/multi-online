@@ -1,0 +1,30 @@
+$kind: http-request
+name: "Deal with shared members"
+order: 700
+method: POST
+url: "{{baseUrl}}/api/room"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{sharedTokenowner}}"
+body:
+  type: json
+  content: |-
+    {
+      "type": "start",
+      "requestId": "deal",
+      "code": "{{sharedCode}}",
+      "expectedRevision": {{sharedRevision}},
+      "roles": [
+        "wolf",
+        "guard",
+        "villager"
+      ]
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('HTTP 200',()=>pm.response.to.have.status(200));
+      pm.collectionVariables.set('sharedRevision',pm.response.json().room.revision);

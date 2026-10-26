@@ -1,0 +1,23 @@
+$kind: http-request
+name: "Ready B"
+order: 900
+method: POST
+url: "{{baseUrl}}/api/room"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{memberTokenB}}"
+body:
+  type: json
+  content: |-
+    {
+      "type": "ready",
+      "requestId": "ready-B",
+      "code": "{{memberCode}}"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('HTTP 200',()=>pm.response.to.have.status(200));

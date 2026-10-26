@@ -1,0 +1,17 @@
+$kind: http-request
+name: "Host exit deletes"
+order: 400
+method: DELETE
+url: "{{debugUrl}}/api/room?code={{sharedCode}}"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{sharedTokenowner}}"
+queryParams:
+  code: "{{sharedCode}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('HTTP 200',()=>pm.response.to.have.status(200));

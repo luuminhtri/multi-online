@@ -1,0 +1,19 @@
+$kind: http-request
+name: "Scoped offline view"
+order: 500
+method: GET
+url: "{{baseUrl}}/api/room?code={{sharedCode}}&offlinePlayerId={{sharedBId}}"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{sharedTokenowner}}"
+queryParams:
+  code: "{{sharedCode}}"
+  offlinePlayerId: "{{sharedBId}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('HTTP 200',()=>pm.response.to.have.status(200));
+      pm.test('Only player projection',()=>{const s=pm.response.json();pm.expect(s.viewer).to.eql('player');pm.expect(s.controller).to.eql('moderator');pm.expect(s.me.id).to.eql(pm.collectionVariables.get('sharedBId'));pm.expect(s.game).to.eql(null);});

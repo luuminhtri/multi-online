@@ -1,0 +1,18 @@
+$kind: http-request
+name: "Online player cannot proxy"
+order: 600
+method: GET
+url: "{{baseUrl}}/api/room?code={{sharedCode}}&offlinePlayerId={{sharedBId}}"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{sharedTokenA}}"
+queryParams:
+  code: "{{sharedCode}}"
+  offlinePlayerId: "{{sharedBId}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Owner required',()=>pm.response.to.have.status(403));

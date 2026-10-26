@@ -1,0 +1,25 @@
+$kind: http-request
+name: "Player cannot edit deck"
+order: 700
+method: POST
+url: "{{baseUrl}}/api/room"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{lobbyTokenA}}"
+body:
+  type: json
+  content: |-
+    {
+      "type": "setDeck",
+      "requestId": "forbidden",
+      "code": "{{lobbyCode}}",
+      "expectedRevision": {{lobbyRevision}},
+      "roles": []
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Moderator required',()=>{pm.response.to.have.status(403);pm.expect(pm.response.json().error.code).to.eql('MODERATOR_REQUIRED');});

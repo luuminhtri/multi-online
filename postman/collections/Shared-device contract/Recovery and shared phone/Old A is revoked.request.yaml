@@ -1,0 +1,17 @@
+$kind: http-request
+name: "Old A is revoked"
+order: 1400
+method: GET
+url: "{{baseUrl}}/api/room?code={{sharedCode}}"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{sharedTokenA}}"
+queryParams:
+  code: "{{sharedCode}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Old capability rejected',()=>pm.response.to.have.status(403));

@@ -8,7 +8,7 @@ import type { Action, Command, Game, Role } from '../src/engine/types.ts';
 
 function make(extra: Record<string, Role> = {}) {
   const base: Record<string, Role> = { w: 'wolf', a: 'villager', b: 'villager', c: 'villager', d: 'villager', e: 'villager', f: 'villager', g: 'villager', h: 'villager', i: 'villager', j: 'villager', ...extra };
-  return createGame('pack-test', Object.entries(base).map(([id, role]) => ({ id, name: id, role })));
+  return createGame('pack-test', Object.entries(base).map(([id, role]) => ({ id, name: id, role })), { witchSeesBite: true, skipVoteDays: 30 });
 }
 const mod = { kind: 'moderator' } as const;
 function cmd(g: Game, command: Command, id?: string) {

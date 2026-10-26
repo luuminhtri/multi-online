@@ -1,0 +1,17 @@
+$kind: http-request
+name: "Old departed session blocked"
+order: 2200
+method: GET
+url: "{{baseUrl}}/api/room?code={{memberCode}}"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{memberTokenhunter}}"
+queryParams:
+  code: "{{memberCode}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Left member blocked',()=>{pm.response.to.have.status(403);pm.expect(pm.response.json().error.code).to.eql('PLAYER_LEFT');});

@@ -1,0 +1,31 @@
+$kind: http-request
+name: "Withdraw Hunter"
+order: 1900
+method: POST
+url: "{{baseUrl}}/api/room"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{memberTokenowner}}"
+body:
+  type: json
+  content: |-
+    {
+      "type": "removeMember",
+      "requestId": "leave-game",
+      "code": "{{memberCode}}",
+      "expectedRevision": {{leaveRevision}},
+      "playerId": "{{memberhunterId}}"
+    }
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      pm.collectionVariables.set('leaveRevision',pm.collectionVariables.get('memberRevision'));
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('HTTP 200',()=>pm.response.to.have.status(200));
+      pm.collectionVariables.set('memberRevision',pm.response.json().room.revision);
+      pm.test('Seat retained and no shot or collateral',()=>{const s=pm.response.json(),id=pm.collectionVariables.get('memberhunterId');pm.expect(s.room.members.length).to.eql(5);pm.expect(s.room.members.find(m=>m.id===id).left).to.eql(true);pm.expect(s.game.players.filter(p=>!p.alive).map(p=>p.id)).to.eql([id]);pm.expect(s.game.pendingHunters).to.eql([]);pm.expect(s.game.events.some(e=>e.type==='hunter-shot')).to.eql(false);});

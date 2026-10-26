@@ -19,16 +19,24 @@ async function listen(server: Server) {
 async function close(server: Server) {
   server.closeAllConnections(); await new Promise<void>((resolve, reject) => server.close(e => e ? reject(e) : resolve()));
 }
-async function fixture(t: Parameters<Parameters<typeof test>[1]>[0]) {
+async function fixture(t: Parameters<Parameters<typeof test>[1]>[0], autoBegin = true) {
   const directory = await mkdtemp(join(tmpdir(), 'ma-soi-http-'));
   const repository = new FileRoomRepository(directory);
   const server = createServer(createApiHandler(new RoomService(repository)));
   const base = await listen(server);
   t.after(async () => { await close(server); await rm(directory, { recursive: true, force: true }); });
   let request = 0;
+  const guestTokens = new Set<string>();
   async function post(token: string, operation: Record<string, unknown>, status = 200) {
     const response = await fetch(base + '/api/room', { method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: JSON.stringify({ requestId: `test-${++request}`, ...operation }) });
-    const body = await response.json(); assert.equal(response.status, status, JSON.stringify(body)); return body;
+    let body = await response.json(); assert.equal(response.status, status, JSON.stringify(body));
+    if (status === 200 && operation.type === 'join') guestTokens.add(token);
+    // Existing engine/HTTP scenarios start from a ready table; lifecycle tests opt out.
+    if (autoBegin && status === 200 && operation.type === 'start' && body.room.phase === 'ready') {
+      for (const guest of guestTokens) body = await post(guest, { type: 'ready', code: operation.code });
+      body = await post(token, { type: 'begin', code: operation.code, expectedRevision: (await read(operation.code as string, token)).room.revision });
+    }
+    return body;
   }
   async function read(code: string, token: string, status = 200): Promise<Snapshot> {
     const response = await fetch(base + '/api/room?code=' + code, { headers: { authorization: `Bearer ${token}` } });
@@ -155,7 +163,8 @@ test('room HTTP: only moderator can deal with Witch settings; hidden healing sur
   await f.post(owner, { ...start, settings: { witchSeesBite: 'false' } }, 400);
   await f.post(owner, { ...start, settings: { witchSeesBite: false, clientAdmin: true } }, 400);
   let current = await f.post(owner, start);
-  assert.equal(current.game.settings.witchSeesBite, false); assert.equal(current.game.schemaVersion, 5);
+  assert.equal(current.game.settings.witchSeesBite, false); assert.equal(current.game.schemaVersion, 7);
+  assert.deepEqual(current.deck, { wolf: 1, guard: 1, seer: 1, witch: 1, villager: 2 }); // public deck counts, no assignment
   assert.deepEqual((await f.post(owner, start)).game, current.game);
   await f.post(owner, { ...start, settings: { witchSeesBite: true } }, 409);
   const byRole = (role: string) => current.game.players.find((p: { role: string }) => p.role === role).id as string;
@@ -191,4 +200,190 @@ test('room HTTP: only moderator can deal with Witch settings; hidden healing sur
   }
   const retry = await f.post(tokenById.get(witch)!, action);
   assert.equal(retry.game.self.resources.heal, 0);
+});
+
+
+test('lobby deck is persisted, public before dealing, moderator-only and revision/idempotency checked', async t => {
+  const f = await fixture(t), owner = credential(), guest = credential();
+  const created = await f.post(owner, { type: 'create', name: 'Quản trò' });
+  const code = created.room.code;
+  assert.deepEqual(created.deck, {});
+  const joined = await f.post(guest, { type: 'join', code, name: 'A' });
+  const operation = { type: 'setDeck', requestId: 'save-deck', code, expectedRevision: joined.room.revision, roles: ['wolf', 'witch', 'villager', 'villager'] };
+  assert.equal((await f.post(guest, operation, 403)).error.code, 'MODERATOR_REQUIRED');
+  const saved = await f.post(owner, operation);
+  const visible = await f.read(code, guest);
+  assert.deepEqual(visible.deck, { wolf: 1, witch: 1, villager: 2 });
+  assert.equal(visible.game, null); assert.equal(visible.viewer, 'player');
+  assert.equal((await f.post(owner, operation)).room.revision, saved.room.revision);
+  assert.equal((await f.post(owner, { ...operation, roles: ['wolf'] }, 409)).error.code, 'REQUEST_ID_REUSED');
+  assert.equal((await f.post(owner, { ...operation, requestId: 'stale' }, 409)).error.code, 'STALE_ROOM');
+  assert.equal((await f.post(owner, { ...operation, requestId: 'bad', expectedRevision: saved.room.revision, roles: ['invented'] }, 400)).error.code, 'UNSUPPORTED_ROLE');
+  const restarted = new RoomService(new FileRoomRepository(f.directory));
+  assert.deepEqual((await restarted.read(code, guest)).deck, visible.deck);
+  const cleared = await f.post(owner, { ...operation, requestId: 'clear', expectedRevision: saved.room.revision, roles: [] });
+  assert.deepEqual(cleared.deck, {}); assert.deepEqual((await f.read(code, guest)).deck, {});
+});
+
+test('legacy room schema 1 migrates on write without changing a running game or its rules', async t => {
+  const f = await fixture(t), owner = credential(), guest = credential();
+  const created = await f.post(owner, { type: 'create', name: 'Cũ' }); const code = created.room.code;
+  const stored = (await f.repository.read(code))!;
+  stored.schemaVersion = 1; delete stored.lobbyRoles; stored.revision++;
+  assert.ok(await f.repository.commit(stored, created.room.revision));
+  assert.deepEqual((await f.read(code, owner)).deck, {});
+  const joined = await f.post(guest, { type: 'join', code, name: 'A' });
+  assert.equal((await f.repository.read(code))!.schemaVersion, 4);
+  await f.post(credential(), { type: 'join', code, name: 'B' });
+  await f.post(credential(), { type: 'join', code, name: 'C' });
+  const lobby = await f.read(code, owner);
+  const started = await f.post(owner, { type: 'start', code, expectedRevision: lobby.room.revision, roles: ['wolf', 'villager', 'villager'] });
+  assert.equal((await f.post(owner, { type: 'setDeck', code, expectedRevision: started.room.revision, roles: [] }, 409)).error.code, 'ROOM_ALREADY_STARTED');
+  const running = (await f.repository.read(code))!; running.schemaVersion = 1; delete running.lobbyRoles; delete running.gameStarted; delete running.readyPlayerIds; running.revision++;
+  assert.ok(await f.repository.commit(running, started.room.revision));
+  const before = structuredClone(running.game);
+  // Read does not migrate or relabel a legacy game.
+  assert.equal((await f.read(code, owner)).game!.rulesVersion, before!.rulesVersion);
+  assert.deepEqual((await f.repository.read(code))!.game, before);
+  await f.post(owner, { type: 'command', code, stepId: started.game.stepId, command: { type: 'advance' } });
+  const migrated = (await f.repository.read(code))!;
+  assert.equal(migrated.schemaVersion, 4); assert.equal(migrated.game!.rulesVersion, before!.rulesVersion); assert.equal(migrated.game!.schemaVersion, before!.schemaVersion);
+});
+
+
+test('deal waits for every authenticated player; only moderator can begin, retries and restart preserve readiness', async t => {
+  const f = await fixture(t, false), owner = credential(), tokens = [credential(), credential(), credential()];
+  const created = await f.post(owner, { type: 'create', name: 'Ready' }); const code = created.room.code;
+  for (let i = 0; i < tokens.length; i++) await f.post(tokens[i], { type: 'join', code, name: String(i) });
+  const lobby = await f.read(code, owner);
+  const dealt = await f.post(owner, { type: 'start', code, expectedRevision: lobby.room.revision, roles: ['wolf', 'villager', 'villager'] });
+  assert.equal(dealt.room.phase, 'ready'); assert.deepEqual(dealt.room.readyPlayerIds, []);
+  const player = await f.read(code, tokens[0]);
+  assert.equal(player.viewer, 'player'); if (player.viewer !== 'player') assert.fail(); assert.equal(player.game!.turn, null);
+  assert.equal((await f.post(owner, { type: 'begin', code, expectedRevision: dealt.room.revision }, 409)).error.code, 'PLAYERS_NOT_READY');
+  assert.equal((await f.post(owner, { type: 'command', code, stepId: dealt.game.stepId, command: { type: 'advance' } }, 409)).error.code, 'GAME_AWAITING_READY');
+  assert.equal((await f.post(owner, { type: 'ready', code }, 403)).error.code, 'PLAYER_REQUIRED');
+  const confirm = { type: 'ready', requestId: 'confirm-once', code };
+  const first = await f.post(tokens[0], confirm); assert.equal(first.room.readyPlayerIds.length, 1);
+  assert.equal((await f.post(tokens[0], confirm)).room.revision, first.room.revision);
+  assert.equal((await new RoomService(new FileRoomRepository(f.directory)).read(code, owner)).room.readyPlayerIds.length, 1);
+  const second = await f.post(tokens[1], { type: 'ready', code });
+  assert.equal((await f.post(owner, { type: 'begin', code, expectedRevision: (await f.read(code, owner)).room.revision }, 409)).error.code, 'PLAYERS_NOT_READY');
+  const all = await f.post(tokens[2], { type: 'ready', code });
+  assert.equal((await f.post(tokens[2], { type: 'begin', code, expectedRevision: (await f.read(code, owner)).room.revision }, 403)).error.code, 'MODERATOR_REQUIRED');
+  const begin = { type: 'begin', requestId: 'begin-once', code, expectedRevision: (await f.read(code, owner)).room.revision };
+  const started = await f.post(owner, begin); assert.equal(started.room.phase, 'playing');
+  assert.equal((await f.post(owner, begin)).room.revision, started.room.revision);
+  assert.equal((await f.post(tokens[0], { type: 'ready', code }, 409)).error.code, 'READY_UNAVAILABLE');
+});
+
+
+test('normal name recovery rotates device capability and preserves role, ready and action; owner can resume too', async t => {
+  const f = await fixture(t), owner = credential(), tokens = [credential(), credential(), credential()];
+  const created = await f.post(owner, { type: 'create', name: 'Quản trò' }); const code = created.room.code;
+  const guests = [];
+  for (let i = 0; i < tokens.length; i++) guests.push(await f.post(tokens[i], { type: 'join', code, name: `Người ${i}` }));
+  const lobby = await f.read(code, owner);
+  let state = await f.post(owner, { type: 'start', code, expectedRevision: lobby.room.revision, roles: ['wolf', 'villager', 'villager'] });
+  while (state.game.step !== 'wolves') state = await f.post(owner, { type: 'command', code, stepId: state.game.stepId, command: { type: 'advance' } });
+  const wolf = state.game.players.find((p: { role: string }) => p.role === 'wolf');
+  const index = guests.findIndex(g => g.me.id === wolf.id), old = tokens[index], moved = credential();
+  const resumed = await f.post(moved, { type: 'join', code, name: guests[index].me.name.toLowerCase() });
+  assert.equal(resumed.me.id, wolf.id); assert.equal(resumed.game.self.role, 'wolf');
+  await f.read(code, old, 403);
+  await f.post(moved, { type: 'command', code, stepId: state.game.stepId, command: { type: 'wake' } });
+  const target = state.game.players.find((p: { role: string }) => p.role === 'villager').id;
+  await f.post(moved, { type: 'command', code, stepId: state.game.stepId, command: { type: 'act', action: { type: 'bite', target } } });
+  const second = credential();
+  const again = await f.post(second, { type: 'join', code, name: guests[index].me.name });
+  assert.equal(again.me.id, wolf.id); assert.deepEqual(again.game.turn.action, { type: 'bite', target });
+  assert.equal(again.room.readyPlayerIds.length, 3); await f.read(code, moved, 403);
+  const newOwner = credential(); const host = await f.post(newOwner, { type: 'join', code, name: 'quản trò' });
+  assert.equal(host.viewer, 'moderator'); assert.equal(host.game.id, state.game.id); await f.read(code, owner, 403);
+  assert.equal((await f.post(credential(), { type: 'join', code, name: 'Người chưa có' }, 409)).error.code, 'ROOM_ALREADY_STARTED');
+});
+
+test('offline player handoff is scoped, owner-only, uses player rules, and can move to a phone without changing identity', async t => {
+  const { createGame } = await import('../src/engine/engine.ts');
+  const f = await fixture(t, false), owner = credential(), online = [credential(), credential()];
+  const created = await f.post(owner, { type: 'create', name: 'Chủ bàn' }); const code = created.room.code;
+  const a = await f.post(online[0], { type: 'join', code, name: 'A' });
+  await f.post(online[1], { type: 'join', code, name: 'B' });
+  let lobby = await f.read(code, owner);
+  assert.equal((await f.post(online[0], { type: 'addOffline', code, expectedRevision: lobby.room.revision, name: 'C' }, 403)).error.code, 'MODERATOR_REQUIRED');
+  const add = { type: 'addOffline', requestId: 'add-once', code, expectedRevision: lobby.room.revision, name: 'C' };
+  lobby = await f.post(owner, add);
+  assert.equal((await f.post(owner, add)).room.members.length, 3);
+  const offline = lobby.room.members.find((m: { offline: boolean }) => m.offline);
+  let state = await f.post(owner, { type: 'start', code, expectedRevision: lobby.room.revision, roles: ['wolf', 'guard', 'villager'] });
+  // Deterministic actor assignment in this fixture; production still shuffles on the server.
+  const stored = (await f.repository.read(code))!;
+  stored.game = createGame(stored.game!.id, stored.members.map(m => ({ id: m.id, name: m.name, role: m.id === offline.id ? 'guard' : m.id === a.me.id ? 'wolf' : 'villager' })));
+  stored.revision++; assert.ok(await f.repository.commit(stored, state.room.revision));
+  const view = await new RoomService(f.repository).read(code, owner, offline.id);
+  assert.equal(view.viewer, 'player'); assert.equal(view.controller, 'moderator');
+  if (view.viewer !== 'player') assert.fail(); assert.equal(view.game!.self.id, offline.id); assert.equal(view.game!.turn, null);
+  assert.equal(Object.hasOwn(view.game!, 'actions'), false); assert.equal(JSON.stringify(view).includes('tokenHash'), false);
+  const denied = await fetch(f.base + `/api/room?code=${code}&offlinePlayerId=${offline.id}`, { headers: { Authorization: `Bearer ${online[0]}` } });
+  assert.equal(denied.status, 403);
+  assert.equal((await f.post(owner, { type: 'offlineReady', code, playerId: a.me.id }, 403)).error.code, 'OFFLINE_PLAYER_REQUIRED');
+  await f.post(owner, { type: 'offlineReady', code, playerId: offline.id });
+  for (const token of online) await f.post(token, { type: 'ready', code });
+  state = await f.read(code, owner);
+  state = await f.post(owner, { type: 'begin', code, expectedRevision: state.room.revision });
+  const base = { type: 'offlineCommand', code, playerId: offline.id, stepId: state.game.stepId };
+  assert.equal((await f.post(online[0], { ...base, command: { type: 'wake' } }, 403)).error.code, 'MODERATOR_REQUIRED');
+  assert.equal((await f.post(owner, { ...base, command: { type: 'advance' } }, 403)).error.code, 'MODERATOR_REQUIRED');
+  await f.post(owner, { ...base, command: { type: 'wake' } });
+  const act = { ...base, requestId: 'proxy-act', command: { type: 'act', action: { type: 'protect', target: a.me.id } } };
+  const acted = await f.post(owner, act);
+  assert.equal(acted.game.self.id, offline.id); assert.equal(acted.game.turn.submitted, true);
+  assert.equal((await f.post(owner, act)).viewVersion, acted.viewVersion);
+  const phone = credential(); const recovered = await f.post(phone, { type: 'join', code, name: 'C' });
+  assert.equal(recovered.me.id, offline.id); assert.deepEqual(recovered.game.turn.action, { type: 'protect', target: a.me.id });
+  assert.equal(recovered.room.members.find((m: { id: string }) => m.id === offline.id).offline, false);
+  assert.equal((await f.post(owner, { ...base, command: { type: 'wake' } }, 403)).error.code, 'OFFLINE_PLAYER_REQUIRED');
+});
+
+
+test('avatar actions require moderator/revision; offline transfer preserves identity and current action', async t => {
+  const f = await fixture(t), owner = credential(), guest = credential();
+  const created = await f.post(owner, { type: 'create', name: 'Host' }); const code = created.room.code;
+  const joined = await f.post(guest, { type: 'join', code, name: 'A' });
+  const operation = { type: 'setOffline', requestId: 'battery-empty', code, playerId: joined.me.id, expectedRevision: joined.room.revision };
+  assert.equal((await f.post(guest, operation, 403)).error.code, 'MODERATOR_REQUIRED');
+  const changed = await f.post(owner, operation);
+  assert.equal(changed.room.members[0].offline, true);
+  assert.equal(changed.room.members[0].id, joined.me.id);
+  assert.equal((await f.post(owner, operation)).room.revision, changed.room.revision);
+  await f.read(code, guest, 403);
+  assert.equal((await f.post(owner, { ...operation, requestId: 'stale' }, 409)).error.code, 'STALE_ROOM');
+  const leave = { type: 'removeMember', code, playerId: joined.me.id, expectedRevision: changed.room.revision, requestId: 'leave-lobby' };
+  const left = await f.post(owner, leave);
+  assert.equal(left.room.members.length, 0);
+  assert.equal((await f.post(owner, leave)).room.revision, left.room.revision);
+});
+
+test('withdrawal after dealing retains seat, revokes recovery and adjusts ready quorum without death chains', async t => {
+  const f = await fixture(t, false), owner = credential(), tokens = Array.from({ length: 5 }, credential);
+  const created = await f.post(owner, { type: 'create', name: 'Host' }); const code = created.room.code;
+  const members = [];
+  for (let i = 0; i < tokens.length; i++) members.push(await f.post(tokens[i], { type: 'join', code, name: `P${i}` }));
+  const lobby = await f.read(code, owner);
+  let state = await f.post(owner, { type: 'start', code, expectedRevision: lobby.room.revision, roles: ['wolf','guard','villager','villager','villager'] });
+  const quitter = state.game.players.find((p: { role: string }) => p.role === 'villager');
+  const index = members.findIndex(m => m.me.id === quitter.id);
+  const remove = { type: 'removeMember', requestId: 'withdraw', code, expectedRevision: state.room.revision, playerId: quitter.id };
+  assert.equal((await f.post(tokens[(index+1)%5], remove, 403)).error.code, 'MODERATOR_REQUIRED');
+  state = await f.post(owner, remove);
+  assert.equal(state.game.players.length, 5); assert.equal(state.room.members.length, 5);
+  assert.equal(state.room.members.find((m: { id: string }) => m.id === quitter.id).left, true);
+  assert.equal(state.game.players.filter((p: { alive: boolean }) => !p.alive).length, 1);
+  assert.equal((await f.post(owner, remove)).room.revision, state.room.revision);
+  await f.read(code, tokens[index], 403);
+  assert.equal((await f.post(credential(), { type: 'join', code, name: quitter.name }, 403)).error.code, 'PLAYER_LEFT');
+  for (let i = 0; i < tokens.length; i++) if (i !== index) await f.post(tokens[i], { type: 'ready', code });
+  const ready = await f.read(code, owner);
+  const begun = await f.post(owner, { type: 'begin', code, expectedRevision: ready.room.revision });
+  assert.equal(begun.room.phase, 'playing'); assert.equal(begun.room.readyPlayerIds.length, 4);
 });

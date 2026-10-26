@@ -1,0 +1,19 @@
+$kind: http-request
+name: Create, join, reorder, publish lobby deck, deal or submit a core command
+description: ""
+url: "{{baseUrl}}/api/room"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+body:
+  type: json
+  content: |-
+    {
+      "type": {},
+      "requestId": "M0erOtuFRVa05FAobqnqbYIqE2kB4vytNF_qMAfw8Cfc1sUJOUj6an1ocNNABGAfdeqB_Y1vqnk25XvZT",
+      "name": "string"
+    }
+settings: {}
+examples: ./.resources/Create, join, reorder, publish lobby deck, deal or submit a core.resources/examples
+order: 2000

@@ -1,0 +1,118 @@
+No authorization data found. Please use the `postman login` command.
+Refer:https://learning.postman.com/docs/postman-cli/postman-cli-options/#postman-login
+
+Running your collection...
+postman
+
+Lobby deck contract
+
+Folder Lobby and readiness
+Sub-folder Create lobby
+
+  POST http://127.0.0.1:5175/api/room [200 OK, 12.43 KB, 21 ms]
+  Pass  HTTP 200
+
+Sub-folder Join A
+
+  POST http://127.0.0.1:5175/api/room [200 OK, 12.48 KB, 9 ms]
+  Pass  HTTP 200
+
+Sub-folder Join B
+
+  POST http://127.0.0.1:5175/api/room [200 OK, 12.55 KB, 9 ms]
+  Pass  HTTP 200
+
+Sub-folder Join C
+
+  POST http://127.0.0.1:5175/api/room [200 OK, 12.61 KB, 12 ms]
+  Pass  HTTP 200
+
+Sub-folder Publish selected deck
+
+  POST http://127.0.0.1:5175/api/room [200 OK, 12.66 KB, 7 ms]
+  Pass  HTTP 200
+  Pass  No assignment before deal
+
+Sub-folder Player sees selected roles and source copy
+
+  GET http://127.0.0.1:5175/api/room?code=L9FDV9 [200 OK, 12.64 KB, 2 ms]
+  Pass  HTTP 200
+  Pass  Selected only and verbatim Witch description
+
+Sub-folder Player cannot edit deck
+
+  POST http://127.0.0.1:5175/api/room [403 Forbidden, 369 B, 1 ms]
+  Pass  Moderator required
+
+Sub-folder Retry publish is idempotent
+
+  POST http://127.0.0.1:5175/api/room [200 OK, 12.66 KB, 1 ms]
+  Pass  HTTP 200
+
+Sub-folder Deal enters ready phase
+
+  POST http://127.0.0.1:5175/api/room [200 OK, 14.45 KB, 8 ms]
+  Pass  HTTP 200
+  Pass  Wait for readiness
+
+Sub-folder Reject early begin
+
+  POST http://127.0.0.1:5175/api/room [409 Conflict, 364 B, 2 ms]
+  Pass  Not ready
+
+Sub-folder Reject early engine action
+
+  POST http://127.0.0.1:5175/api/room [409 Conflict, 388 B, 8 ms]
+  Pass  Game cannot run yet
+
+Sub-folder Ready A
+
+  POST http://127.0.0.1:5175/api/room [200 OK, 13.89 KB, 15 ms]
+  Pass  HTTP 200
+
+Sub-folder Ready B
+
+  POST http://127.0.0.1:5175/api/room [200 OK, 13.5 KB, 8 ms]
+  Pass  HTTP 200
+
+Sub-folder Ready C
+
+  POST http://127.0.0.1:5175/api/room [200 OK, 13.66 KB, 10 ms]
+  Pass  HTTP 200
+
+Sub-folder Moderator sees all ready
+
+  GET http://127.0.0.1:5175/api/room?code=L9FDV9 [200 OK, 14.56 KB, 2 ms]
+  Pass  HTTP 200
+  Pass  Three ready
+
+Sub-folder Begin after acknowledgements
+
+  POST http://127.0.0.1:5175/api/room [200 OK, 14.56 KB, 9 ms]
+  Pass  HTTP 200
+  Pass  Playing
+
+Sub-folder Reject deck edits after deal
+
+  POST http://127.0.0.1:5175/api/room [409 Conflict, 403 B, 4 ms]
+  Pass  Deck locked
+
+-------------------------------------------------------------------
+|                         |          executed |            failed |
+--------------------------+-------------------+--------------------
+|              iterations |                 1 |                 0 |
+--------------------------+-------------------+--------------------
+|                requests |                17 |                 0 |
+--------------------------+-------------------+--------------------
+|            test-scripts |                17 |                 0 |
+--------------------------+-------------------+--------------------
+|      prerequest-scripts |                 2 |                 0 |
+--------------------------+-------------------+--------------------
+|              assertions |                22 |                 0 |
+-------------------------------------------------------------------
+| total run duration: 763 ms                                      |
+-------------------------------------------------------------------
+| total data received: 169.94 KB (approx)                         |
+-------------------------------------------------------------------
+| average response time: 8 ms [min: 1 ms, max: 21 ms, s.d.: 5 ms] |
+-------------------------------------------------------------------

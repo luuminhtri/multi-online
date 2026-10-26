@@ -3,6 +3,10 @@ import { ApiError, parseMutation, roomCode, token } from './validation.ts';
 import { RoomService, supportedCatalog } from './rooms.ts';
 
 const messages: Record<string, string> = {
+  VOTE_REQUIRED: 'Đã hết lượt không loại ai. Hãy chọn một người để vote.',
+  PLAYER_LEFT: 'Bạn đã rời trò chơi.', PLAYER_NOT_FOUND: 'Người chơi không còn tham gia phòng.',
+  OFFLINE_PLAYER_REQUIRED: 'Chỉ thao tác thay người đang dùng máy quản trò.', DEBUG_UNAVAILABLE: 'Tính năng này chỉ có trong debug.', AMBIGUOUS_NAME: 'Tên trùng giữa quản trò và người chơi.',
+  GAME_AWAITING_READY: 'Chờ mọi người đọc vai và quản trò bắt đầu.', PLAYERS_NOT_READY: 'Chưa đủ người chơi sẵn sàng.', READY_UNAVAILABLE: 'Không còn ở bước xác nhận vai.', PLAYER_REQUIRED: 'Chỉ người chơi được xác nhận sẵn sàng.',
   SESSION_REQUIRED: 'Cần phiên truy cập trên thiết bị này.', SESSION_NOT_IN_ROOM: 'Phiên này không có quyền vào phòng.',
   ROOM_NOT_FOUND: 'Không tìm thấy phòng hoặc phòng đã hết hạn.', MODERATOR_REQUIRED: 'Chỉ quản trò được thao tác này.',
   STALE_ROOM: 'Danh sách phòng vừa thay đổi. Hãy tải lại rồi thử tiếp.', ROOM_ALREADY_STARTED: 'Phòng đã bắt đầu, không thể đổi danh sách hoặc chia lại.',
@@ -13,7 +17,7 @@ const messages: Record<string, string> = {
   REQUEST_ID_REUSED: 'Mã yêu cầu đã dùng cho một thao tác khác.', STALE_STEP: 'Lượt đã thay đổi. Hãy tải trạng thái mới.',
   WAITING_FOR_ACTIONS: 'Chưa đủ người hoàn tất hành động.', WOLVES_DISAGREE: 'Bầy Sói chưa thống nhất mục tiêu.',
   NOT_YOUR_TURN: 'Chưa đến lượt của bạn.', NOT_AWAKE: 'Cần xác nhận thức dậy trước.', INVALID_TARGET: 'Mục tiêu không hợp lệ hoặc đã chết.',
-  ACTION_ALREADY_CONFIRMED: 'Hành động đã chốt.', INVALID_ROOM_CODE: 'Mã phòng gồm 6 chữ hoặc số.',
+  ACTION_ALREADY_CONFIRMED: 'Hành động đã chốt.', INVALID_ROOM_CODE: 'Nhập mã phòng gồm 6 chữ số.',
   INVALID_NAME: 'Nhập tên từ 1 đến 40 ký tự.', REPEATED_PROTECTION: 'Không được bảo vệ cùng người hai đêm liền.',
 };
 function reply(res: ServerResponse, status: number, value: unknown) {
@@ -50,12 +54,15 @@ export function createApiHandler(service: RoomService | (() => RoomService)) {
         if (url.searchParams.get('config') === '1' && [...url.searchParams.keys()].length === 1) {
           reply(res, 200, { storage: instance.repository.mode, catalog: supportedCatalog() }); return;
         }
+        if ([...url.searchParams.keys()].some(k => k !== 'code' && k !== 'offlinePlayerId')) throw new ApiError('UNKNOWN_FIELD');
+        reply(res, 200, await instance.read(roomCode(url.searchParams.get('code')), token(req.headers.authorization), url.searchParams.get('offlinePlayerId') ?? undefined));
+      } else if (req.method === 'DELETE') {
         if ([...url.searchParams.keys()].some(k => k !== 'code')) throw new ApiError('UNKNOWN_FIELD');
-        reply(res, 200, await instance.read(roomCode(url.searchParams.get('code')), token(req.headers.authorization)));
+        reply(res, 200, await instance.closeDebug(roomCode(url.searchParams.get('code')), token(req.headers.authorization)));
       } else if (req.method === 'POST') {
         const credential = token(req.headers.authorization);
         reply(res, 200, await instance.mutate(parseMutation(await readJSON(req)), credential));
-      } else { res.setHeader('Allow', 'GET, POST'); throw new ApiError('METHOD_NOT_ALLOWED', 405); }
+      } else { res.setHeader('Allow', 'GET, POST, DELETE'); throw new ApiError('METHOD_NOT_ALLOWED', 405); }
     } catch (e) {
       const error = e instanceof ApiError ? e : new ApiError('INTERNAL_ERROR', 500);
       reply(res, error.status, { error: { code: error.code, message: messages[error.code] ?? 'Không thực hiện được thao tác. Hãy kiểm tra lựa chọn và thử lại.', retryable: error.retryable } });

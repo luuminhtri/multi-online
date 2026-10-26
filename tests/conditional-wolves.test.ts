@@ -8,7 +8,7 @@ import type { Action, Command, Game, Role } from '../src/engine/types.ts';
 
 function make(extra: Record<string, Role> = {}) {
   const roles: Record<string, Role> = { w: 'wolf', a: 'villager', b: 'villager', c: 'villager', d: 'villager', e: 'villager', f: 'villager', g: 'villager', h: 'villager', i: 'villager', j: 'villager', ...extra };
-  return createGame('conditional', Object.entries(roles).map(([id, role]) => ({ id, name: id, role })));
+  return createGame('conditional', Object.entries(roles).map(([id, role]) => ({ id, name: id, role })), { witchSeesBite: true, skipVoteDays: 30 });
 }
 function cmd(g: Game, command: Command, id?: string) {
   return dispatch(g, id ? { kind: 'player', playerId: id } : { kind: 'moderator' }, { id: `q${g.revision}`, gameId: g.id, stepId: stepId(g), command });
@@ -192,7 +192,7 @@ test('Lycan and Virginia death never activate Dream, but Wolf-man death does', (
 test('a lone dormant Dream still counts for faction victory without getting a fake turn', () => {
   let g = createGame('dream-only', [
     { id: 'dream', name: 'dream', role: 'dream_wolf' }, { id: 'a', name: 'a', role: 'villager' }, { id: 'b', name: 'b', role: 'villager' },
-  ]);
+  ], { witchSeesBite: true, skipVoteDays: 30 });
   g = dawn(g);
   assert.equal(g.winner, null);
   assert.equal(g.biteTargets.length, 0);
@@ -237,7 +237,7 @@ test('Fang does not forget conversion revealed at publication of its first awake
 test('Fang plus dormant Dream can both sleep; moderator can still complete an empty night', () => {
   let g = createGame('sleepers', [
     ['fang', 'fang_face'], ['dream', 'dream_wolf'], ['a', 'villager'], ['b', 'villager'], ['c', 'villager'], ['d', 'villager'], ['e', 'villager'],
-  ].map(([id, role]) => ({ id, name: id, role: role as Role })));
+  ].map(([id, role]) => ({ id, name: id, role: role as Role })), { witchSeesBite: true, skipVoteDays: 30 });
   g = next(dawn(g));
   g = until(g, 'wolves');
   assert.deepEqual(actors(g), []);
@@ -249,7 +249,7 @@ test('Fang plus dormant Dream can both sleep; moderator can still complete an em
 test('last Fruit wakes but can only confirm fasting; empty maul is not a skip', () => {
   let g = createGame('fruit', [
     ['fruit', 'fruit_wolf'], ['a', 'villager'], ['b', 'villager'], ['c', 'villager'],
-  ].map(([id, role]) => ({ id, name: id, role: role as Role })));
+  ].map(([id, role]) => ({ id, name: id, role: role as Role })), { witchSeesBite: true, skipVoteDays: 30 });
   g = until(g, 'wolves');
   assert.deepEqual(actors(g), ['fruit']);
   assert.equal(wolfPlan(g).maxTargets, 0);

@@ -1,0 +1,18 @@
+$kind: http-request
+name: "Read ready revision"
+order: 1300
+method: GET
+url: "{{baseUrl}}/api/room?code={{memberCode}}"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{memberTokenowner}}"
+queryParams:
+  code: "{{memberCode}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('HTTP 200',()=>pm.response.to.have.status(200));
+      pm.collectionVariables.set('memberRevision',pm.response.json().room.revision);

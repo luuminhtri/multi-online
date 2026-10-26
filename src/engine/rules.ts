@@ -1,9 +1,12 @@
 import type { Role, Step } from './types.ts';
 
-// v10 adds pack chat during the wolves step; v9 adds the moderator's explicit
-// pre-game Witch visibility option.
+// v12 makes no-execution days a limited budget; v11 adds moderator-started day
+// phase clocks; v10 adds pack chat during the wolves step; v9 adds the
+// moderator's explicit pre-game Witch visibility option.
 export const RULES = Object.freeze({
-  version: 'classic-core-v10',
+  version: 'classic-core-v12',
+  dayPhases: ['discussion', 'nomination', 'defense', 'finalvote'] as const,
+  defaultDayTimers: { discussion: 300, nomination: 15, defense: 30, finalvote: 15 } as const,
   guardCanSelfProtect: true,
   guardCanRepeat: false,
   protectionBlocksPoison: false,

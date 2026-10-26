@@ -1,0 +1,29 @@
+$kind: http-request
+name: "Create room"
+order: 100
+method: POST
+url: "{{baseUrl}}/api/room"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{memberTokenowner}}"
+body:
+  type: json
+  content: |-
+    {
+      "type": "create",
+      "requestId": "create",
+      "name": "Menu host"
+    }
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      const r=()=> (pm.variables.replaceIn('{{$guid}}')+pm.variables.replaceIn('{{$guid}}')).replace(/-/g,'');for(const id of ['owner','A','B','C','D','E','new'])pm.collectionVariables.set('memberToken'+id,r());
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('HTTP 200',()=>pm.response.to.have.status(200));
+      pm.collectionVariables.set('memberCode',pm.response.json().room.code);
+      pm.collectionVariables.set('memberRevision',pm.response.json().room.revision);

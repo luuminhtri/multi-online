@@ -1,0 +1,36 @@
+{
+  "$kind": "http-request",
+  "name": "Create numeric room",
+  "order": 100,
+  "method": "POST",
+  "url": "{{baseUrl}}/api/room",
+  "auth": {
+    "type": "noauth"
+  },
+  "headers": [
+    {
+      "key": "Authorization",
+      "value": "Bearer {{numericToken}}"
+    },
+    {
+      "key": "Content-Type",
+      "value": "application/json"
+    }
+  ],
+  "scripts": [
+    {
+      "type": "beforeRequest",
+      "language": "text/javascript",
+      "code": "pm.collectionVariables.set('numericToken',(pm.variables.replaceIn('{{$guid}}')+pm.variables.replaceIn('{{$guid}}')).replace(/-/g,''));"
+    },
+    {
+      "type": "afterResponse",
+      "language": "text/javascript",
+      "code": "pm.test('HTTP 200',()=>pm.response.to.have.status(200));const code=pm.response.json().room.code;pm.test('six digits',()=>pm.expect(code).match(/^[0-9]{6}$/));pm.collectionVariables.set('numericCode',code);"
+    }
+  ],
+  "body": {
+    "type": "json",
+    "content": "{\"type\": \"create\", \"requestId\": \"create\", \"name\": \"Numeric host\"}"
+  }
+}

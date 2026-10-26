@@ -15,7 +15,9 @@
     "preview": "vite preview --host 127.0.0.1",
     "test:data": "python3 -m unittest discover -s tests -p 'test_*.py' && python3 beauti.py --check",
     "gen:images": "node scripts/generate-role-images.mjs",
-    "dev:online": "vite --host 0.0.0.0 --port 5174 --strictPort"
+    "dev:online": "vite --host 0.0.0.0 --port 5174 --strictPort",
+    "debug": "vite --host 0.0.0.0 --port 5174 --strictPort --mode debug",
+    "gen:descriptions": "node scripts/generate-role-descriptions.mjs"
   },
   "devDependencies": {
     "@types/node": "22.18.0",

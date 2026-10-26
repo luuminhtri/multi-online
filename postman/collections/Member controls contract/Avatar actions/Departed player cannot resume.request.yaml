@@ -1,0 +1,24 @@
+$kind: http-request
+name: "Departed player cannot resume"
+order: 2100
+method: POST
+url: "{{baseUrl}}/api/room"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{memberTokennew}}"
+body:
+  type: json
+  content: |-
+    {
+      "type": "join",
+      "requestId": "recover-left",
+      "code": "{{memberCode}}",
+      "name": "{{memberhunterName}}"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Departure stays final',()=>{pm.response.to.have.status(403);pm.expect(pm.response.json().error.code).to.eql('PLAYER_LEFT');});

@@ -2,14 +2,14 @@
   "schemaVersion": 1,
   "origin": "remote",
   "source": "https://raw.githubusercontent.com/postmanlabs/postman-plugin/main/",
-  "fetchedAt": "2026-10-25T12:15:00.150Z",
-  "etag": "W/\"30d2b857bb0e72aba778fc3fcc9e667ec6a27009a3fe2790be7077cef3bcf45c\"",
+  "fetchedAt": "2026-10-26T09:56:49.084Z",
+  "etag": "W/\"6cea15a02a8aa8b6aa6d4918010ec3f51732f66c1b6122b422f0784c4ae0feae\"",
   "skills": {
     "api-engineer": {
       "files": {
         "SKILL.md": {
-          "source": "bd6a4b985511b3ce68c5d8837eb4f98b085bda28d1a7da68c6715b4a0dd5c642",
-          "written": "bd6a4b985511b3ce68c5d8837eb4f98b085bda28d1a7da68c6715b4a0dd5c642"
+          "source": "586be65a16d2b418ce5a158593dd6f3dc1eeca26c1a9efe058a79c576cf26f8e",
+          "written": "586be65a16d2b418ce5a158593dd6f3dc1eeca26c1a9efe058a79c576cf26f8e"
         }
       }
     },

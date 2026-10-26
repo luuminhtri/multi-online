@@ -1,0 +1,32 @@
+$kind: http-request
+name: "Deal roles"
+order: 700
+method: POST
+url: "{{baseUrl}}/api/room"
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{memberTokenowner}}"
+body:
+  type: json
+  content: |-
+    {
+      "type": "start",
+      "requestId": "deal",
+      "code": "{{memberCode}}",
+      "expectedRevision": {{memberRevision}},
+      "roles": [
+        "wolf",
+        "guard",
+        "hunter",
+        "villager",
+        "villager"
+      ]
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('HTTP 200',()=>pm.response.to.have.status(200));
+      const s=pm.response.json(); for(const role of ['guard','hunter']) {const p=s.game.players.find(p=>p.role===role);pm.collectionVariables.set('member'+role+'Id',p.id);pm.collectionVariables.set('member'+role+'Name',p.name);pm.collectionVariables.set('memberToken'+role,pm.collectionVariables.get('memberToken'+p.name));}

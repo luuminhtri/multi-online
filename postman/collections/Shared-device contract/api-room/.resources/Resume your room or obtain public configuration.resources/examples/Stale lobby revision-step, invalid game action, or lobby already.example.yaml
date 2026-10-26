@@ -1,0 +1,29 @@
+$kind: http-example
+name: Stale lobby revision/step, invalid game action, or lobby already started
+request:
+  url: "{{baseUrl}}/api/room?code=M4MDFB&offlinePlayerId=string"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    code: M4MDFB
+    offlinePlayerId: string
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 409
+  statusText: Conflict
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "error": {
+          "code": "string",
+          "message": "string",
+          "retryable": true
+        }
+      }
+order: 6000

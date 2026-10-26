@@ -656,6 +656,8 @@ function schedule() { clearTimeout(poll); if (sessionMoved || localMode) return;
 async function sendPending() {
   if (!pending || busy) return false;
   let success = false;
+  // A poll started before this write must not overwrite its newer ACK later.
+  readSequence++; fetching = false; clearTimeout(poll);
   busy = true; notice = ''; render();
   try {
     const s: Snapshot = await request(pending.operation, pending.token);

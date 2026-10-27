@@ -503,3 +503,10 @@ button.primary[aria-busy="true"]::after { border-color: #17231d35; border-top-co
   button[aria-busy="true"] > * { animation: none; opacity: 0; }
   button[aria-busy="true"]::after { animation: none; opacity: 1; }
 }
+
+/* Creating a room uses a centered indicator without status banners. */
+.create-loading { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: #0b1210a6; cursor: progress; }
+.create-spinner { width: 42px; height: 42px; border: 3px solid #dcc89430; border-top-color: #dcc894; border-radius: 50%; animation: loading-spin 800ms linear infinite; }
+#app:has(.create-loading) button[aria-busy="true"], #app:has(.create-loading) button[aria-busy="true"] > * { animation: none; }
+#app:has(.create-loading) button[aria-busy="true"]::after { display: none; }
+@media (prefers-reduced-motion: reduce) { .create-spinner { animation: none; } }

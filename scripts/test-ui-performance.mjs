@@ -130,6 +130,7 @@ try {
   })()`);
   await host.wait(`!!document.querySelector('[data-action="create"][aria-busy="true"]')`);
   assert.equal(await host.evaluate(`document.querySelectorAll('.notice').length`),0,'ordinary sending stays quiet');
+  assert.equal(await host.evaluate(`(() => {const spinner=document.querySelector('.create-spinner'); if(!spinner)return false; const r=spinner.getBoundingClientRect(); return Math.abs(r.x+r.width/2-innerWidth/2)<2 && Math.abs(r.y+r.height/2-innerHeight/2)<2;})()`),true,'create spinner centered in viewport');
   assert.equal(await host.evaluate(`document.querySelector('[data-action="create"]').getBoundingClientRect().width===window.__createWidth`),true,'loading keeps button width');
   await host.evaluate(`window.__releaseAck()`);
   await host.wait(`!!document.querySelector('[data-action="retry"]')`);

@@ -1,5 +1,11 @@
 # Trạng thái làm việc
 
+## 2026-10-27 — Loading giữa màn hình khi tạo phòng
+
+- Khi create đang gửi, hiện spinner giữa viewport trên lớp nền dịu, không banner chữ; không chạy đồng thời spinner trên nút. Các thao tác khác giữ loading tại nút. Thành công/lỗi đều đóng lớp loading; mất ACK vẫn có retry đúng request cũ.
+- Build/typecheck và Chrome 7 tab regression đạt, bổ sung đo tâm spinner theo viewport khi giữ ACK, xác nhận không banner và retry không tạo trùng.
+- Kiểm chỉ đọc production: bundle main-Du0uwrvy.js đã có aria-busy, không chứa “Đang gửi thao tác”, chưa có create-loading. Nếu người dùng còn thấy câu cũ có thể tab/service worker vẫn giữ build trước; chưa xác minh cache trên máy người dùng. Bản loading giữa màn hình chưa deploy.
+
 ## 2026-10-27 — Đã phát hành v14 lên production
 
 - Người dùng yêu cầu đưa toàn bộ sửa đổi lên production. Đã ghép main 2c037cf vào bản 64 vai, giữ tối ưu WebP/DOM/loading/fullscreen/chat; push main commit code 3283ce1. Production https://multi-online.vercel.app phục vụ bundle main-Du0uwrvy.js khớp build đã kiểm.

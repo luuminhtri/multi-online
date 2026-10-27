@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" fill="none" aria-hidden="true" class="wolf-emblem">
+  <path d="M22 14 57 37 80 31 103 37 138 14 132 67 146 90 122 87 128 103 103 128 80 147 57 128 32 103 38 87 14 90 28 67Z" fill="#211217" stroke="#b94750" stroke-width="3" stroke-linejoin="round"/>
+  <path d="m31 30 23 17-21 14Zm98 0-23 17 21 14Z" fill="#8e303e"/>
+  <path d="m80 42-18 47 18 28 18-28Z" fill="#42212b"/>
+  <path d="m40 66 25 10-7 7-16-8Zm80 0-25 10 7 7 16-8Z" fill="#ff6069"/>
+  <path d="m41 89 22 5 17 23 17-23 22-5-20 29-19 17-19-17Z" fill="#68303c"/>
+  <path d="m68 112 12-4 12 4-12 13Z" fill="#110c10"/>
+  <path d="M80 125v10" stroke="#bc5863" stroke-width="3" stroke-linecap="round"/>
+</svg>

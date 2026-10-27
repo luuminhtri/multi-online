@@ -46,3 +46,12 @@ test('Nhãn số vai: catalog đã hỗ trợ + vai thiếu bằng đúng 64 vai
   // Mọi vai đã hỗ trợ phải nằm trong thư viện nguồn (không có vai ngoài nguồn).
   for (const s of supported) assert.ok(!missing.some(m => m.id === s.id), s.id);
 });
+
+
+test('acknowledging any private ability result prevents its dialog reopening on the next snapshot',async()=>{
+ const {latestAbilityResult}=await import('../src/online/presentation.ts');
+ for(const type of ['inspection','aura-inspection','mystic-inspection','alignment-comparison','ability-result']){
+  const messages:GameEvent[]=[{id:1,night:1,type:'inspection',audience:'private',data:{}},{id:2,night:2,type,audience:'private',data:{}},{id:3,night:2,type:'tapped',audience:'private',data:{}}];
+  const displayed=latestAbilityResult(messages,1)!;assert.equal(displayed.id,2);const acknowledged=latestAbilityResult(messages)!.id;assert.equal(latestAbilityResult(messages,acknowledged),null);
+ }
+});

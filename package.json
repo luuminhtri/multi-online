@@ -17,7 +17,8 @@
     "gen:images": "node scripts/generate-role-images.mjs",
     "dev:online": "vite --host 0.0.0.0 --port 5174 --strictPort",
     "debug": "vite --host 0.0.0.0 --port 5174 --strictPort --mode debug",
-    "gen:descriptions": "node scripts/generate-role-descriptions.mjs"
+    "gen:descriptions": "node scripts/generate-role-descriptions.mjs",
+    "test:players": "node scripts/open-test-players.mjs"
   },
   "devDependencies": {
     "@types/node": "22.18.0",

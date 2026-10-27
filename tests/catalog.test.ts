@@ -47,11 +47,13 @@ test('new schema is validated; v5 snapshot is not silently migrated', () => {
   assert.throws(() => dispatch(g, { kind: 'moderator' }, request), (e: unknown) => e instanceof RuleError && e.code === 'UNSUPPORTED_SCHEMA_VERSION');
 });
 
-test('generated image map covers every source role and matches cards.json exactly', () => {
+test('generated image map ships valid local WebP for every source role', () => {
   const data = JSON.parse(readFileSync(new URL('../cards.json', import.meta.url), 'utf8'));
   for (const role of ROLE_CATALOG) {
-    const expected = data[role.source.group]['Deck of cards'][role.source.name]['Image Url'];
-    assert.equal(ROLE_IMAGES[role.id], expected, role.id);
+    assert.equal(ROLE_IMAGES[role.id], `/offline-cards/${role.id}.webp`, role.id);
+    const bytes = readFileSync(new URL(`../public${ROLE_IMAGES[role.id]}`, import.meta.url));
+    assert.equal(bytes.toString('ascii', 0, 4), 'RIFF');
+    assert.equal(bytes.toString('ascii', 8, 12), 'WEBP');
   }
   assert.equal(Object.keys(ROLE_IMAGES).length, 64);
 });

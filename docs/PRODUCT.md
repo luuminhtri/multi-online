@@ -143,3 +143,11 @@ Sổ tay bí mật chia tab Người chơi, Chat Sói và Nhật ký. Trên đi�
 ## Giao diện gọi lượt — D70 (2026-10-26)
 
 Đến lượt bạn hiện toàn màn hình để người chơi chú ý, với nút Tôi đã thức dậy lớn. Không lộ vai; xác nhận xong mới thấy form chọn hành động. Bộ lọc Đêm trong sổ tay nhỏ gọn, chữ nhẹ và đồng bộ giao diện.
+
+## Trải nghiệm production — D74 (2026-10-27)
+
+- Ảnh do app tự phục vụ, chuyển định dạng nhẹ và tải/cache trước để giảm chờ khi nhận/xem vai.
+- Bàn ổn định khi vuốt và nhận cập nhật; người chơi có bàn lớn hơn, không có header MA SÓI/Đã đồng bộ. Icon mở/thu toàn màn hình ở góc trên phải.
+- Chat bầy Sói mở toàn màn hình, bên ngoài chỉ vài tin xem trước. Mỗi lượt có hướng dẫn thao tác; dùng máy quản trò bỏ màn gọi thức dậy.
+- Xem chi tiết vai từ danh sách tại lobby đóng về lobby ngay.
+- Kết quả Tiên tri: “Là phe Sói”, biểu tượng đầu sói riêng đơn giản, tone đỏ đen; không dùng lá Ma Sói.

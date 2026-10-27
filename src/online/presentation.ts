@@ -25,3 +25,8 @@ export function publicEventText(e: GameEvent, name: (id: unknown) => string): st
     default: return null;
   }
 }
+
+// All private result dialogs use the same selection when opening and acknowledging.
+export function latestAbilityResult(messages:readonly GameEvent[],seen=0):GameEvent|null {
+  return [...messages].reverse().find(m=>m.id>seen&&['inspection','aura-inspection','mystic-inspection','alignment-comparison','ability-result'].includes(m.type))??null;
+}

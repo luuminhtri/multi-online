@@ -1,5 +1,11 @@
 # Trạng thái làm việc
 
+## 2026-10-27 — Ghép bản 64 vai với tối ưu production, chuẩn bị phát hành
+
+- Ghép toàn bộ v14 với main 2c037cf, giữ DOM patch/loading tại nút, fullscreen/chat, ảnh WebP và các sửa hiệu năng. Xóa PNG trùng để service worker chỉ cache 64 WebP.
+- Kiểm tra lại sau ghép: 265/265 Node tests; typecheck/build đạt; script UI nhiều tab đạt (DOM/viewport/avatar/chat/soi). Bổ sung sửa xác nhận popup kết quả cho mọi vai thông tin, 7/7 presentation tests đạt.
+- Người dùng đã yêu cầu đưa toàn bộ sửa đổi lên production. Đang phát hành qua nhánh main, không thay secret hoặc SQL/RLS.
+
 ## 2026-10-27 — Tiếp quản và mở rộng 64 vai (nhánh riêng, chưa deploy)
 
 - Ván mới classic-core-v14/schema9: catalog/core/ảnh offline đủ 64 ID nguồn. Bổ sung 37 vai, lượt chọn/xác nhận/thông tin riêng, phe thứ ba, thắng thay thế, Vampire sau treo cổ, Ghost cần duyệt, Minion cắn cùng bầy và Frankenstein tích lũy kỹ năng. Giữ nguyên mô tả nguồn và luật Hunter của người dùng.
@@ -9,6 +15,38 @@
 - Chrome mobile 390×844: hai Mason xác nhận riêng, form Nostradamus, avatar cắn/Vampire, gửi và duyệt Ghost khi mất mạng; bản build cache đủ 64 ảnh, reload và tạo bàn offline khi network fetch bị chặn. Không tràn ngang ở màn đã kiểm.
 - Ba vòng **tự rà soát nối tiếp**, không giả danh reviewer độc lập. Chưa kiểm mọi tổ hợp, điện thoại vật lý hoặc v14 trên production. Không push/merge/deploy. Bản production vẫn ở v13; thay đổi nằm trong `.agent-roles64-worktree`, nhánh `agent/roles-64`.
 - Luật/quy ước: [role-contracts-v14.md](verification/role-contracts-v14.md). Kiểm chứng và giới hạn: [roles-v14-review.md](verification/roles-v14-review.md).
+
+## 2026-10-27 — Gửi thao tác yên lặng, loading tại nút
+
+- Bỏ banner “Đang gửi thao tác… Vui lòng chờ máy chủ xác nhận” trong yêu cầu bình thường. Nút vừa bấm giữ kích thước/nhãn trợ năng, có aria-busy và spinner sau 180ms để phản hồi nhanh không nháy loading. Tôn trọng giảm chuyển động; vẫn khóa gửi trùng.
+- Chỉ báo khi có lỗi/mất ACK; gộp thông báo và Thử gửi lại thành một banner. Retry vẫn giữ nguyên capability/requestId/payload, không giả định thao tác đã thành công.
+- Typecheck/build đạt. Chrome 7 tab regression đạt; thêm mô phỏng giữ rồi mất ACK tạo phòng: không banner khi gửi, nút không đổi rộng, mất ACK chỉ một banner, retry cùng payload và xóa loading khi thành công. Chưa deploy.
+
+## 2026-10-27 — Sửa báo thức dậy nhầm ở lượt Thợ săn ban đêm
+
+- Nguyên nhân: publicView còn ánh xạ mọi step hunter thành day theo luật bắn sau công bố sáng cũ. V13 gọi Thợ săn trong đêm nên người không có lượt nhận phase day và UI báo “Cả làng thức dậy”.
+- Chỉ coi hunter là day ở luật cũ; v13 giữ night cho cả chủ động/bị động, review và resolve, tới publish mới day. Không đổi schema/lệnh/quyền hoặc luật Thợ săn; phòng online và bàn local dùng chung projection đã sửa.
+- Kiểm: 51 tests hunter-night/interactions/rooms đạt, gồm hai hồi quy đầy đủ qua đêm → resolve → publish → đêm sau và tương thích Thợ săn cũ. Typecheck/build đạt. Chưa deploy bản sửa này.
+
+## 2026-10-27 — Giảm giật giao diện, ảnh WebP và bàn/chat toàn màn hình
+
+- Thay dựng lại toàn bộ DOM bằng patch có khóa ổn định cho khung bàn/ghế; cập nhật vẫn theo snapshot máy chủ, giữ focus/draft và ảnh đã decode. Thông báo gửi nổi không đẩy bố cục. Bàn thường tính theo chiều rộng, không theo chiều cao thanh trình duyệt; bỏ co bàn xuống 140px khi có lượt/chat. Màn người chơi ẩn header MA SÓI/Đã đồng bộ, bàn lớn hơn; icon mở/thu toàn màn hình ở góc phải trên, có nhãn trợ năng/Escape.
+- Chi tiết vai mở trực tiếp từ danh sách ở lobby đóng về lobby ngay. Mở từ catalog vẫn quay đúng danh sách. Chat Sói bên ngoài chỉ xem trước hai tin, bấm mở toàn màn hình có ô gửi; giữ vị trí đọc hoặc theo tin mới khi đang ở cuối.
+- Thêm hướng dẫn hành động theo lượt. Player projection dùng chung máy không hiện overlay gọi dậy; Xác nhận gửi wake rồi act qua hai lệnh hợp lệ hiện có, giữ requestId/retry và chờ ACK từng lệnh. Chưa gộp hai lệnh API.
+- Tiên tri hiện “Là phe Sói” cùng biểu tượng đầu sói SVG riêng, nhúng trực tiếp, đỏ/đen; không dùng lá Ma Sói. Không thay luật kết quả soi/ngoại lệ vai.
+- Tải đủ 64 ảnh theo cards.json vào cache nguồn local data/source-cards (gitignore), chuyển WebP q88 giữ nguyên độ phân giải, lưu public/offline-cards. 64 ảnh: 14.075.037 → 1.647.924 bytes (~88,3%); 27 vai đang chạy: 7.858.360 → 932.852 bytes (~88,1%). Không đổi cards.json hoặc bật vai chưa có core. Runtime chỉ dùng ảnh cùng origin, tải/decode trước 27 vai theo hàng đợi 2 ảnh; SW cache cả 64 WebP. Xóa PNG trùng khỏi public. npm run gen:images cần cwebp, chỉ tải nguồn thiếu.
+- Poll khi đang chơi ban đêm giảm khoảng nghỉ 1500→750ms; lobby/ngày giữ 1500ms, lỗi 5000ms, tab ẩn không poll. Đây là đổi độ trễ nhận cập nhật, không phải cam kết tốc độ API; số GET khi đêm tăng. Không thay API/schema/luật hoặc cấu hình vùng sin1 đã có.
+- Kiểm: typecheck/build đạt; 225/225 Node tests; Chrome 7 tab smoke đạt. scripts/test-ui-performance.mjs kiểm đóng vai trực tiếp, DOM bàn/ghế giữ nguyên, chiều cao viewport 844→650 tại rộng 390 không đổi cỡ bàn, header ẩn, fullscreen, ready/wake, hướng dẫn/avatar, chat và kết quả soi/biểu tượng. Đã thử riêng proxy Tiên tri ở chế độ không tối giản: không overlay wake, một lần Xác nhận ra kết quả, Đã rõ về quản trò.
+- Kiểm production chỉ đọc `/api/room?config=1`: HTTP 200 cả 3 lượt, x-vercel-id chứa hkg1::sin1, thời gian 718/169/96ms. Endpoint config không truy vấn DB; không coi đây là số đo tạo phòng hoặc bằng chứng cold start.
+- Kiểm build bằng Chrome: SW có 64 WebP/0 PNG thẻ, không request ảnh tới nguồn; chặn mạng, reload vẫn tạo bàn local và xem ảnh Tiên tri được; request chưa cache thất bại xác nhận mạng đã chặn. Chưa thử điện thoại vật lý, chưa đo tải nhiều phòng hoặc đo cold start production. Chưa commit/push/deploy.
+
+
+## 2026-10-27 — Chrome thử tự tạo phòng và sáu người chơi
+
+- `npm run test:players` tự chạy server debug RAM ở cổng trống, mở một cửa sổ Chrome tạm gồm quản trò ngẫu nhiên và A–F tự vào phòng mã ngẫu nhiên. Không cần nhập mã, server có sẵn hoặc các profile người chơi. Đóng Chrome/Ctrl+C dừng server và dọn thư mục tạm.
+- Phiên/capability và pending trong debug lưu sessionStorage theo tab; production vẫn dùng localStorage theo thiết bị. Không đổi API, luật, schema hoặc build sản phẩm. Không tự chia vai/bắt đầu ván.
+- Kiểm: typecheck đạt; 6 tests debug lifetime/product boundaries đạt (bao gồm build thường và build mode debug); Chrome headless smoke đạt tạo phòng sáu số, 6 người vào, 7 capability khác nhau, cùng windowId, reload sáu tab giữ đúng danh tính và không ghi capability vào localStorage.
+- Chưa kiểm trọn ván hoặc nhiều máy vật lý; tiếp theo chọn bộ vai/chia vai tại cửa sổ vừa mở để thử thao tác các vai.
 
 ## 2026-10-27 — Sửa độ trễ production và trạng thái gửi
 

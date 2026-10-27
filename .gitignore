@@ -14,3 +14,5 @@ postman/.dependencies/
 *.ndjson
 
 .agent-rooms/
+# Original card downloads; published WebP assets are tracked.
+data/source-cards/

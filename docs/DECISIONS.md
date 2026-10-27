@@ -289,3 +289,9 @@ Theo yêu cầu: avatar chọn mục tiêu đêm, giữ Xác nhận riêng. Nhi�
 ## D73 — Vùng API và xác nhận thao tác
 
 Vercel Function đặt sin1 (Singapore), cùng vùng Supabase thay vì mặc định iad1. Cấu hình trong vercel.json để deploy không quay về vùng xa. Đang gửi là trạng thái bình thường, chỉ hiển thị nút gửi lại khi đã mất xác nhận; retry giữ nguyên requestId/capability. Client chờ tối đa 12 giây để bao phủ hai lượt storage timeout 5 giây và độ trễ mạng. Thành công dùng snapshot ACK ngay, không GET lập tức; polling thường vẫn tiếp tục, lỗi 4xx đã hủy pending thì refresh để phục hồi trạng thái.
+
+## D74 — Hiệu năng ảnh, bàn ổn định và luồng người chơi (2026-10-27)
+
+Theo người dùng: tự lưu/xử lý toàn bộ ảnh, không dùng URL nguồn khi chơi; WebP giữ độ phân giải, tải trước và cache để mở vai nhanh. Giữ nút đóng/ảnh trong viewport. Bàn không co theo thanh trình duyệt hay lượt/chat, cập nhật từng phần để tránh nháy. Người chơi ẩn header thương hiệu/trạng thái đồng bộ; bàn lớn hơn, icon toàn màn hình tại góc trên phải. Chat bầy có hai tin xem trước và cửa sổ toàn màn hình. Chi tiết vai mở từ lobby đóng thẳng về lobby. Mỗi lượt có hướng dẫn; quản trò thao tác thay không cần màn gọi dậy.
+
+Kết quả soi dùng nhãn “Là phe Sói” và biểu tượng đầu sói riêng, đỏ đen; không dùng ảnh lá Ma Sói vì kết quả biểu thị phe. Chỉ thay trình bày, giữ nguyên luật soi hiện hành. Poll đêm 750ms, các pha khác 1500ms; giữ kiểm quyền và xác nhận máy chủ. Chưa triển khai Realtime hoặc thay hạ tầng.

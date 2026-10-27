@@ -10,7 +10,7 @@ export function offlineShell(): Plugin {
     configResolved(value) { config = value; },
     async closeBundle() {
       const out = resolve(config.root, config.build.outDir);
-      const files = (await readdir(out, { recursive: true })).filter(f => /\.(html|js|css|png|webp|svg|webmanifest)$/.test(f) && f !== 'sw.js').sort();
+      const files = (await readdir(out, { recursive: true })).filter(f => /\.(html|js|css|png|webp|svg|webmanifest)$/.test(f) && f !== 'sw.js' && !/^assets\/qr-scanner-/.test(f)).sort();
       const hash = createHash('sha256');
       for (const file of files) hash.update(await readFile(resolve(out, file)));
       const version = `ma-soi-shell-${hash.digest('hex').slice(0, 16)}`;

@@ -532,3 +532,11 @@ button.primary[aria-busy="true"]::after { border-color: #17231d35; border-top-co
 
 .room-tool-menu { display: grid; gap: 8px; }
 .room-tool-menu button { width: 100%; justify-content: flex-start; gap: 12px; margin: 0; padding: 14px; }
+
+.join-code-row { display: flex; align-items: center; gap: 8px; }
+.join-code-row input { min-width: 0; flex: 1; }
+.join-code-row button { flex-shrink: 0; white-space: nowrap; }
+.qr-scanner { width: min(420px, calc(100vw - 32px)); box-sizing: border-box; max-height: 90svh; overflow: auto; background: var(--surface); color: var(--ink); border: 1px solid var(--muted); border-radius: 16px; padding: 20px; }
+.qr-scanner::backdrop { background: #000b; }
+.qr-scanner > button { float: right; }
+.qr-scanner video { display: block; width: 100%; max-height: 55svh; object-fit: cover; border-radius: 12px; background: #000; }

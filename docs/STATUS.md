@@ -1,5 +1,17 @@
 # Trạng thái làm việc
 
+## 2026-10-28 — Camera trên HTTP mạng nội bộ
+
+- Người dùng xác nhận iPhone Chrome đang mở địa chỉ HTTP LAN: không phải secure context nên không có hộp xin quyền camera. Quét trực tiếp cần HTTPS được thiết bị tin cậy.
+- Scanner kiểm tra secure context/API trước khi xin quyền, báo riêng lỗi quyền/camera bận/không có camera/phát video, có nút thử lại; đặt muted và playsInline bằng thuộc tính video.
+- Build/typecheck và 2 tests QR đạt; chưa thử camera iPhone thật, chưa deploy.
+
+## 2026-10-28 — Quét QR trên màn Vào phòng
+
+- Nút Quét QR cạnh ô mã, ưu tiên camera sau, điền mã sáu số từ QR cùng origin hoặc mã thuần. Giữ nguyên ô tên (kể cả tên đã lưu), không tự gửi yêu cầu vào phòng. Tắt camera khi đóng/quét thành công/ẩn trang; báo cách nhập tay nếu không mở được camera.
+- jsQR tải động khi bấm quét; loại chunk scanner khỏi precache để không tải nền ở lần mở app. Chunk scanner 131.91 kB, gzip 48.71 kB; bundle chính gzip 68.62 kB.
+- Build/typecheck, 2 tests QR (phân tích URL và giải QR do qrcode tạo), 3 product boundaries đạt. Chưa kiểm camera iPhone thật, chưa deploy.
+
 ## 2026-10-28 — Vai quen thuộc đứng trước trong thư viện
 
 - Danh sách xem 64 vai ưu tiên Dân làng, Ma sói, Tiên tri, Bảo vệ, Phù thủy, Thợ săn, Thần tình yêu; tiếp đến các vai quen thuộc mở rộng rồi phần còn lại theo thứ tự thư viện nguồn. Đây là thứ tự biên tập, không phải thống kê tần suất chơi.

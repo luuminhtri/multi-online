@@ -155,3 +155,5 @@ Sổ tay bí mật chia tab Người chơi, Chat Sói và Nhật ký. Trên đi�
 ## Rời phòng, QR, nhớ tên và toàn màn hình — 2026-10-27
 
 Người chơi có Rời phòng: xác nhận rồi rút hẳn, lobby bỏ ghế, ván đã chia giữ ghế đánh dấu rời và không kích hoạt chết dây chuyền. Máy chủ xác định người rời từ capability, không nhận ID người khác. Quản trò có icon QR cạnh mã phòng online; QR chỉ chứa link phòng. Tên người chơi được nhớ trên thiết bị sau khi vào thành công, có thể sửa lần sau. Icon góc màn hình mở/thoát fullscreen trình duyệt khi được hỗ trợ, khác icon phóng to bàn; iPhone không hỗ trợ hiện hướng dẫn Thêm vào Màn hình chính. Không ép Chrome qua QR.
+
+- Màn Vào phòng có Quét QR cạnh mã phòng: quét trong web app, điền mã, giữ tên đã lưu/đang nhập; người chơi bấm Vào phòng để xác nhận. Luôn có nhập mã thủ công.

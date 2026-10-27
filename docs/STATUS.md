@@ -1,5 +1,13 @@
 # Trạng thái làm việc
 
+## 2026-10-27 — Đã phát hành v14 lên production
+
+- Người dùng yêu cầu đưa toàn bộ sửa đổi lên production. Đã ghép main 2c037cf vào bản 64 vai, giữ tối ưu WebP/DOM/loading/fullscreen/chat; push main commit code 3283ce1. Production https://multi-online.vercel.app phục vụ bundle main-Du0uwrvy.js khớp build đã kiểm.
+- Kiểm cuối: 266/266 Node tests, 8/8 data tests, typecheck/build và UI nhiều tab đạt. Sửa thêm xác nhận popup cho mọi loại kết quả riêng, tránh mở lại sau khi bấm Đã rõ.
+- Kiểm thật trên Vercel + Supabase bằng phòng thử riêng: catalog 64; classic-core-v14/schema9; hai Mason nhận kết quả riêng; Ghost chỉ công khai sau duyệt; Vampire giữ nạn nhân đến sau phán quyết; replay receipt cũ không thay đổi revision. Nhật ký không chứa token: [v14-production-smoke.json](verification/v14-production-smoke.json).
+- Chrome xác nhận trang và service worker tải được bundle production mới. Không đổi secret/SQL/RLS. Ván v8–v13 giữ luật cũ; tạo ván mới để dùng v14. Người đang mở trang nên tải lại một lần nhận giao diện mới.
+- Các ghi chú “chưa deploy” bên dưới là lịch sử trước lần phát hành này. Vẫn chưa chứng minh mọi tổ hợp 64 vai hoặc nhiều điện thoại vật lý.
+
 ## 2026-10-27 — Ghép bản 64 vai với tối ưu production, chuẩn bị phát hành
 
 - Ghép toàn bộ v14 với main 2c037cf, giữ DOM patch/loading tại nút, fullscreen/chat, ảnh WebP và các sửa hiệu năng. Xóa PNG trùng để service worker chỉ cache 64 WebP.

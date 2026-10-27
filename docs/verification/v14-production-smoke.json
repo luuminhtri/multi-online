@@ -1,0 +1,12 @@
+{
+  "production": "https://multi-online.vercel.app",
+  "storage": "supabase",
+  "catalogRoles": 64,
+  "rules": "classic-core-v14",
+  "schema": 9,
+  "masonPrivateResults": true,
+  "ghostModeration": true,
+  "vampireAfterVerdict": true,
+  "oldReceiptReplayStable": true,
+  "requestsSucceeded": true
+}

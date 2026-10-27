@@ -1,0 +1,2 @@
+Phòng 546468: 1 tab quản trò + 6 tab A–F, cùng cửa sổ, phiên riêng; tải lại vẫn đúng người.
+UI đạt: đóng vai trực tiếp; giữ DOM bàn/ghế; bàn ổn định 390px; ẩn header; toàn màn hình; nhận vai/ready/wake; chọn avatar; chat; soi phe Sói có biểu tượng riêng.

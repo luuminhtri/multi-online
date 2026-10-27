@@ -12,3 +12,6 @@ __pycache__/
 .local-rooms/
 postman/.dependencies/
 *.ndjson
+
+# Original card downloads; published WebP assets are tracked.
+data/source-cards/

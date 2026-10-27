@@ -1,0 +1,55 @@
+{
+  "measuredAt": "2026-10-26T17:47:03.868Z",
+  "rows": [
+    {
+      "operation": "config",
+      "ms": 488,
+      "status": 200
+    },
+    {
+      "operation": "create",
+      "ms": 1437,
+      "status": 200
+    },
+    {
+      "operation": "read",
+      "ms": 642,
+      "status": 200
+    },
+    {
+      "operation": "write",
+      "ms": 1413,
+      "status": 200
+    },
+    {
+      "operation": "create",
+      "ms": 1398,
+      "status": 200
+    },
+    {
+      "operation": "read",
+      "ms": 1126,
+      "status": 200
+    },
+    {
+      "operation": "write",
+      "ms": 1517,
+      "status": 200
+    },
+    {
+      "operation": "create",
+      "ms": 1420,
+      "status": 200
+    },
+    {
+      "operation": "read",
+      "ms": 1156,
+      "status": 200
+    },
+    {
+      "operation": "write",
+      "ms": 1437,
+      "status": 200
+    }
+  ]
+}

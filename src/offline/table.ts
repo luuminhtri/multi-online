@@ -1,3 +1,4 @@
+import { ROLE_IMAGES } from '../catalog/images.ts';
 import { randomId } from '../shared/random-id.ts';
 import { actors, createGame, dispatch, stepId, withdrawPlayer } from '../engine/engine.ts';
 import { moderatorView, playerView } from '../engine/views.ts';
@@ -14,7 +15,7 @@ export type LocalMutation = Mutation
 interface SavedTable { version: 1; room: Room; simplified: boolean; inspection: number | null; }
 const prefix = 'ma-soi:local-table:v1:';
 const ensure = (ok: unknown, message: string) => { if (!ok) throw new Error(message); };
-export const localCatalog = () => (Object.keys(ROLES) as Role[]).map(id => ({ id, ...ROLES[id], description: ROLE_DESCRIPTIONS[id], image: `/offline-cards/${id}.png` }));
+export const localCatalog = () => (Object.keys(ROLES) as Role[]).map(id => ({ id, ...ROLES[id], description: ROLE_DESCRIPTIONS[id], image: ROLE_IMAGES[id] }));
 
 // This document never travels to a server. The current device is the moderator.
 // Separate keys/version keep local saves independent from network room sessions.

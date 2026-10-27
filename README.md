@@ -64,6 +64,8 @@ Chỉ mô phỏng trên một trình duyệt, chưa lưu ván; tải lại trang
 
 Chế độ thử 2 tab chỉ có khi chạy `npm run debug`: một tab quản trò, một tab vào phòng và tick "Chế độ thử 1 tab" — tab đó điều khiển được nhiều người chơi (A–H, bấm ＋ để thêm) và đổi vai ngay trên thanh đầu trang, reload giữ nguyên. Phiên thử nằm trong sessionStorage từng tab nên không đụng phiên quản trò; không dùng khi chơi thật.
 
+Thử nhiều tab Chrome tự động: chạy `npm run test:players`. Lệnh tự bật server debug local ở cổng trống, tạo phòng/máy chủ phòng có ID ngẫu nhiên và mở **một cửa sổ Chrome gồm 1 tab quản trò + 6 tab người chơi A–F**, tự vào cùng phòng. Mỗi tab giữ phiên và thao tác đang gửi trong sessionStorage riêng; tải lại vẫn đúng người. Chọn bộ vai và chia vai thủ công ở tab quản trò. Không cần khởi động server trước hoặc tạo các Chrome profile riêng; dữ liệu Chrome dùng thư mục tạm, xóa khi kết thúc lệnh. Đóng cửa sổ Chrome hoặc Ctrl+C để dừng. Không đụng phòng cloud hay dữ liệu Chrome cá nhân. Cần Chrome cài sẵn; có thể đặt `CHROME_PATH` nếu đường dẫn khác. `npm run test:players -- --smoke` kiểm tra tạo/join, 7 danh tính riêng, cùng cửa sổ và reload trong Chrome headless rồi tự dọn dẹp. Mọi tab debug (kể cả không dùng thanh thử nhiều người) đều dùng phiên theo tab; bản thường vẫn lưu phiên theo thiết bị như trước.
+
 `npm run build` kiểm tra kiểu và chỉ xuất giao diện phòng vào dist; `npm run preview` xem bundle tĩnh, không chạy API phòng.
 
 Bộ vai lobby được quản trò lưu để mọi người cùng xem trước khi chia. Sau Chia vai, chờ đủ xác nhận sẵn sàng mới Bắt đầu. Mô tả vai giữ nguyên cards.json qua `npm run gen:descriptions`; luật engine độc lập. Room schema mới là 4 (Game mới schema 7); xem D52–D54 và ONLINE_SETUP trước khi cấu hình cloud.
@@ -80,10 +82,12 @@ Sau chia vai, quản trò có thể đưa máy lần lượt cho từng người
 
 Ván tự lưu vào trình duyệt hiện tại; tải lại link `?local=...` hoặc nút **Tiếp tục bàn đã lưu trên máy** để chơi tiếp. Xóa dữ liệu trang sẽ xóa bản lưu. Bàn một máy không đồng bộ sang thiết bị khác.
 
-**Chuẩn bị trước khi ra ngoài:** mở bản build một lần khi có mạng để trình duyệt tải và lưu sẵn app cùng ảnh thẻ. Giao diện, engine, mô tả và ảnh của cả 27 vai được lưu sẵn (ảnh khoảng 7,6 MB). Sau đó mở lại cùng địa chỉ/trình duyệt ngay cả khi mất mạng. Service worker cần HTTPS hoặc localhost; bản `npm run dev/debug` không cài cache offline.
+**Chuẩn bị trước khi ra ngoài:** mở bản build một lần khi có mạng để trình duyệt tải và lưu sẵn app cùng ảnh thẻ. Giao diện, engine, mô tả và ảnh của cả 64 vai nguồn được lưu sẵn (WebP khoảng 1,65 MB; 27 vai đang chạy khoảng 0,93 MB). Sau đó mở lại cùng địa chỉ/trình duyệt ngay cả khi mất mạng. Service worker cần HTTPS hoặc localhost; bản `npm run dev/debug` không cài cache offline.
 
-Kiểm bản build local: `npm run build`, rồi `npm run preview -- --port 5180`; mở `http://127.0.0.1:5180`. Preview không chạy API phòng online nhưng bàn một máy hoạt động độc lập. Build không tự deploy. `node scripts/cache-offline-cards.mjs` chỉ tải bổ sung ảnh nguồn còn thiếu vào public/offline-cards, không sửa cards.json.
+Kiểm bản build local: `npm run build`, rồi `npm run preview -- --port 5180`; mở `http://127.0.0.1:5180`. Preview không chạy API phòng online nhưng bàn một máy hoạt động độc lập. Build không tự deploy. `npm run gen:images` (cần cwebp) tải ảnh nguồn còn thiếu vào data/source-cards, chuyển WebP giữ độ phân giải vào public/offline-cards và sinh map ảnh; không sửa cards.json. `node scripts/cache-offline-cards.mjs` là lối gọi tương thích.
 
 Quản trò bấm **Thoát phòng** trên thanh công cụ để về trang đầu, chọn **Ở lại** nếu bấm nhầm. Bàn offline giữ bản lưu để tiếp tục; phòng online giữ phiên trên thiết bị. Phòng debug tự xóa khi thoát như trước. Cài đặt **Phù thủy thấy nạn nhân** mặc định tắt khi tạo ván qua giao diện; có thể bật trước chia vai.
 
 Mã phòng/bàn mới gồm **6 chữ số**, giữ cả số 0 ở đầu; phòng cũ có mã chữ vẫn dùng được. Khi cấu hình Supabase, áp dụng thêm migration `202610260004_numeric_room_codes.sql` trước khi chạy bản server mới.
+
+Kiểm hồi quy giao diện bằng Chrome headless: `node scripts/test-ui-performance.mjs --smoke`. Dùng phòng RAM và profile tạm, tự dọn sau kiểm; không thao tác production.

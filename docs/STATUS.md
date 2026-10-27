@@ -1,11 +1,40 @@
 # Trạng thái làm việc
 
+## 2026-10-27 — Giảm giật giao diện, ảnh WebP và bàn/chat toàn màn hình
+
+- Thay dựng lại toàn bộ DOM bằng patch có khóa ổn định cho khung bàn/ghế; cập nhật vẫn theo snapshot máy chủ, giữ focus/draft và ảnh đã decode. Thông báo gửi nổi không đẩy bố cục. Bàn thường tính theo chiều rộng, không theo chiều cao thanh trình duyệt; bỏ co bàn xuống 140px khi có lượt/chat. Màn người chơi ẩn header MA SÓI/Đã đồng bộ, bàn lớn hơn; icon mở/thu toàn màn hình ở góc phải trên, có nhãn trợ năng/Escape.
+- Chi tiết vai mở trực tiếp từ danh sách ở lobby đóng về lobby ngay. Mở từ catalog vẫn quay đúng danh sách. Chat Sói bên ngoài chỉ xem trước hai tin, bấm mở toàn màn hình có ô gửi; giữ vị trí đọc hoặc theo tin mới khi đang ở cuối.
+- Thêm hướng dẫn hành động theo lượt. Player projection dùng chung máy không hiện overlay gọi dậy; Xác nhận gửi wake rồi act qua hai lệnh hợp lệ hiện có, giữ requestId/retry và chờ ACK từng lệnh. Chưa gộp hai lệnh API.
+- Tiên tri hiện “Là phe Sói” cùng biểu tượng đầu sói SVG riêng, nhúng trực tiếp, đỏ/đen; không dùng lá Ma Sói. Không thay luật kết quả soi/ngoại lệ vai.
+- Tải đủ 64 ảnh theo cards.json vào cache nguồn local data/source-cards (gitignore), chuyển WebP q88 giữ nguyên độ phân giải, lưu public/offline-cards. 64 ảnh: 14.075.037 → 1.647.924 bytes (~88,3%); 27 vai đang chạy: 7.858.360 → 932.852 bytes (~88,1%). Không đổi cards.json hoặc bật vai chưa có core. Runtime chỉ dùng ảnh cùng origin, tải/decode trước 27 vai theo hàng đợi 2 ảnh; SW cache cả 64 WebP. Xóa PNG trùng khỏi public. npm run gen:images cần cwebp, chỉ tải nguồn thiếu.
+- Poll khi đang chơi ban đêm giảm khoảng nghỉ 1500→750ms; lobby/ngày giữ 1500ms, lỗi 5000ms, tab ẩn không poll. Đây là đổi độ trễ nhận cập nhật, không phải cam kết tốc độ API; số GET khi đêm tăng. Không thay API/schema/luật hoặc cấu hình vùng sin1 đã có.
+- Kiểm: typecheck/build đạt; 225/225 Node tests; Chrome 7 tab smoke đạt. scripts/test-ui-performance.mjs kiểm đóng vai trực tiếp, DOM bàn/ghế giữ nguyên, chiều cao viewport 844→650 tại rộng 390 không đổi cỡ bàn, header ẩn, fullscreen, ready/wake, hướng dẫn/avatar, chat và kết quả soi/biểu tượng. Đã thử riêng proxy Tiên tri ở chế độ không tối giản: không overlay wake, một lần Xác nhận ra kết quả, Đã rõ về quản trò.
+- Kiểm production chỉ đọc `/api/room?config=1`: HTTP 200 cả 3 lượt, x-vercel-id chứa hkg1::sin1, thời gian 718/169/96ms. Endpoint config không truy vấn DB; không coi đây là số đo tạo phòng hoặc bằng chứng cold start.
+- Kiểm build bằng Chrome: SW có 64 WebP/0 PNG thẻ, không request ảnh tới nguồn; chặn mạng, reload vẫn tạo bàn local và xem ảnh Tiên tri được; request chưa cache thất bại xác nhận mạng đã chặn. Chưa thử điện thoại vật lý, chưa đo tải nhiều phòng hoặc đo cold start production. Chưa commit/push/deploy.
+
+
+## 2026-10-27 — Chrome thử tự tạo phòng và sáu người chơi
+
+- `npm run test:players` tự chạy server debug RAM ở cổng trống, mở một cửa sổ Chrome tạm gồm quản trò ngẫu nhiên và A–F tự vào phòng mã ngẫu nhiên. Không cần nhập mã, server có sẵn hoặc các profile người chơi. Đóng Chrome/Ctrl+C dừng server và dọn thư mục tạm.
+- Phiên/capability và pending trong debug lưu sessionStorage theo tab; production vẫn dùng localStorage theo thiết bị. Không đổi API, luật, schema hoặc build sản phẩm. Không tự chia vai/bắt đầu ván.
+- Kiểm: typecheck đạt; 6 tests debug lifetime/product boundaries đạt (bao gồm build thường và build mode debug); Chrome headless smoke đạt tạo phòng sáu số, 6 người vào, 7 capability khác nhau, cùng windowId, reload sáu tab giữ đúng danh tính và không ghi capability vào localStorage.
+- Chưa kiểm trọn ván hoặc nhiều máy vật lý; tiếp theo chọn bộ vai/chia vai tại cửa sổ vừa mở để thử thao tác các vai.
+
+## 2026-10-27 — Sửa độ trễ production và trạng thái gửi
+
+- Chẩn đoán trực tiếp dashboard: default Function Region iad1 (Mỹ), Supabase ap-southeast-1 (Singapore). Đã đặt regions sin1 trong vercel.json, commit d905db6; guard đọc cũ ở 6f8ccd8. Production asset đã khớp build mới.
+- Pending không đồng nghĩa thất bại: khi busy chỉ hiện Đang gửi thao tác, không có nút retry. Chỉ khi mất ACK mới cho retry. Giữ nguyên capability/requestId; xóa notice cũ lúc retry. Client timeout 12s bao phủ hai lượt upstream 5s. ACK thành công dùng snapshot trả về, bỏ GET dư; đọc bắt đầu trước write bị vô hiệu bằng readSequence để tránh đè ACK. Poll thường giữ 1.5s; ván/luật/schema không thay đổi.
+- Đo từ cùng máy, 3 lượt create/read/write trước/sau (verification/latency-before.json và latency-after.json): create median 1420→260ms; read 1126→144ms; write 1437→342ms. Một write sau 835ms; số liệu nhỏ, không cam kết p95 hay mọi mạng. Không lộ token/key/role vào artifacts.
+- Kiểm: typecheck/build đạt, 16 test boundaries/rooms đạt; Postman Room codes 5 requests/9 assertions/0 failures. Chrome chạy production bundle qua proxy cục bộ giữ ACK: đang gửi không hiện retry; mô phỏng đã lưu nhưng mất phản hồi rồi retry trở về đúng phòng cũ, cùng requestId, không tạo trùng. GET đầu tiên sau ACK 1522ms (không còn GET tức thì). Debug in-memory tránh network/database, do đó vẫn nhanh hơn online; chưa chuyển sang Realtime.
+
+
 ## 2026-10-27 — Thợ săn v13 và avatar mục tiêu
 
 - Luật người dùng chốt: mặc định bị động ghim mỗi đêm, chết đêm mọi nguyên nhân kéo người ghim đêm đó chết theo; chết ban ngày không bắn. Tùy chọn chủ động thay thế: một phát cả ván, được giữ lại; trúng team Sói lúc chốt thì sống, sai thì cả hai chết. Bảo vệ/cứu không chặn phát bắn. Tổng kết cùng đợt đêm; không lộ nguyên nhân.
 - classic-core-v13/schema8 cho ván mới; v8–v12 giữ đúng luật/ghép schema cũ (gồm chat, clocks, skip budget). Thợ săn Nhân bản không nạp lại đạn chủ động hay sao chép ghim. Không cần SQL migration. Test tương tác luật Thợ săn cũ được đánh dấu legacyHunter rõ, vẫn có kiểm tra 100 ván seed theo luật mới.
 - Chọn mục tiêu đêm qua avatar, nhiều mục tiêu có từng ô chọn; giữ Xác nhận riêng. Viền vàng mục tiêu, đỏ đồng đội sống từ pack projection khi thức ở lượt bầy. Sửa giảm sáng awaiting-ready; offline không làm người sống tối đi. Menu quản lý riêng trên avatar khi đang chọn mục tiêu ở chế độ tối giản.
 - Kiểm: 225/225 Node tests, typecheck và build đạt. Spec syntax lint/collection lint đạt. Postman Night modes 46 requests/50 assertions/0 failures (log verification/hunter-modes-postman.txt). Chrome đã thử ghim Thợ săn, tự sang Sói, chọn avatar, menu quản lý; đo tất cả ghế sống opacity 1, 0 select mục tiêu, viền đỏ chỉ đúng Sói đã biết và viền chọn độc lập. Chiều rộng 390 không tràn ngang.
+- Đã push 3aae288 và 5aea8c0, production asset khớp build mới. Đã chạy trọn lượt đêm thật trên Vercel + Supabase cho cả passive và active: schema8/v13, mục tiêu và Thợ săn sống/chết đúng, thắng được xét sau đợt chết. Hai bàn dữ liệu thử sẽ hết hạn theo TTL thường.
 - Chưa thử nhiều điện thoại vật lý hoặc mọi tổ hợp vai trên giao diện; core/privacy/legacy/offline có test tự động.
 
 

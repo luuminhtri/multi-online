@@ -63,7 +63,7 @@ main.grid { display: grid; gap: 24px; }
 .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .section-heading h2 { font-size: 16px; letter-spacing: -.015em; }
 .live-label { color: var(--muted); font-size: 11px; }
-.table { position: relative; width: min(100%, 470px, calc(100dvh - 290px)); aspect-ratio: 1; margin: 22px auto; }
+.table { position: relative; width: min(100%, 470px, calc(100svh - 290px)); aspect-ratio: 1; margin: 22px auto; }
 .table::before, .table::after { content: ''; position: absolute; border-radius: 50%; pointer-events: none; }
 .table::before { inset: 12%; background: #1d2926; border: 1px solid #3f504245; box-shadow: inset 0 0 48px #10191580, 0 0 0 12px #2a35251a; }
 .table::after { inset: 16%; border: 1px solid #8c9a6b20; }
@@ -233,7 +233,7 @@ blockquote { margin: 20px 0; padding: 0 0 0 14px; border-left: 1px solid #bdab80
   .table-stage { padding: 16px 12px 14px; border-radius: 16px; }
   .section-heading h2 { font-size: 14px; }
   .live-label { font-size: 10px; }
-  .table { width: min(100%, clamp(180px, calc(100dvh - 560px), 300px)); margin: 12px auto; }
+  .table { width: min(100%, clamp(180px, calc(100svh - 560px), 300px)); margin: 12px auto; }
   .hub strong { font-size: 32px; }
   .seat .avatar { width: 40px; height: 40px; font-size: 15px; box-shadow: 0 0 0 4px #151d1d; }
   .seat { gap: 5px; width: 60px; }
@@ -437,3 +437,51 @@ blockquote { margin: 20px 0; padding: 0 0 0 14px; border-left: 1px solid #bdab80
 .avatar-target-field.single-target .target-slot { border: 0; padding: 4px 0; }
 
 .sending-notice { border-color: var(--line); color: var(--muted); }
+
+/* Stable table footprint: browser chrome and turn controls must not resize seats. */
+.player-view > header { display: none; }
+.player-view .room-heading { padding-block: 14px; }
+.table-stage > .section-heading { flex-wrap: wrap; gap: 8px; }
+.table-expand.icon-button { position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; padding: 7px; background: transparent; color: var(--muted); }
+.table-stage > .section-heading { padding-right: 36px; min-height: 28px; }
+.player-layout .table { width: min(100%, 430px); margin: 24px auto; }
+.turn-instruction { color: var(--text); line-height: 1.6; margin: 0 0 14px; }
+.chat-fullscreen { width: 100%; max-width: none; height: 100dvh; max-height: none; border-radius: 0; }
+.modal-back:has(.chat-fullscreen) { padding: 0; }
+.chat-fullscreen .modal-body { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.chat-fullscreen .chat-messages { flex: 1; max-height: none; overflow: auto; }
+.chat-fullscreen .chat-input { flex-shrink: 0; padding-bottom: env(safe-area-inset-bottom); }
+.pack-chat.preview .chat-line { font-size: 12px; overflow-wrap: anywhere; }
+.inspect-result.wolf { background: radial-gradient(ellipse at top, #641c29, #15090d 75%); color: #ffb6bd; }
+.inspect-illustration { height: min(23svh, 180px); margin: 12px auto; }
+.inspect-illustration .wolf-emblem { height: 100%; width: auto; filter: drop-shadow(0 0 18px #b52c3b40); }
+.inspect-result.safe .inspect-illustration { display: none; }
+.table-fullscreen .table-stage { position: fixed; inset: 0; z-index: 40; border-radius: 0; display: flex; flex-direction: column; padding: 20px max(20px, env(safe-area-inset-right)); }
+.table-fullscreen .table-stage .table { width: min(calc(100vw - 70px), calc(100svh - 170px), 850px); margin: auto; }
+.table-fullscreen .table-caption { display: none; }
+body:has(.table-fullscreen) { overflow: hidden; }
+@media (max-width: 760px) {
+  .player-layout .table-stage { grid-row: 1; padding: 18px 20px; }
+  .player-layout .player-controls { grid-row: 2; }
+  .player-layout .table, .player-layout:is(:has(.action-box), :has(.pack-chat)) .table { width: min(100%, 310px); margin: 24px auto; }
+  .player-layout:is(:has(.action-box), :has(.pack-chat)) .table-stage { padding: 18px 20px; }
+  .player-layout .seat, .player-layout:is(:has(.action-box), :has(.pack-chat)) .seat { width: 58px; gap: 4px; }
+  .player-layout .seat .avatar, .player-layout:is(:has(.action-box), :has(.pack-chat)) .seat .avatar { width: 38px; height: 38px; font-size: 14px; }
+  .player-layout .seat .sname, .player-layout:is(:has(.action-box), :has(.pack-chat)) .seat .sname { font-size: 11px; }
+  .table-fullscreen .table-stage .table { width: min(calc(100vw - 70px), calc(100svh - 170px)); margin: auto; }
+}
+
+/* Status updates float above the layout instead of pushing the table down. */
+#app > .notice { position: fixed; bottom: max(12px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: min(92vw, 560px); z-index: 70; box-shadow: 0 8px 32px #0008; }
+.table { width: min(100%, 470px); }
+@media (max-width: 760px) {
+  .table { width: min(100%, 300px); margin: 20px auto; }
+  .moderator-layout .table-stage { grid-row: 1; }
+  .moderator-layout .moderator-controls { grid-row: 2; }
+}
+
+@media (max-width: 760px) {
+  .player-layout .table.dense .seat .avatar { width: 28px; height: 28px; font-size: 11px; }
+  .player-layout .table.dense .seat { width: 42px; gap: 2px; }
+  .player-layout .table.dense .seat .sname { max-width: 42px; font-size: 9px; }
+}

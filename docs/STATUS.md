@@ -1,5 +1,17 @@
 # Trạng thái làm việc
 
+## 2026-10-27 — Gửi thao tác yên lặng, loading tại nút
+
+- Bỏ banner “Đang gửi thao tác… Vui lòng chờ máy chủ xác nhận” trong yêu cầu bình thường. Nút vừa bấm giữ kích thước/nhãn trợ năng, có aria-busy và spinner sau 180ms để phản hồi nhanh không nháy loading. Tôn trọng giảm chuyển động; vẫn khóa gửi trùng.
+- Chỉ báo khi có lỗi/mất ACK; gộp thông báo và Thử gửi lại thành một banner. Retry vẫn giữ nguyên capability/requestId/payload, không giả định thao tác đã thành công.
+- Typecheck/build đạt. Chrome 7 tab regression đạt; thêm mô phỏng giữ rồi mất ACK tạo phòng: không banner khi gửi, nút không đổi rộng, mất ACK chỉ một banner, retry cùng payload và xóa loading khi thành công. Chưa deploy.
+
+## 2026-10-27 — Sửa báo thức dậy nhầm ở lượt Thợ săn ban đêm
+
+- Nguyên nhân: publicView còn ánh xạ mọi step hunter thành day theo luật bắn sau công bố sáng cũ. V13 gọi Thợ săn trong đêm nên người không có lượt nhận phase day và UI báo “Cả làng thức dậy”.
+- Chỉ coi hunter là day ở luật cũ; v13 giữ night cho cả chủ động/bị động, review và resolve, tới publish mới day. Không đổi schema/lệnh/quyền hoặc luật Thợ săn; phòng online và bàn local dùng chung projection đã sửa.
+- Kiểm: 51 tests hunter-night/interactions/rooms đạt, gồm hai hồi quy đầy đủ qua đêm → resolve → publish → đêm sau và tương thích Thợ săn cũ. Typecheck/build đạt. Chưa deploy bản sửa này.
+
 ## 2026-10-27 — Giảm giật giao diện, ảnh WebP và bàn/chat toàn màn hình
 
 - Thay dựng lại toàn bộ DOM bằng patch có khóa ổn định cho khung bàn/ghế; cập nhật vẫn theo snapshot máy chủ, giữ focus/draft và ảnh đã decode. Thông báo gửi nổi không đẩy bố cục. Bàn thường tính theo chiều rộng, không theo chiều cao thanh trình duyệt; bỏ co bàn xuống 140px khi có lượt/chat. Màn người chơi ẩn header MA SÓI/Đã đồng bộ, bàn lớn hơn; icon mở/thu toàn màn hình ở góc phải trên, có nhãn trợ năng/Escape.

@@ -10,7 +10,8 @@ import type { Game } from './types.ts';
 export function publicView(g: Game) {
   return {
     gameId: g.id, night: g.night,
-    phase: g.step === 'ended' ? 'ended' : (g.step === 'day' || g.step === 'hunter') ? 'day' : 'night',
+    // v13 calls Hunter during the night; saved older games shoot after dawn.
+    phase: g.step === 'ended' ? 'ended' : (g.step === 'day' || g.step === 'hunter' && g.rulesVersion !== 'classic-core-v13') ? 'day' : 'night',
     // Day phase names and deadlines are public; clocks only count down.
     dayPhase: g.step === 'day' ? g.dayPhase ?? null : null,
     dayEndsAt: g.step === 'day' ? g.dayPhaseEndsAt ?? null : null,

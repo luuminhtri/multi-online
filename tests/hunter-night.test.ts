@@ -119,3 +119,33 @@ test('inheriting active Hunter copies spent ammunition, never refills or copies 
   g = cmd(cmd(g, { type: 'verdict', target: null }), { type: 'nextNight' });
   g = cmd(g, { type: 'advance' }); assert.deepEqual(actors(g), []);
 });
+
+for (const active of [false, true]) {
+  test(`v13 ${active ? 'active' : 'passive'} hunter keeps sleeping players in night until dawn is published`, () => {
+    let g = game(active);
+    let calledHunter = false;
+    while (g.step !== 'review') {
+      assert.equal(publicView(g).phase, 'night', g.step);
+      for (const p of g.players) assert.equal(playerView(g, p.id).phase, 'night', `${g.step}/${p.id}`);
+      if (g.step === 'hunter') {
+        calledHunter = true;
+        assert.equal(playerView(g, 'a').turn, null);
+        assert.equal(playerView(g, 'h').turn?.ability, 'hunter');
+      }
+      for (const id of actors(g)) {
+        g = act(g, id, g.step === 'hunter'
+          ? active ? { type: 'hold' } : { type: 'shoot', target: 'd' }
+          : { type: 'bite', target: 'a' });
+      }
+      g = cmd(g, { type: 'advance' });
+    }
+    assert(calledHunter);
+    assert.equal(publicView(g).phase, 'night');
+    g = cmd(g, { type: 'resolve' });
+    assert.equal(playerView(g, 'b').phase, 'night');
+    g = cmd(g, { type: 'publish' });
+    assert.equal(playerView(g, 'b').phase, 'day');
+    g = cmd(cmd(g, { type: 'verdict', target: null }), { type: 'nextNight' });
+    assert.equal(playerView(g, 'b').phase, 'night');
+  });
+}

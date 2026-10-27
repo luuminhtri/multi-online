@@ -114,9 +114,30 @@ try {
   await host.send('Page.navigate', { url: origin });
   await host.wait(`!!document.querySelector('[data-action="entry-create"]') && !document.querySelector('[data-action="entry-create"]').disabled`);
   await host.evaluate(`document.querySelector('[data-action="entry-create"]').click()`);
-  await host.evaluate(`document.querySelector('[data-action="create"]').click()`);
+  await host.evaluate(`(() => {
+    const original=window.fetch.bind(window);
+    const gate=new Promise(resolve=>window.__releaseAck=resolve);
+    window.__writes=[];
+    window.__createWidth=document.querySelector('[data-action="create"]').getBoundingClientRect().width;
+    window.fetch=async (...args)=>{
+      const post=args[1]?.method==='POST';
+      if(post) window.__writes.push(args[1].body);
+      const response=await original(...args);
+      if(post && window.__writes.length===1){await gate; throw new TypeError('Simulated lost acknowledgement');}
+      return response;
+    };
+    document.querySelector('[data-action="create"]').click();
+  })()`);
+  await host.wait(`!!document.querySelector('[data-action="create"][aria-busy="true"]')`);
+  assert.equal(await host.evaluate(`document.querySelectorAll('.notice').length`),0,'ordinary sending stays quiet');
+  assert.equal(await host.evaluate(`document.querySelector('[data-action="create"]').getBoundingClientRect().width===window.__createWidth`),true,'loading keeps button width');
+  await host.evaluate(`window.__releaseAck()`);
+  await host.wait(`!!document.querySelector('[data-action="retry"]')`);
+  assert.equal(await host.evaluate(`document.querySelectorAll('.notice').length`),1,'lost ACK has one actionable message');
+  await host.evaluate(`document.querySelector('[data-action="retry"]').click()`);
   const room = await host.wait(`document.querySelector('#room-code')?.textContent`);
   assert.match(room, /^\d{6}$/);
+  assert.equal(await host.evaluate(`window.__writes.length===2 && window.__writes[0]===window.__writes[1] && !document.querySelector('[aria-busy="true"]')`),true,'retry keeps the original request and clears loading');
   await host.evaluate(`document.title = ${JSON.stringify(`Quản trò · ${room}`)}`);
   const tabs = [host];
   for (const name of 'ABCDEF') {

@@ -485,3 +485,18 @@ body:has(.table-fullscreen) { overflow: hidden; }
   .player-layout .table.dense .seat { width: 42px; gap: 2px; }
   .player-layout .table.dense .seat .sname { max-width: 42px; font-size: 9px; }
 }
+
+/* Keep button dimensions and its accessible name; fast ACKs never flash a spinner. */
+button[aria-busy="true"] { position: relative; animation: loading-label-hide 0s 180ms forwards; }
+button[aria-busy="true"] > * { animation: loading-child-hide 0s 180ms forwards; }
+button[aria-busy="true"]::after { content: ''; position: absolute; width: 16px; height: 16px; left: calc(50% - 8px); top: calc(50% - 8px); border: 2px solid #aab5ad55; border-top-color: #e5e7d7; border-radius: 50%; opacity: 0; animation: loading-show 0s 180ms forwards, loading-spin 700ms linear infinite; }
+button.primary[aria-busy="true"]::after { border-color: #17231d35; border-top-color: #17231d; }
+@keyframes loading-label-hide { to { color: transparent; } }
+@keyframes loading-child-hide { to { opacity: 0; } }
+@keyframes loading-show { to { opacity: 1; } }
+@keyframes loading-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  button[aria-busy="true"] { animation: none; color: transparent; }
+  button[aria-busy="true"] > * { animation: none; opacity: 0; }
+  button[aria-busy="true"]::after { animation: none; opacity: 1; }
+}

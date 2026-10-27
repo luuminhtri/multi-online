@@ -1,4 +1,7 @@
 const paths: Record<string, string> = {
+  'window-fullscreen': '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 8h18m-8 4h4v4m0-4-6 6"/>',
+  'window-restore': '<path d="M8 8V4h13v12h-4"/><rect x="3" y="8" width="14" height="12" rx="2"/><path d="M3 12h14"/>',
+  qr: '<path d="M3 3h6v6H3zM15 3h6v6h-6zM3 15h6v6H3zM15 15h2v2h-2zM19 15h2v6h-6v-2M12 3v2M3 12h3m3 0h3v3m0 4v2"/>',
   expand: '<path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/>',
   collapse: '<path d="M3 8h5V3m8 0v5h5M8 21v-5H3m13 5v-5h5"/>',
   copy: '<rect x="8" y="8" width="12" height="12" rx="3"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>',

@@ -414,3 +414,25 @@ test('v14 HTTP powers: choices, Ghost moderation, wolf timeout, role privacy and
  await send({type:'reviewNote',actor:ghost.id,approve:true});const seen=await f.read(code,tokens[0]);assert.ok(JSON.stringify(seen.game!.announcements).includes('rừng'));
  await send({type:'resolve'});await send({type:'publish'});host=await f.read(code,owner);assert.equal(host.game!.players.find((p:{id:string})=>p.id===villagers[0])!.alive,false);
 });
+
+for (const started of [false, true]) test(`self leave ${started ? 'game' : 'lobby'} revokes access and retries return no secrets`, async t => {
+  const f = await fixture(t), owner = credential(), tokens = Array.from({length: 6}, credential);
+  const {room:{code}} = await f.post(owner, {type:'create',name:'Host'});
+  const players = [];
+  for (const [i, token] of tokens.entries()) players.push(await f.post(token,{type:'join',code,name:`Player ${i}`}));
+  if(started) await f.post(owner,{type:'start',code,expectedRevision:(await f.read(code,owner)).room.revision,roles:['wolf','hunter','villager','villager','villager','villager']});
+  await f.post(owner,{type:'leave',code},403);
+  await f.post(credential(),{type:'leave',code},403);
+  await f.post(tokens[0],{type:'leave',code,playerId:players[1].me.id},400);
+  const op={type:'leave',code,requestId:'leave-once'};
+  assert.deepEqual(await f.post(tokens[0],op),{left:true,code});
+  const before=await f.read(code,owner);
+  assert.deepEqual(await f.post(tokens[0],op),{left:true,code});
+  assert.equal((await f.read(code,owner)).room.revision,before.room.revision);
+  await f.read(code,tokens[0],403);
+  if(started) {
+    assert(before.room.members.find(m=>m.id===players[0].me.id)?.left);
+    await f.post(credential(),{type:'join',code,name:'Player 0'},403);
+  } else assert(!before.room.members.some(m=>m.id===players[0].me.id));
+  assert(!before.room.members.find(m=>m.id===players[1].me.id)?.left);
+});

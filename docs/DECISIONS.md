@@ -295,3 +295,13 @@ Vercel Function đặt sin1 (Singapore), cùng vùng Supabase thay vì mặc đ�
 Theo người dùng: tự lưu/xử lý toàn bộ ảnh, không dùng URL nguồn khi chơi; WebP giữ độ phân giải, tải trước và cache để mở vai nhanh. Giữ nút đóng/ảnh trong viewport. Bàn không co theo thanh trình duyệt hay lượt/chat, cập nhật từng phần để tránh nháy. Người chơi ẩn header thương hiệu/trạng thái đồng bộ; bàn lớn hơn, icon toàn màn hình tại góc trên phải. Chat bầy có hai tin xem trước và cửa sổ toàn màn hình. Chi tiết vai mở từ lobby đóng thẳng về lobby. Mỗi lượt có hướng dẫn; quản trò thao tác thay không cần màn gọi dậy.
 
 Kết quả soi dùng nhãn “Là phe Sói” và biểu tượng đầu sói riêng, đỏ đen; không dùng ảnh lá Ma Sói vì kết quả biểu thị phe. Chỉ thay trình bày, giữ nguyên luật soi hiện hành. Poll đêm 750ms, các pha khác 1500ms; giữ kiểm quyền và xác nhận máy chủ. Chưa triển khai Realtime hoặc thay hạ tầng.
+
+## D75 — Tự rời ván và mở phòng thuận tiện (2026-10-27)
+
+Người dùng chọn rút hẳn khỏi ván thay vì về trang chủ giữ chỗ. POST leave trả receipt tối giản left/code, không snapshot bí mật sau rời; retry cùng capability/requestId trả lại receipt, CAS kiểm xung đột, quyền đọc bị thu hồi. Trước chia xóa member, sau chia dùng withdrawPlayer không gây hiệu ứng chết dây chuyền như removeMember; quản trò không được gọi leave. Không đổi schema; dùng receipts/left hiện có.
+
+QR tạo cục bộ bằng qrcode, URL same-origin kèm mã phòng, không nhúng capability. Ghi nhớ tên qua localStorage (debug dùng sessionStorage). Manifest standalone + metadata iOS hỗ trợ mở từ Màn hình chính; icon riêng góc trên phải gọi Fullscreen API bằng thao tác người dùng, nếu bị từ chối/không hỗ trợ thì chỉ dẫn cài shortcut web app. QR không thể ép đổi trình duyệt mặc định.
+
+Tinh chỉnh D75 theo người dùng: fullscreen trình duyệt nằm trong thanh công cụ bên trái, icon cửa sổ khác bốn góc phóng bàn; ID/QR bên phải. Bỏ hàng trống dành riêng cho icon. Nút thu nhỏ bàn luôn ở góc bàn, không chồng với nút trình duyệt.
+
+Tinh chỉnh D75 (2026-10-28): gom công cụ vào nút Cài đặt cho cả quản trò và người chơi, chỉ giữ Vai bên ngoài. Cài đặt luật của quản trò nằm trong mục Cài đặt ván chơi ở lobby.

@@ -208,6 +208,9 @@
                   },
                   {
                     "$ref": "#/components/schemas/RemoveMember"
+                  },
+                  {
+                    "$ref": "#/components/schemas/Leave"
                   }
                 ]
               }
@@ -220,7 +223,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Snapshot"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Snapshot"
+                    },
+                    {
+                      "$ref": "#/components/schemas/LeaveReceipt"
+                    }
+                  ]
                 }
               }
             }
@@ -927,6 +937,44 @@
         ],
         "additionalProperties": false,
         "description": "Moderator withdraws a player. In lobby removes the membership; after dealing retains the seat, marks left, excludes the player and ready quorum without death chains, Hunter, bombs, inheritance or wolf-death effects. Public left event. Settles winner without exposing unresolved night deaths. Cannot resume a withdrawn in-game identity by name."
+      },
+      "Leave": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "code",
+          "requestId"
+        ],
+        "properties": {
+          "type": {
+            "const": "leave"
+          },
+          "code": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,128}$"
+          }
+        },
+        "description": "Player withdraws self using capability only. Lobby seat removed; game seat marked left without death cascades. Same request retry returns receipt after access revoked. Moderator rejected."
+      },
+      "LeaveReceipt": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "left",
+          "code"
+        ],
+        "properties": {
+          "left": {
+            "const": true
+          },
+          "code": {
+            "type": "string"
+          }
+        }
       }
     }
   }

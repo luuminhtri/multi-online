@@ -1,3 +1,4 @@
+import QRCode from 'qrcode';
 import { patchHtml } from './dom.ts';
 import { ROLE_IMAGES } from '../catalog/images.ts';
 import { pickTarget, visiblePackIds, type TargetSlot } from './target-picker.ts';
@@ -55,11 +56,26 @@ let failed = false;
 let editingWolfStep: string | null = null;
 let chatDraftCleared = false;
 const formMemory = new Map<string, string | boolean>();
+let savedPlayerName = '';
+try { savedPlayerName = sessionStore.getItem('ma-soi:player-name:v1') ?? ''; } catch {}
+let inviteQr = '', inviteQrUrl = '';
+const inviteUrl = () => `${location.origin}/?room=${encodeURIComponent(code)}`;
+
 function persist() { sessionStore.setItem('ma-soi:sessions:v1', JSON.stringify(sessions)); if (pending) sessionStore.setItem('ma-soi:pending:v1', JSON.stringify(pending)); else sessionStore.removeItem('ma-soi:pending:v1'); }
 const name = (id: unknown) => snapshot?.room.members.find(m => m.id === id)?.name ?? String(id ?? 'không ai');
 const roleName = (id: unknown) => catalog.find(r => r.id === id)?.name ?? String(id);
 const roleLibraryMissing = () => missingLibraryRoles(catalog.map(r => r.id), ROLE_CATALOG);
 const roleById = (id: unknown) => catalog.find(r => r.id === id);
+// Thứ tự đọc do sản phẩm chọn: vai nền tảng trước, rồi các vai mở rộng theo thư viện.
+const familiarRoleOrder = [
+  'villager', 'wolf', 'seer', 'guard', 'witch', 'hunter', 'cupid',
+  'wolf_cub', 'cursed', 'mason', 'tanner', 'idiot', 'mayor', 'prince',
+  'apprentice_seer', 'lycan', 'minion', 'sorceress', 'lone_wolf',
+  'alpha_wolf', 'big_bad_wolf', 'doppelganger', 'drunk', 'diseased',
+];
+const libraryRoleOrder = [...new Set([...familiarRoleOrder, ...ROLE_CATALOG.map(r => r.id)])];
+const libraryRoleRank = new Map(libraryRoleOrder.map((id, index) => [id, index]));
+
 const initial = (v: string) => [...v.trim()][0]?.toLocaleUpperCase('vi') ?? '?';
 const cardImage = (roleId: string, fallbackText: string) => {
   const image = ROLE_IMAGES[roleId];
@@ -321,14 +337,22 @@ function modalShell(inner: string) {
     return `<div class="modal-back" data-action="modal-close"><div class="modal secret-notebook" role="dialog" aria-modal="true" aria-labelledby="notebook-title"><button type="button" class="modal-close" data-action="modal-open" data-modal="__close" aria-label="Đóng">${icon('close')}</button><h3 id="notebook-title">Sổ tay bí mật</h3><nav class="notebook-tabs" role="tablist" aria-label="Mục sổ tay">${tabs}</nav><div class="modal-body" id="notebook-panel" role="tabpanel" aria-labelledby="notebook-tab-${notebookTab}" tabindex="0">${inner}</div></div></div>`;
   }
   const roleDetail = modal === 'packchat' ? ' chat-fullscreen' : modal?.startsWith('role:') || modal === 'rolepeek' ? ' role-detail' : '';
-  return `<div class="modal-back" data-action="modal-close"><div class="modal${roleDetail}" role="dialog" aria-modal="true" aria-label="${modal === 'exit-room' ? 'Thoát phòng' : modal === 'settings' ? 'Cài đặt' : modal === 'deck' ? 'Bộ vai' : modal === 'catalog' || modal === 'allroles' ? 'Danh sách vai' : modal?.startsWith('role:') ? esc(roleName(modal.slice(5))) : 'Thông tin ván'}"><button type="button" class="modal-close" data-action="modal-open" data-modal="__close" aria-label="Đóng">${icon('close')}</button><div class="modal-body">${inner}</div>${modal === 'deck' ? button('save-deck', 'Lưu bộ vai', false, 'class="primary wide modal-footer"') : modal === 'offline-add' ? button('add-offline', 'Thêm người chơi', false, 'class="primary wide modal-footer"') : ''}</div></div>`;
+  return `<div class="modal-back" data-action="modal-close"><div class="modal${roleDetail}" role="dialog" aria-modal="true" aria-label="${modal === 'exit-room' ? 'Thoát phòng' : modal === 'settings' || modal === 'tools' ? 'Cài đặt' : modal === 'deck' ? 'Bộ vai' : modal === 'catalog' || modal === 'allroles' ? 'Danh sách vai' : modal?.startsWith('role:') ? esc(roleName(modal.slice(5))) : 'Thông tin ván'}"><button type="button" class="modal-close" data-action="modal-open" data-modal="__close" aria-label="Đóng">${icon('close')}</button><div class="modal-body">${inner}</div>${modal === 'deck' ? button('save-deck', 'Lưu bộ vai', false, 'class="primary wide modal-footer"') : modal === 'offline-add' ? button('add-offline', 'Thêm người chơi', false, 'class="primary wide modal-footer"') : ''}</div></div>`;
 }
 function modalHtml() {
   if (!modal) return '';
   const g = snapshot?.viewer === 'player' ? snapshot.game : null;
   const gm = snapshot?.viewer === 'moderator' ? snapshot.game : null;
   let inner = '';
-  if (modal === 'exit-room' && snapshot?.viewer === 'moderator') {
+  if (modal === 'tools' && snapshot) {
+    inner = `<h3>Cài đặt</h3><div class="room-tool-menu">${button('browser-fullscreen', icon(document.fullscreenElement ? 'window-restore' : 'window-fullscreen') + `<span>${document.fullscreenElement ? 'Thu nhỏ' : 'Toàn màn hình'}</span>`, false, 'class="secondary"')}${localMode ? '' : button('copy', icon('copy') + '<span>Sao chép link mời</span>', false, 'class="secondary"')}${button('refresh', icon('refresh') + '<span>Làm mới</span>', false, 'class="secondary"')}${snapshot.viewer === 'moderator' && !snapshot.game ? button('modal-open', icon('settings') + '<span>Cài đặt ván chơi</span>', false, 'class="secondary" data-modal="settings"') : ''}${snapshot.controller ? button('return-moderator', icon('close') + '<span>Về quản trò</span>', false, 'class="secondary"') : button('exit-room', icon('exit') + `<span>${snapshot.viewer === 'moderator' ? 'Thoát phòng' : 'Rời phòng'}</span>`, false, 'class="danger"')}</div>`;
+  } else if (modal === 'browser-fullscreen-help') {
+    inner = '<h3>Mở toàn màn hình</h3><p>Trình duyệt này chưa cho phép trang web bật toàn màn hình.</p><p>Trên iPhone: mở menu Chia sẻ trong Safari hoặc Chrome → Thêm vào Màn hình chính → mở Ma Sói từ biểu tượng vừa thêm. Nếu có tùy chọn Mở dưới dạng ứng dụng web, hãy bật.</p><p class="muted">Bạn vẫn có thể dùng icon ở góc bàn để chỉ xem bàn chơi trong cửa sổ hiện tại.</p>';
+  } else if (modal === 'invite-qr' && snapshot?.viewer === 'moderator' && !localMode) {
+    inner = `<h3>Quét mã để vào phòng</h3><div class="invite-qr">${inviteQr}</div><p class="qr-room-code">${esc(code)}</p><p class="muted">Mở Camera iPhone, hướng vào mã QR rồi chạm liên kết.</p>${button('copy', 'Sao chép link mời', false, 'class="secondary wide"')}<details class="install-help"><summary>Mở bằng Chrome / toàn màn hình</summary><p>Đặt Chrome làm trình duyệt mặc định trong Cài đặt iPhone để mở liên kết bằng Chrome.</p><p>Để mở như ứng dụng: trong trình duyệt chọn Chia sẻ → Thêm vào Màn hình chính, sau đó mở từ biểu tượng vừa thêm. Không thể tự ép Chrome hoặc ẩn thanh trình duyệt ngay khi quét QR.</p></details>`;
+  } else if (modal === 'exit-room' && snapshot?.viewer === 'player' && !snapshot.controller) {
+    inner = `<h3>Rời phòng chơi?</h3><p>Bạn sẽ rút hẳn khỏi ${snapshot.game ? 'ván này và không thể vào lại ván đang chơi bằng tên cũ' : 'phòng và bỏ chỗ đang giữ'}. Hành động này không thể hoàn tác.</p><div class="exit-actions">${button('cancel-exit', 'Ở lại', false, 'class="secondary"')}${button('confirm-leave', 'Rời phòng', false, 'class="danger"')}</div>`;
+  } else if (modal === 'exit-room' && snapshot?.viewer === 'moderator') {
     const message = localMode ? 'Ván được lưu trên máy. Bạn có thể tiếp tục từ trang chủ.'
       : snapshot.room.debug ? 'Phòng thử sẽ được đóng và xóa khi bạn thoát.' : 'Bạn có thể vào lại bằng mã phòng trên thiết bị này.';
     inner = `<h3>Thoát phòng?</h3><p class="muted">${message}</p><div class="exit-actions">${button('cancel-exit', 'Ở lại', false, 'class="secondary"')}${button('confirm-exit', 'Thoát phòng', false, 'class="primary"')}</div>`;
@@ -376,9 +400,9 @@ function modalHtml() {
       .map(([id, count]) => `<button type="button" class="role-row" data-action="modal-open" data-modal="role:${esc(id)}"><span>${esc(roleName(id))}</span><b>×${count}</b></button>`);
     inner = `<h3>Vai trong ván này</h3>${rows.length ? `<p class="muted">Bấm vào vai để xem ảnh và mô tả.</p><div class="role-rows">${rows.join('')}</div>` : '<p class="empty">Quản trò chưa chọn bộ vai.</p>'}${button('modal-open', `Vai đã hỗ trợ (${catalog.length}/${ROLE_CATALOG.length}) ` + icon('chevron'), false, 'class="secondary wide" data-modal="allroles"')}`;
   } else if (modal === 'allroles') {
-    const roles = [...catalog].sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+    const roles = [...catalog].sort((a, b) => (libraryRoleRank.get(a.id) ?? Infinity) - (libraryRoleRank.get(b.id) ?? Infinity) || a.name.localeCompare(b.name, 'vi'));
     const missing = roleLibraryMissing();
-    inner = `<h3>Vai đã hỗ trợ (${roles.length}/${ROLE_CATALOG.length})</h3><p class="muted">Các vai này đã chạy được và là vai duy nhất chọn vào bộ vai.</p><div class="role-rows">${roles.map(r => `<button type="button" class="role-row" data-action="modal-open" data-modal="role:${esc(r.id)}"><span>${esc(r.name)}</span>${icon('chevron')}</button>`).join('')}</div>${missing.length ? `<h3>Thư viện nguồn — chưa hỗ trợ (${missing.length})</h3><p class="muted">Có trong dữ liệu nguồn nhưng chưa thể chơi.</p><p class="library-missing">${missing.map(r => `<span class="library-role"><span>${esc(r.displayName)}</span><em>Chưa hỗ trợ</em></span>`).join('')}</p>` : ''}`;
+    inner = `<h3>Vai đã hỗ trợ (${roles.length}/${ROLE_CATALOG.length})</h3><p class="muted">Các vai quen thuộc được xếp trước, tiếp đến là các vai mở rộng.</p><div class="role-rows">${roles.map(r => `<button type="button" class="role-row" data-action="modal-open" data-modal="role:${esc(r.id)}"><span>${esc(r.name)}</span>${icon('chevron')}</button>`).join('')}</div>${missing.length ? `<h3>Thư viện nguồn — chưa hỗ trợ (${missing.length})</h3><p class="muted">Có trong dữ liệu nguồn nhưng chưa thể chơi.</p><p class="library-missing">${missing.map(r => `<span class="library-role"><span>${esc(r.displayName)}</span><em>Chưa hỗ trợ</em></span>`).join('')}</p>` : ''}`;
   } else if (modal.startsWith('role:')) {
     const id = modal.slice(5);
     const r = roleById(id);
@@ -416,14 +440,14 @@ function roleInfo(g: Extract<Snapshot, { viewer: 'player' }>['game']) {
   return `<div class="modal-role"><div class="card-hero">${cardImage(self.role, roleName(self.role))}</div><h3>${esc(roleName(self.role))}</h3><p class="team-chip">${({wolves:'Phe Sói',lovers:'Phe Tình nhân',village:'Phe Dân',vampires:'Phe Ma cà rồng',cult:'Giáo phái',independent:'Thắng riêng'})[self.team]}</p>${self.powers?.length?`<p class="muted">Kỹ năng đã nhận: ${self.powers.map(roleName).map(esc).join(', ')}.</p>`:''}${self.role === 'hunter' ? `<p class="muted">${esc(self.description)}</p>` : ''}<p class="role-desc">${esc(roleById(self.role)?.description ?? '')}</p></div>`;
 }
 function roleRevealOverlay(g: Extract<Snapshot, { viewer: 'player' }>['game']) {
-  if (!g) return '';
+  if (!g || modal === 'exit-room') return '';
   const preparing = snapshot?.room.phase === 'ready';
   if (!(snapshot?.room.local && preparing) && (snapshot?.room.readyPlayerIds.includes(g.self.id) || !preparing && sessionStorage.getItem(sessionStorageKey(g.gameId)))) return '';
-  return `<div class="overlay" id="role-overlay"><div class="overlay-card">${roleInfo(g)}${button('role-read', 'Tôi đã đọc và sẵn sàng', false, 'class="primary wide"')}</div></div>`;
+  return `<div class="overlay" id="role-overlay"><div class="overlay-card">${roleInfo(g)}${button('role-read', 'Tôi đã đọc và sẵn sàng', false, 'class="primary wide"')}${!snapshot?.controller ? button('exit-room', 'Rời phòng', false, 'class="quiet"') : ''}</div></div>`;
 }
 function wakeOverlay(s: Snapshot | null): string {
-  if (s?.viewer !== 'player' || s.controller || s.room.phase !== 'playing' || !s.game?.turn || s.game.turn.awake) return '';
-  return `<div class="overlay wake-screen" id="wake-overlay" role="alertdialog" aria-modal="true" aria-labelledby="wake-title" aria-describedby="wake-description"><div class="wake-content"><span class="wake-icon" aria-hidden="true">${icon('eye')}</span><span class="eyebrow">${s.game.phase === 'night' ? `Đêm ${s.game.night}` : 'Ban ngày'}</span><h2 id="wake-title">Đến lượt bạn</h2><p id="wake-description">Quản trò đang gọi bạn.</p>${notice ? `<p class="wake-notice" role="status">${esc(notice)}</p>` : ''}${button('wake', 'Tôi đã thức dậy', false, 'class="primary wide"')}</div></div>`;
+  if (s?.viewer !== 'player' || s.controller || modal === 'exit-room' || s.room.phase !== 'playing' || !s.game?.turn || s.game.turn.awake) return '';
+  return `<div class="overlay wake-screen" id="wake-overlay" role="alertdialog" aria-modal="true" aria-labelledby="wake-title" aria-describedby="wake-description"><div class="wake-content"><span class="wake-icon" aria-hidden="true">${icon('eye')}</span><span class="eyebrow">${s.game.phase === 'night' ? `Đêm ${s.game.night}` : 'Ban ngày'}</span><h2 id="wake-title">Đến lượt bạn</h2><p id="wake-description">Quản trò đang gọi bạn.</p>${notice ? `<p class="wake-notice" role="status">${esc(notice)}</p>` : ''}${button('wake', 'Tôi đã thức dậy', false, 'class="primary wide"')}${button('exit-room', 'Rời phòng', false, 'class="quiet"')}</div></div>`;
 }
 function rolePeek(g: Extract<Snapshot, { viewer: 'player' }>['game']) {
   if (!g) return '';
@@ -581,7 +605,7 @@ function render() {
   const overlay = snapshot?.viewer === 'player' && snapshot.game && snapshot.game.phase !== 'ended'
     ? roleRevealOverlay(snapshot.game) : '';
   patchHtml(app, `<header data-ui-key="header"><a class="brand" href="/">${moon}<span>MA SÓI</span></a><div class="connection ${failed ? 'offline' : ''}" role="status" title="${esc(status)}"><span>${esc(status)}</span></div></header>${localMode ? '' : debug?.header(storage, code, busy || !!pending) ?? ''}${notice && !pending ? `<div class="notice" role="status">${esc(notice)}</div>` : ''}${pending && !busy ? `<div class="notice" role="status">${esc(notice || 'Thao tác chưa được xác nhận. Bạn có thể thử gửi lại.')}<button type="button" data-action="retry">Thử gửi lại</button></div>` : ''}
-    ${snapshot ? `<div class="room-heading" data-ui-key="room-heading"><div class="room-identity"><span class="eyebrow">${snapshot.controller ? 'DÙNG MÁY QUẢN TRÒ · ' + esc(snapshot.me.name) : snapshot.viewer === 'moderator' ? localMode ? 'QUẢN TRÒ · MỘT MÁY' : 'QUẢN TRÒ' : esc(snapshot.me.name)}</span><h1><span class="room-prefix">${localMode ? 'Bàn' : 'Phòng'}</span> <span id="room-code">${snapshot.room.code}</span></h1></div><nav class="room-tools" aria-label="Công cụ phòng">${snapshot.controller ? button('return-moderator', icon('close') + '<span>Quản trò</span>', false, 'class="tool-button" aria-label="Đóng màn người chơi, quay lại quản trò"') : `${localMode ? '' : iconButton('copy', 'copy', 'Sao chép link mời')}${button('refresh', icon('refresh') + '<span>Làm mới</span>', false, 'class="tool-button" aria-label="Làm mới trạng thái phòng"')}${button('modal-open', icon('cards') + '<span>Vai</span>', false, 'class="tool-button" data-modal="catalog" aria-label="Danh sách vai"')}${snapshot.viewer === 'moderator' && !snapshot.game ? modalButton('settings', 'settings', 'Cài đặt') : ''}${snapshot.viewer === 'moderator' ? button('exit-room', icon('exit') + '<span>Thoát phòng</span>', false, 'class="tool-button"') : ''}`}</nav></div><main data-ui-key="game-main" class="grid ${!snapshot.game ? 'lobby-layout' : snapshot.viewer === 'moderator' ? 'moderator-layout' : 'player-layout'}">${!snapshot.game ? lobby(snapshot) : snapshot.viewer === 'moderator' ? moderator(snapshot) : player(snapshot)}</main>` : switchingView ? `<main class="switching-view" role="status">Đang chuyển màn hình…</main>` : `<main class="welcome"><div class="welcome-mark" aria-hidden="true">${moon}</div><h1>Ma Sói</h1><div class="entry-tabs" role="tablist" aria-label="Vào bàn chơi">${button('entry-join', 'Vào phòng', false, `id="tab-join" role="tab" aria-selected="${entryMode === 'join'}" aria-controls="entry-panel"`)}${button('entry-create', 'Tạo phòng', false, `id="tab-create" role="tab" aria-selected="${entryMode === 'create'}" aria-controls="entry-panel"`)}</div><section id="entry-panel" class="entry-panel" role="tabpanel" aria-labelledby="tab-${entryMode}">${entryMode === 'create' ? `${button('toggle-mode', '<span class="mode-indicator" aria-hidden="true"></span><span class="mode-label mode-online">Online</span><span class="mode-label mode-offline">Offline</span>', false, `id="create-mode" class="mode-switch" role="switch" aria-label="Chế độ offline" aria-checked="${localMode}"`)}${button('create', `Tạo ${localMode ? 'bàn' : 'phòng'} ${icon('arrow')}`, false, 'class="primary wide"')}${localTable.lastCode() ? button('resume-local', 'Tiếp tục bàn đã lưu trên máy', false, 'class="secondary wide"') : ''}` : `<label>Mã phòng<input id="join-code" maxlength="6" inputmode="numeric" value="${esc(code)}" placeholder="••••••" autocomplete="off"></label><label>Tên của bạn<input id="join-name" maxlength="40" autocomplete="nickname" placeholder="Tên hoặc Biệt danh"></label>${debug?.joinOption() ?? '<p class="muted">Đổi máy: nhập mã phòng và đúng tên cũ để tiếp tục.</p>'}${button('join', `Vào phòng ${icon('arrow')}`, false, 'class="primary wide"')}`}</section></main>`}${overlay}${overlay ? '' : wakeOverlay(snapshot)}${modalHtml()}${memberMenuHtml()}${busy && pending?.operation.type === 'create' ? '<div class="create-loading" data-ui-key="create-loading" role="status" aria-label="Đang tạo phòng" aria-busy="true"><span class="create-spinner" aria-hidden="true"></span></div>' : ''}`);
+    ${snapshot ? `<div class="room-heading" data-ui-key="room-heading"><nav class="room-tools" aria-label="Công cụ phòng">${button('modal-open', icon('settings') + '<span>Cài đặt</span>', false, 'class="tool-button" data-modal="tools"')}${button('modal-open', icon('cards') + '<span>Vai</span>', false, 'class="tool-button" data-modal="catalog" aria-label="Danh sách vai"')}</nav><div class="room-identity"><span class="eyebrow">${snapshot.controller ? 'DÙNG MÁY QUẢN TRÒ · ' + esc(snapshot.me.name) : snapshot.viewer === 'moderator' ? localMode ? 'QUẢN TRÒ · MỘT MÁY' : 'QUẢN TRÒ' : esc(snapshot.me.name)}</span><h1><span class="room-prefix">${localMode ? 'Bàn' : 'Phòng'}</span> <span id="room-code">${snapshot.room.code}</span>${snapshot.viewer === 'moderator' && !localMode ? iconButton('invite-qr', 'qr', 'Mã QR vào phòng') : ''}</h1></div></div><main data-ui-key="game-main" class="grid ${!snapshot.game ? 'lobby-layout' : snapshot.viewer === 'moderator' ? 'moderator-layout' : 'player-layout'}">${!snapshot.game ? lobby(snapshot) : snapshot.viewer === 'moderator' ? moderator(snapshot) : player(snapshot)}</main>` : switchingView ? `<main class="switching-view" role="status">Đang chuyển màn hình…</main>` : `<main class="welcome"><div class="welcome-mark" aria-hidden="true">${moon}</div><h1>Ma Sói</h1><div class="entry-tabs" role="tablist" aria-label="Vào bàn chơi">${button('entry-join', 'Vào phòng', false, `id="tab-join" role="tab" aria-selected="${entryMode === 'join'}" aria-controls="entry-panel"`)}${button('entry-create', 'Tạo phòng', false, `id="tab-create" role="tab" aria-selected="${entryMode === 'create'}" aria-controls="entry-panel"`)}</div><section id="entry-panel" class="entry-panel" role="tabpanel" aria-labelledby="tab-${entryMode}">${entryMode === 'create' ? `${button('toggle-mode', '<span class="mode-indicator" aria-hidden="true"></span><span class="mode-label mode-online">Online</span><span class="mode-label mode-offline">Offline</span>', false, `id="create-mode" class="mode-switch" role="switch" aria-label="Chế độ offline" aria-checked="${localMode}"`)}${button('create', `Tạo ${localMode ? 'bàn' : 'phòng'} ${icon('arrow')}`, false, 'class="primary wide"')}${localTable.lastCode() ? button('resume-local', 'Tiếp tục bàn đã lưu trên máy', false, 'class="secondary wide"') : ''}` : `<label>Mã phòng<input id="join-code" maxlength="6" inputmode="numeric" value="${esc(code)}" placeholder="••••••" autocomplete="off"></label><label>Tên của bạn<input id="join-name" value="${esc(savedPlayerName)}" maxlength="40" autocomplete="nickname" placeholder="Tên hoặc Biệt danh"></label>${debug?.joinOption() ?? '<p class="muted">Đổi máy: nhập mã phòng và đúng tên cũ để tiếp tục.</p>'}${button('join', `Vào phòng ${icon('arrow')}`, false, 'class="primary wide"')}`}</section></main>`}${overlay}${overlay ? '' : wakeOverlay(snapshot)}${modalHtml()}${memberMenuHtml()}${busy && pending?.operation.type === 'create' ? '<div class="create-loading" data-ui-key="create-loading" role="status" aria-label="Đang tạo phòng" aria-busy="true"><span class="create-spinner" aria-hidden="true"></span></div>' : ''}`);
   app.classList.toggle('player-view', snapshot?.viewer === 'player');
   app.classList.toggle('table-fullscreen', tableFullscreen && !!snapshot);
   for (const region of app.querySelectorAll<HTMLElement>('header, .room-heading, main.grid > :not(.table-stage)')) region.inert = tableFullscreen && !!snapshot;
@@ -687,6 +711,7 @@ function accepted(s: Snapshot) {
   if (snapshot?.room.code !== s.room.code) { deckDirty = false; deck = {}; notebookTab = 'players'; notebookNight = 'all'; notebookScroll.players = notebookScroll.chat = notebookScroll.history = 0; }
   switchingView = false; sessionMoved = false;
   if (s.controller) setProxy(s.me.id);
+  if (s.viewer === 'player' && !s.controller) { savedPlayerName = s.me.name; try { sessionStore.setItem('ma-soi:player-name:v1', savedPlayerName); } catch {} }
   snapshot = s; code = s.room.code; catalog = s.catalog; storage = s.storage;
   serverOffset = Date.now() - Date.parse(s.serverTime);
   if (!s.room.local) debug?.watch(s, capabilityFor(code));
@@ -742,7 +767,13 @@ async function sendPending() {
   busyAction = lastAction === 'retry' || !lastAction ? (pending.operation.type === 'command' || pending.operation.type === 'offlineCommand' ? pending.operation.command.type === 'act' ? 'submit' : pending.operation.command.type : pending.operation.type) : lastAction;
   busy = true; notice = ''; render();
   try {
-    const s: Snapshot = await request(pending.operation, pending.token);
+    const leaving = pending.operation.type === 'leave' ? pending.operation.code : null;
+    const s = await request(pending.operation, pending.token);
+    if (leaving) {
+      if (s.left !== true || s.code !== leaving) throw new Error('Không xác nhận được việc rời phòng.');
+      delete sessions[s.code]; pending = null; persist(); setProxy(null); clearTimeout(poll); sessionMoved = true;
+      location.assign('/'); success = true; return true;
+    }
     if (pending.operation.type === 'setDeck') deckDirty = false;
     if (!debug?.owns(s.room.code)) sessions[s.room.code] = { token: pending.token }; pending = null; persist();
     accepted(s); notice = ''; failed = false; success = true;
@@ -806,6 +837,14 @@ app.addEventListener('click', async e => {
   const action = el.dataset.action!;
   if (!busy) lastAction = action;
   try {
+    if (action === 'browser-fullscreen') {
+      try {
+        if (document.fullscreenElement) await document.exitFullscreen();
+        else if (document.fullscreenEnabled && document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen();
+        else { modal = 'browser-fullscreen-help'; render(); }
+      } catch { modal = 'browser-fullscreen-help'; render(); }
+      return;
+    }
     if (action === 'target-slot') { activeTargetSlot = el.dataset.slot!; updateTargetPicker(); return; }
     if (action === 'pick-target' || action === 'target-clear') {
       const slots = pickerSlots(), slot = action === 'target-clear' ? el.dataset.slot! : activeTargetSlot;
@@ -827,7 +866,13 @@ app.addEventListener('click', async e => {
       if (ok && action === 'simple-ack') { modal = null; render(); }
       return;
     }
-    if (action === 'exit-room' && snapshot?.viewer === 'moderator') {
+    if (action === 'invite-qr' && snapshot?.viewer === 'moderator' && !localMode) {
+      const url = inviteUrl();
+      if (inviteQrUrl !== url) { inviteQr = await QRCode.toString(url, { type: 'svg', errorCorrectionLevel: 'M', margin: 4 }); inviteQrUrl = url; }
+      modal = 'invite-qr'; modalReturnTarget = null; render(); return;
+    }
+    if (action === 'confirm-leave' && snapshot?.viewer === 'player' && !snapshot.controller) { await mutate({ type: 'leave', code, requestId: random() }); return; }
+    if (action === 'exit-room' && snapshot && !snapshot.controller) {
       modalReturnTarget = null; modal = 'exit-room'; render();
       app.querySelector<HTMLButtonElement>('[data-action="cancel-exit"]')?.focus(); return;
     }
@@ -936,6 +981,7 @@ app.addEventListener('click', async e => {
     if (ok && proxy && command.type === 'act' && modal !== 'inspect-result') await returnModerator(false);
   } catch (e) { notice = action === 'copy' ? `Link vào phòng: ${location.origin}/?room=${code}` : (e as Error).message; render(); }
 });
+document.addEventListener('fullscreenchange', () => render());
 window.addEventListener('online', () => { if (pending) void sendPending(); else void refresh(); });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) { if (pending) void sendPending(); else void refresh(); } });
 document.addEventListener('click', e => {

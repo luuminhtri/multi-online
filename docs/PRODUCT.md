@@ -151,3 +151,7 @@ Sổ tay bí mật chia tab Người chơi, Chat Sói và Nhật ký. Trên đi�
 - Chat bầy Sói mở toàn màn hình, bên ngoài chỉ vài tin xem trước. Mỗi lượt có hướng dẫn thao tác; dùng máy quản trò bỏ màn gọi thức dậy.
 - Xem chi tiết vai từ danh sách tại lobby đóng về lobby ngay.
 - Kết quả Tiên tri: “Là phe Sói”, biểu tượng đầu sói riêng đơn giản, tone đỏ đen; không dùng lá Ma Sói.
+
+## Rời phòng, QR, nhớ tên và toàn màn hình — 2026-10-27
+
+Người chơi có Rời phòng: xác nhận rồi rút hẳn, lobby bỏ ghế, ván đã chia giữ ghế đánh dấu rời và không kích hoạt chết dây chuyền. Máy chủ xác định người rời từ capability, không nhận ID người khác. Quản trò có icon QR cạnh mã phòng online; QR chỉ chứa link phòng. Tên người chơi được nhớ trên thiết bị sau khi vào thành công, có thể sửa lần sau. Icon góc màn hình mở/thoát fullscreen trình duyệt khi được hỗ trợ, khác icon phóng to bàn; iPhone không hỗ trợ hiện hướng dẫn Thêm vào Màn hình chính. Không ép Chrome qua QR.

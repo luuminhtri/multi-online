@@ -61,6 +61,7 @@ export function parseMutation(v: unknown): Mutation {
   if (o.type === 'join') { keys(o, ['type', 'requestId', 'code', 'name']); return { type: 'join', requestId, code, name: cleanName(o.name) }; }
   if (o.type === 'offlineReady') { keys(o, ['type', 'requestId', 'code', 'playerId']); return { type: 'offlineReady', requestId, code, playerId: text(o.playerId, 80) }; }
   if (o.type === 'offlineCommand') { keys(o, ['type', 'requestId', 'code', 'playerId', 'stepId', 'command']); return { type: 'offlineCommand', requestId, code, playerId: text(o.playerId, 80), stepId: text(o.stepId, 200), command: command(o.command) }; }
+  if (o.type === 'leave') { keys(o, ['type', 'requestId', 'code']); return { type: 'leave', requestId, code }; }
   if (o.type === 'ready') { keys(o, ['type', 'requestId', 'code']); return { type: 'ready', requestId, code }; }
   if (o.type === 'command') { keys(o, ['type', 'requestId', 'code', 'stepId', 'command']); return { type: 'command', requestId, code, stepId: text(o.stepId, 200), command: command(o.command) }; }
   requireApi(Number.isSafeInteger(o.expectedRevision) && (o.expectedRevision as number) >= 0, 'INVALID_REVISION');

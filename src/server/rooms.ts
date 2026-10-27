@@ -91,7 +91,32 @@ export class RoomService {
     return { ...payload, viewVersion: hash(JSON.stringify(payload)), serverTime: new Date(this.now()).toISOString() } as Snapshot;
   }
   async read(code: string, token: string, offlinePlayerId?: string) { const room = await this.repository.read(code); this.valid(room); return this.project(room, hash(token), offlinePlayerId); }
+  async leave(operation: Extract<Mutation, { type: 'leave' }>, token: string) {
+    const tokenHash = hash(token), receiptKey = hash(JSON.stringify([tokenHash, operation.requestId]));
+    const fingerprint = hash(JSON.stringify(operation));
+    for (let attempt = 0; attempt < 8; attempt++) {
+      const prior = await this.repository.read(operation.code); this.valid(prior);
+      if (prior.receipts[receiptKey]) {
+        requireApi(prior.receipts[receiptKey] === fingerprint, 'REQUEST_ID_REUSED', 409);
+        return { left: true as const, code: prior.code };
+      }
+      const identity = this.member(prior, tokenHash);
+      requireApi(!identity.moderator, 'PLAYER_REQUIRED', 403);
+      const room = structuredClone(prior);
+      room.schemaVersion = 4; room.lobbyRoles ??= []; room.readyPlayerIds ??= []; room.gameStarted ??= !!room.game;
+      if (!room.game) room.members = room.members.filter(m => m.id !== identity.member.id);
+      else {
+        room.members.find(m => m.id === identity.member.id)!.left = true;
+        room.game = withdrawPlayer(room.game, identity.member.id);
+      }
+      room.readyPlayerIds = room.readyPlayerIds.filter(id => id !== identity.member.id);
+      room.receipts[receiptKey] = fingerprint; room.revision++;
+      if (await this.repository.commit(room, prior.revision)) return { left: true as const, code: room.code };
+    }
+    throw new ApiError('STORAGE_BUSY', 503, true);
+  }
   async mutate(operation: Mutation, token: string): Promise<Snapshot> {
+    requireApi(operation.type !== 'leave', 'INVALID_REQUEST');
     const tokenHash = hash(token);
     const proxyId = operation.type === 'offlineReady' || operation.type === 'offlineCommand' ? operation.playerId : undefined;
     if (operation.type === 'create') {

@@ -1,5 +1,35 @@
 # Trạng thái làm việc
 
+## 2026-10-28 — Vai quen thuộc đứng trước trong thư viện
+
+- Danh sách xem 64 vai ưu tiên Dân làng, Ma sói, Tiên tri, Bảo vệ, Phù thủy, Thợ săn, Thần tình yêu; tiếp đến các vai quen thuộc mở rộng rồi phần còn lại theo thứ tự thư viện nguồn. Đây là thứ tự biên tập, không phải thống kê tần suất chơi.
+- Giữ đủ vai, nguyên mô tả/ảnh và dữ liệu cards.json; không đổi luật hay thứ tự chia vai. Build/typecheck đạt; chưa deploy.
+
+## 2026-10-28 — Gom công cụ phòng vào Cài đặt
+
+- Thanh phòng quản trò/người chơi chỉ giữ Cài đặt và Vai; ID/QR vẫn bên phải. Cài đặt mở danh sách Toàn màn hình, Sao chép link, Làm mới, Rời/Thoát phòng; quản trò ở lobby có mục Cài đặt ván chơi. Chế độ dùng máy quản trò có mục quay về quản trò.
+- Build/typecheck, smoke Chrome 7 tab (bao gồm bố cục 390px, fullscreen và rời phòng), diff check đều đạt. Chưa deploy, chưa kiểm tra iPhone thật.
+
+## 2026-10-28 — Nhãn dưới icon công cụ phòng
+
+- Thêm nhãn “Sao chép”, “Toàn màn hình” (đổi thành “Thu nhỏ” khi đang fullscreen) dưới icon; dùng cùng bố cục icon trên, nhãn dưới cho công cụ phòng.
+- Giữ công cụ bên trái, ID bên phải và nút thu nhỏ bàn riêng.
+- Kiểm tra: `npm run build`, smoke Chrome 7 tab `node scripts/test-ui-performance.mjs --smoke`, `git diff --check` đều đạt. Chưa deploy; chưa kiểm tra trên iPhone thật.
+
+## 2026-10-27 — Tách icon toàn màn hình và đổi vị trí thanh phòng
+
+- Bỏ icon fullscreen trình duyệt cố định góc trên và khoảng trống 38px riêng. Đặt vào room-tools với icon cửa sổ riêng; công cụ bên trái, mã phòng/QR bên phải, công cụ tự xuống dòng trong vùng của mình khi màn hẹp.
+- Phóng to bàn giữ icon bốn góc, khi mở có nút thu nhỏ 44px nằm trên bàn, không bị icon trình duyệt che. Fullscreen trình duyệt và phóng to bàn hoạt động độc lập.
+- Typecheck/build đạt, Chrome regression kiểm vị trí thanh/ID trên 390px, elementFromPoint tại nút thu nhỏ trúng đúng nút, phóng bàn không bật Fullscreen API. Chưa deploy.
+
+## 2026-10-27 — Rời ván, QR, nhớ tên và fullscreen trình duyệt
+
+- Player có Rời phòng cả ở nhận vai/gọi dậy; xác nhận rút hẳn. API leave tự xác định danh tính; lobby xóa ghế, giữa ván withdrawPlayer không hiệu ứng chết dây chuyền, bỏ quorum/lượt; thu hồi quyền đọc. Reply chỉ left/code, retry cùng request vẫn thành công không trả bí mật. Client xóa phiên phòng sau ACK, giữ tên. Quản trò và giả mạo playerId bị chặn. Không schema migration.
+- Icon QR cạnh ID ở quản trò phòng online, SVG QR tạo tại thiết bị bằng qrcode, URL phòng không có credential. Offline không có QR mời vào phòng. Nhớ tên sau join thành công qua localStorage, debug cô lập sessionStorage.
+- Icon fullscreen riêng cố định góc màn hình gọi requestFullscreen/exitFullscreen và theo fullscreenchange. Không hỗ trợ/bị từ chối hiện hướng dẫn iPhone Chrome/Safari Chia sẻ → Thêm vào Màn hình chính. Manifest standalone và metadata iOS đã thêm. Không hứa ép Chrome hay tự fullscreen khi quét QR.
+- Kiểm 24 tests rooms/withdrawal và 3 product boundaries đạt; build/typecheck đạt; Chrome 7 tab kiểm QR xuất hiện, xác nhận/hủy rời, member left và tên điền lại; kiểm requestFullscreen/exitFullscreen với user gesture và hướng dẫn khi fullscreenEnabled=false. Postman spec syntax và collection lint đạt. Lượt Postman đầu lỗi token fixture có dấu gạch, đã sửa generator thành hex; lượt cuối 6 requests, 8 assertions, 0 failures. Chưa kiểm camera iPhone/Safari thật; chưa deploy.
+
+
 ## 2026-10-27 — Loading giữa màn hình khi tạo phòng
 
 - Khi create đang gửi, hiện spinner giữa viewport trên lớp nền dịu, không banner chữ; không chạy đồng thời spinner trên nút. Các thao tác khác giữ loading tại nút. Thành công/lỗi đều đóng lớp loading; mất ACK vẫn có retry đúng request cũ.

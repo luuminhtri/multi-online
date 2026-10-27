@@ -16,6 +16,7 @@ export interface RoomRepository {
   remove?(code: string, expectedRevision: number): Promise<boolean>;
 }
 export type Mutation =
+  | { type: 'leave'; requestId: string; code: string }
   | { type: 'create'; requestId: string; name: string }
   | { type: 'join'; requestId: string; code: string; name: string }
   | { type: 'setOffline'; requestId: string; code: string; expectedRevision: number; playerId: string }

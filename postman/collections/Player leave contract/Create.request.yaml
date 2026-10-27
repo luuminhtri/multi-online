@@ -1,0 +1,21 @@
+$kind: http-request
+name: Create
+order: 1000
+method: POST
+url: "{{baseUrl}}/api/room"
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{owner}}"
+body:
+  type: json
+  content: |
+    {"type": "create", "requestId": "create", "name": "Host"}
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |
+      pm.collectionVariables.set('owner',pm.variables.replaceIn('{{$guid}}').replace(/-/g,'')+pm.variables.replaceIn('{{$guid}}').replace(/-/g,''));pm.collectionVariables.set('guest',pm.variables.replaceIn('{{$guid}}').replace(/-/g,'')+pm.variables.replaceIn('{{$guid}}').replace(/-/g,''));
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('HTTP 200',()=>pm.response.to.have.status(200));pm.collectionVariables.set('room',pm.response.json().room.code);

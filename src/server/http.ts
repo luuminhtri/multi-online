@@ -65,7 +65,8 @@ export function createApiHandler(service: RoomService | (() => RoomService)) {
         reply(res, 200, await instance.closeDebug(roomCode(url.searchParams.get('code')), token(req.headers.authorization)));
       } else if (req.method === 'POST') {
         const credential = token(req.headers.authorization);
-        reply(res, 200, await instance.mutate(parseMutation(await readJSON(req)), credential));
+        const operation = parseMutation(await readJSON(req));
+        reply(res, 200, operation.type === 'leave' ? await instance.leave(operation, credential) : await instance.mutate(operation, credential));
       } else { res.setHeader('Allow', 'GET, POST, DELETE'); throw new ApiError('METHOD_NOT_ALLOWED', 405); }
     } catch (e) {
       const error = e instanceof ApiError ? e : new ApiError('INTERNAL_ERROR', 500);

@@ -1,0 +1,15 @@
+$kind: http-request
+name: Revoked
+order: 6000
+method: GET
+url: "{{baseUrl}}/api/room?code={{room}}"
+queryParams:
+  code: "{{room}}"
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{guest}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('HTTP 403',()=>pm.response.to.have.status(403));

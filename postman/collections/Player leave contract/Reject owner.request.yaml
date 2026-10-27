@@ -1,0 +1,17 @@
+$kind: http-request
+name: Reject owner
+order: 3000
+method: POST
+url: "{{baseUrl}}/api/room"
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{owner}}"
+body:
+  type: json
+  content: |
+    {"type": "leave", "requestId": "owner-leave", "code": "{{room}}"}
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('HTTP 403',()=>pm.response.to.have.status(403));

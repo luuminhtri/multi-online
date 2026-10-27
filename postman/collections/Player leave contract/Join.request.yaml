@@ -1,0 +1,17 @@
+$kind: http-request
+name: Join
+order: 2000
+method: POST
+url: "{{baseUrl}}/api/room"
+headers:
+  Content-Type: application/json
+  Authorization: "Bearer {{guest}}"
+body:
+  type: json
+  content: |
+    {"type": "join", "requestId": "join", "code": "{{room}}", "name": "Guest"}
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('HTTP 200',()=>pm.response.to.have.status(200));

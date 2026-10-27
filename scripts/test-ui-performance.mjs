@@ -103,7 +103,7 @@ try {
     const info = await until(async () => (await (await fetch(`${endpoint}/json/list`)).json()).find(p => p.id === targetId), 'tab mới');
     const send = await connect(info.webSocketDebuggerUrl);
     const evaluate = async expression => {
-      const result = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true });
+      const result = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true, userGesture: true });
       if (result.exceptionDetails) throw new Error('Thao tác trong tab thất bại.');
       return result.result.value;
     };
@@ -170,11 +170,22 @@ try {
   }
   assert.equal(new Set(identities).size, 7);
   assert.equal(new Set(windows).size, 1);
-  await host.evaluate(`document.querySelector('[data-action="refresh"]').click()`);
+  await host.evaluate(`document.querySelector('[data-modal="tools"]').click();document.querySelector('[data-action="refresh"]').click();document.querySelector('[data-modal="__close"]').click()`);
   await host.wait(`document.querySelectorAll('.seat').length >= 6`);
   await browser('Target.activateTarget', { targetId: host.targetId });
   console.log(`Phòng ${room}: 1 tab quản trò + 6 tab A–F, cùng cửa sổ, phiên riêng; tải lại vẫn đúng người.`);
 
+  await host.evaluate(`if (!document.querySelector('[data-action="browser-fullscreen"]')) document.querySelector('[data-modal="tools"]').click();document.querySelector('[data-action="browser-fullscreen"]').click()`);
+  await host.wait(`!!document.fullscreenElement`);
+  await host.evaluate(`if (!document.querySelector('[data-action="browser-fullscreen"]')) document.querySelector('[data-modal="tools"]').click();document.querySelector('[data-action="browser-fullscreen"]').click()`);
+  await host.wait(`!document.fullscreenElement`);
+  await host.evaluate(`Object.defineProperty(document,'fullscreenEnabled',{value:false,configurable:true});document.querySelector('[data-action="browser-fullscreen"]').click()`);
+  await host.wait(`document.querySelector('.modal-body')?.textContent.includes('Thêm vào Màn hình chính')`);
+  await host.evaluate(`delete document.fullscreenEnabled;document.querySelector('[data-modal="__close"]').click()`);
+  await host.evaluate(`document.querySelector('[data-action="invite-qr"]').click()`);
+  await host.wait(`!!document.querySelector('.invite-qr svg')`);
+  assert.equal(await host.evaluate(`document.querySelector('.qr-room-code').textContent`), room);
+  await host.evaluate(`document.querySelector('[data-modal="__close"]').click()`);
   // UI regression coverage against seven isolated clients in ephemeral RAM.
   const readSource = `async () => {
     const code = document.querySelector('#room-code').textContent;
@@ -182,7 +193,7 @@ try {
     return (await fetch('/api/room?code='+code, {headers:{Authorization:'Bearer '+token}})).json();
   }`;
   const read = tab => tab.evaluate(`(${readSource})()`);
-  const click = (tab, selector) => tab.evaluate(`document.querySelector(${JSON.stringify(selector)}).click()`);
+  const click = (tab, selector) => tab.evaluate(`if (!document.querySelector(${JSON.stringify(selector)}) && document.querySelector('[data-modal="tools"]')) document.querySelector('[data-modal="tools"]').click();document.querySelector(${JSON.stringify(selector)}).click();if (${JSON.stringify(selector)}.includes('refresh')) document.querySelector('[data-modal="__close"]')?.click()`);
   const p = tabs[1];
   await p.send('Emulation.setDeviceMetricsOverride', {width:390,height:844,deviceScaleFactor:1,mobile:true});
   await host.evaluate(`document.querySelector('[data-modal="deck"]').click(); for(const input of document.querySelectorAll('[data-role]')) {input.value=({wolf:2,seer:1,guard:1,villager:2})[input.dataset.role]||0; input.dispatchEvent(new Event('input',{bubbles:true}));} document.querySelector('[data-action="save-deck"]').click()`);
@@ -198,7 +209,10 @@ try {
   await p.send('Emulation.setDeviceMetricsOverride', {width:390,height:650,deviceScaleFactor:1,mobile:true});
   assert.equal(await p.evaluate(`document.querySelector('.table').getBoundingClientRect().width`), width, 'height changes do not resize table');
   assert.equal(await p.evaluate(`getComputedStyle(document.querySelector('header')).display`), 'none');
+  assert.equal(await p.evaluate(`document.querySelector('.room-tools').getBoundingClientRect().right <= document.querySelector('.room-identity').getBoundingClientRect().left`),true,'tools left, room ID right');
+  assert.equal(await p.evaluate(`document.querySelectorAll('.room-tools button').length === 2 && !!document.querySelector('.room-tools [data-modal="tools"]') && !!document.querySelector('.room-tools [data-modal="catalog"]')`),true,'toolbar only shows settings and roles');
   await click(p, '[data-action="table-fullscreen"]');
+  assert.equal(await p.evaluate(`(() => {const button=document.querySelector('[data-action="table-fullscreen"]');const r=button.getBoundingClientRect();return document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.closest('button')===button && button.getAttribute('aria-label')==='Thu nhỏ bàn chơi' && !document.fullscreenElement;})()`),true,'table restore button is unobscured and independent of browser fullscreen');
   assert.equal(await p.evaluate(`getComputedStyle(document.querySelector('.table-stage')).position`), 'fixed');
   await click(p, '[data-action="table-fullscreen"]');
   await click(host, '[data-action="start"]');
@@ -251,6 +265,15 @@ try {
   }
   assert.ok(checkedChat&&checkedSeer&&checkedTurn);
   assert.equal(await p.evaluate(`document.documentElement.scrollWidth<=innerWidth`),true,'no mobile overflow');
+  await click(p,'[data-action="exit-room"]');
+  await click(p,'[data-action="cancel-exit"]');
+  assert.equal((await read(p)).me.name, 'A');
+  await click(p,'[data-action="exit-room"]');
+  await click(p,'[data-action="confirm-leave"]');
+  await p.wait(`!!document.querySelector('#join-name') && !document.querySelector('#room-code')`);
+  assert.equal(await p.evaluate(`document.querySelector('#join-name').value`),'A','player name remembered after leave');
+  assert((await read(host)).room.members.find(m=>m.name==='A').left,'player permanently left');
+
   console.log('UI đạt: đóng vai trực tiếp; giữ DOM bàn/ghế; bàn ổn định 390px; ẩn header; toàn màn hình; nhận vai/ready/wake; chọn avatar; chat; soi phe Sói có biểu tượng riêng.');
 
 } catch (error) {

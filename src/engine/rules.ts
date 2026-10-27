@@ -1,3 +1,5 @@
+import { EXTRA_DEFINITIONS } from './extra-definitions.ts';
+import { EXTRA_OPENING, EXTRA_NIGHT } from './extension-types.ts';
 import type { Role, Step } from './types.ts';
 
 // v13 adds nightly Hunter pins or one active shot; older games retain death-time shots.
@@ -5,7 +7,7 @@ import type { Role, Step } from './types.ts';
 // phase clocks; v10 adds pack chat during the wolves step; v9 adds the
 // moderator's explicit pre-game Witch visibility option.
 export const RULES = Object.freeze({
-  version: 'classic-core-v13',
+  version: 'classic-core-v14',
   dayPhases: ['discussion', 'nomination', 'defense', 'finalvote'] as const,
   defaultDayTimers: { discussion: 300, nomination: 15, defense: 30, finalvote: 15 } as const,
   guardCanSelfProtect: true,
@@ -16,6 +18,7 @@ export const RULES = Object.freeze({
   revealDeadRoles: false,
 });
 export const ROLES: Record<Role, { name: string; description: string }> = {
+  ...Object.fromEntries(['mason','minion','beholder','count','insomniac','the_thing','sorceress','paranormal_investigator','priest','old_hag','spellcaster','mummy','troublemaker','huntress','revealer','idiot','pacifist','mayor','wolverine','lone_wolf','teen_wolf','bigfoot','vampire','leprechaun','tanner','hoodlum','nostradamus','cult_leader','blob','zombie','dracula','chupacabra','ghost','bogeyman','drunk','bloody_mary','frankenstein'].map(id => [id, EXTRA_DEFINITIONS[id as keyof typeof EXTRA_DEFINITIONS]])) as Record<Role, { name: string; description: string }>,
   wolf: { name: 'Ma Sói', description: 'Cùng bầy chọn một người không mang vai Sói để cắn mỗi đêm. Tất cả Sói sống phải chọn cùng mục tiêu.' },
   villager: { name: 'Dân làng', description: 'Thảo luận và biểu quyết ban ngày. Không có hành động ban đêm.' },
   seer: { name: 'Tiên tri', description: 'Mỗi đêm soi một người khác còn sống. Sói thường hiện Sói; Người hóa sói cũng hiện Sói, còn Người sói che giấu hiện không phải Sói.' },
@@ -47,8 +50,9 @@ export const ROLES: Record<Role, { name: string; description: string }> = {
   dream_wolf: { name: 'Sói chiêm bao', description: 'Không thức hoặc biết bầy cho đến khi một Sói thật chết được công bố. Sau đó thức và cắn cùng bầy.' },
 
 };
-export const NIGHT_STEPS: Step[] = ['guard', 'hunter', 'seer', 'aura_seer', 'mystic_seer', 'mentalist', 'wolves', 'alpha_wolf', 'witch'];
+export const NIGHT_STEPS: Step[] = ['guard', 'hunter', 'seer', 'aura_seer', 'mystic_seer', 'mentalist', 'paranormal_investigator', 'priest', 'sorceress', 'old_hag', 'spellcaster', 'mummy', 'troublemaker', 'wolves', 'leprechaun', 'alpha_wolf', 'witch', 'huntress', 'revealer', 'vampire', 'chupacabra', 'cult_leader', 'blob', 'zombie', 'dracula', 'bogeyman', 'ghost', 'bloody_mary', 'the_thing', 'insomniac'];
 export const MODERATOR_SCRIPTS: Record<Step, { wake: string; sleep?: string }> = {
+  ...Object.fromEntries([...EXTRA_OPENING,...EXTRA_NIGHT].map(id=>[id,{wake:`${EXTRA_DEFINITIONS[id].name} thức dậy và làm chức năng.`,sleep:`${EXTRA_DEFINITIONS[id].name} đi ngủ.`}])) as Record<Step, {wake:string;sleep?:string}>,
   dire_wolf: { wake: 'Sói tuyết thức dậy, chọn một bạn đồng hành.', sleep: 'Sói tuyết đi ngủ.' },
   virginia_woolf: { wake: 'Virginia Woolf thức dậy, chọn người sợ mình.', sleep: 'Virginia Woolf đi ngủ.' },
   alpha_wolf: { wake: 'Sói Alpha thức dậy, quyết định có chuyển hóa một nạn nhân của bầy hay không.', sleep: 'Sói Alpha đi ngủ.' },
@@ -93,3 +97,5 @@ export const MODERATOR_SCRIPTS: Record<Step, { wake: string; sleep?: string }> =
     wake: 'Ván chơi đã kết thúc!',
   },
 };
+
+export const LEGACY_V13_ROLES = Object.freeze(['wolf', 'villager', 'seer', 'guard', 'witch', 'hunter', 'cupid', 'cursed', 'doppelganger', 'apprentice_seer', 'aura_seer', 'mystic_seer', 'mentalist', 'lycan', 'wolf_man', 'tough_guy', 'diseased', 'prince', 'mad_bomber', 'wolf_cub', 'big_bad_wolf', 'alpha_wolf', 'dire_wolf', 'virginia_woolf', 'fruit_wolf', 'fang_face', 'dream_wolf']) as readonly Role[];

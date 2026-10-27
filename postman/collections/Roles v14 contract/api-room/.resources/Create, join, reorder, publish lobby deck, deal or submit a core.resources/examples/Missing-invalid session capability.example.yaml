@@ -1,0 +1,35 @@
+$kind: http-example
+name: Missing/invalid session capability
+request:
+  url: "{{baseUrl}}/api/room"
+  method: POST
+  headers:
+    - key: Authorization
+      value: Bearer <token>
+      description: "Added as a part of security scheme: bearer"
+    - key: Accept
+      value: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "type": {},
+        "requestId": "E-nhEPeR0bYDYz1SM4q8TUeitOhazqx5aQN-isRmDI7qlmKc418MOLSXMx_FD1IZnQA1MeE1k0OaQgR9NHMatz_T-kH5Fbd_",
+        "name": "string"
+      }
+response:
+  statusCode: 401
+  statusText: Unauthorized
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "error": {
+          "code": "string",
+          "message": "string",
+          "retryable": true
+        }
+      }
+order: 3000

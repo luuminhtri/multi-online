@@ -1,0 +1,49 @@
+ok   config đọc được, storage=local (không đụng cloud)
+ok   tạo phòng
+ok   7 người chơi join
+ok   join mã phòng không tồn tại → ROOM_NOT_FOUND
+ok   setDeck chứa vai chưa hỗ trợ → UNSUPPORTED_ROLE
+ok   setDeck hợp lệ (7 lá)
+ok   setDeck với revision đã cũ (CAS) → STALE_ROOM
+ok   chia vai (start)
+ok   begin khi chưa ai ready → PLAYERS_NOT_READY
+ok   7 người chơi ready
+ok   begin vào đêm 1
+ok   7 người chơi trong ván (quản trò không chơi)
+ok   đủ vai trong deck
+ok   setOffline người chơi giữa ván
+ok   GET qua proxy đúng danh tính người offline
+ok   offlineCommand qua máy chủ không sập (quyền bị kiểm)
+ok   người lạ không proxy được danh tính người khác
+ok   CAS đồng thời: 1 thắng 1 STALE_ROOM
+ok   bầy bất đồng bị chặn khi advance (WOLVES_DISAGREE)
+ok   resolve đêm 1
+ok   publish đêm 1
+     [đêm 1] chết: P4
+ok   bầy bất đồng bị chặn khi advance (WOLVES_DISAGREE)
+ok   resolve đêm 2
+ok   publish đêm 2
+     [đêm 2] chết: không ai
+ok   ván kết thúc có winner (sau 1 đêm)
+ok   phe Sói thắng khi đạt parity (kịch bản này)
+ok   có ghi nhận write thành công để thử replay
+ok   retry cùng requestId+content → ACK lại snapshot cũ (revision/viewVersion không đổi)
+ok   requestId trùng, nội dung khác → REQUEST_ID_REUSED
+ok   stepId giả → STALE_STEP/REQUEST_ID_REUSED
+ok   player view không rò bí mật (role/actions/targets/receipts)
+ok   moderator view giữ nhật ký đầy đủ
+ok   mutation chứa trường lạ → UNKNOWN_FIELD
+ok   content-type sai → JSON_REQUIRED
+ok   JSON hỏng → INVALID_JSON
+ok   GET tham số lạ → UNKNOWN_FIELD
+ok   rút người giữa ván
+ok   rút người chỉ đánh dấu người rút là công khai, không dây chuyền (D59)
+ok   đọc lại cùng token cùng viewVersion (reconnect ổn định)
+ok   reconnect vẫn thấy ván
+
+=== ĐỘ TRỲ (ms, local) ===
+ACK người gửi: {"n":3,"median":7,"max":7}
+Máy khác thấy qua poll: {"n":3,"median":3,"max":3}
+ok   Bảo vệ chặn được cắn qua HTTP (một đêm không ai chết)
+
+TẤT CẢ 40 kiểm tra ĐẠT

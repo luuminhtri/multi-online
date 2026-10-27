@@ -1,0 +1,42 @@
+✔ local table adds people explicitly, rejects duplicate names/stale edits and keeps network storage separate (4.994959ms)
+✔ simplified night needs one guard choice, inspection acknowledgment and one shared wolf choice (10.479458ms)
+✔ bad actions and failed persistence do not partially apply a group action (2.261125ms)
+✔ simplified retries are idempotent, stale forms and repeat protection are refused (1.653292ms)
+✔ normal local mode preserves individual wake/actions, role handoff and manual advancing (1.569ms)
+✔ empty roles skip automatically while actual abilities and deaths use the same engine (1.835167ms)
+✔ offline catalog ships local images and original descriptions for every supported role (0.115334ms)
+✔ shared wolf choice is atomic if any wolf rejects the target (1.062291ms)
+✔ offline seer can see a non-wolf and the next morning still enforces the skip budget (5.906041ms)
+✔ cub sacrifice in simplified mode submits the offer before the rest of the pack (1.597333ms)
+✔ hunter pins before wolf bite and night publication resolves the shot automatically (1.925791ms)
+✔ complete local flow works when HTTP browser has no crypto.randomUUID (3.347042ms)
+✔ offline active hunter retains ammunition across reload after holding, then fires once (3.993875ms)
+✔ expanded offline table handles two Masons separately, persists each result and supports prediction/ghost moderation (7.8025ms)
+✔ Vite development: công cụ thử chỉ được phục vụ trong debug (141.547125ms)
+✔ Vite debug: công cụ thử chỉ được phục vụ trong debug (85.66875ms)
+✔ Mọi build, kể cả --mode debug, chỉ xuất sản phẩm (382.5665ms)
+✔ per-turn flooding is rejected without discarding receipts or blocking first action/moderator progress (79.853667ms)
+✔ more than 300 receipts from other actors cannot turn an old bite replay into a new choice (43.974125ms)
+✔ lobby flood returns 429; old receipts remain valid and moderator can still add players/deal (565.962208ms)
+✔ room HTTP: concurrent joins survive, restart resumes identity, secret projections and start retries (162.996875ms)
+✔ room HTTP: missing identity, principal spoofing, invalid JSON, oversized bodies and cross-origin writes fail (13.202666ms)
+✔ Supabase HTTP adapter: new secret uses apikey only, legacy JWT retains Bearer, CAS failures stay false (16.544542ms)
+✔ Supabase failure never acknowledges a mutation or exposes upstream details; retry can recover (107.649666ms)
+✔ cloud configuration never silently falls back to local; partial configuration fails (0.33975ms)
+✔ room HTTP: only moderator can deal with Witch settings; hidden healing survives retries and reconnect (292.131458ms)
+✔ lobby deck is persisted, public before dealing, moderator-only and revision/idempotency checked (48.800791ms)
+✔ legacy room schema 1 migrates on write without changing a running game or its rules (83.865291ms)
+✔ deal waits for every authenticated player; only moderator can begin, retries and restart preserve readiness (83.343167ms)
+✔ normal name recovery rotates device capability and preserves role, ready and action; owner can resume too (121.553041ms)
+✔ offline player handoff is scoped, owner-only, uses player rules, and can move to a phone without changing identity (139.601ms)
+✔ avatar actions require moderator/revision; offline transfer preserves identity and current action (42.019333ms)
+✔ withdrawal after dealing retains seat, revokes recovery and adjusts ready quorum without death chains (118.11825ms)
+✔ v14 HTTP powers: choices, Ghost moderation, wolf timeout, role privacy and moderator authorization (479.861375ms)
+ℹ tests 34
+ℹ suites 0
+ℹ pass 34
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1846.217291

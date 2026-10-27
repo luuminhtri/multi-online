@@ -1,3 +1,4 @@
+import { ROLES } from '../src/engine/rules.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer, type Server } from 'node:http';
@@ -84,7 +85,7 @@ test('room HTTP: concurrent joins survive, restart resumes identity, secret proj
 test('room HTTP: missing identity, principal spoofing, invalid JSON, oversized bodies and cross-origin writes fail', async t => {
   const f = await fixture(t);
   const config = await fetch(f.base + '/api/room?config=1');
-  assert.equal(config.status, 200); assert.equal((await config.json()).catalog.length, 27);
+  assert.equal(config.status, 200); assert.equal((await config.json()).catalog.length, 64);
   assert.equal((await fetch(f.base + '/api/room?code=ABCDEF')).status, 401);
   assert.equal((await f.post(credential(), { type: 'create', name: 'A', principal: { kind: 'moderator' } }, 400)).error.code, 'UNKNOWN_FIELD');
   for (const [body, status] of [['{', 400], ['x'.repeat(17000), 413]] as const) {
@@ -163,7 +164,7 @@ test('room HTTP: only moderator can deal with Witch settings; hidden healing sur
   await f.post(owner, { ...start, settings: { witchSeesBite: 'false' } }, 400);
   await f.post(owner, { ...start, settings: { witchSeesBite: false, clientAdmin: true } }, 400);
   let current = await f.post(owner, start);
-  assert.equal(current.game.settings.witchSeesBite, false); assert.equal(current.game.schemaVersion, 8);
+  assert.equal(current.game.settings.witchSeesBite, false); assert.equal(current.game.schemaVersion, 9);
   assert.deepEqual(current.deck, { wolf: 1, guard: 1, seer: 1, witch: 1, villager: 2 }); // public deck counts, no assignment
   assert.deepEqual((await f.post(owner, start)).game, current.game);
   await f.post(owner, { ...start, settings: { witchSeesBite: true } }, 409);
@@ -386,4 +387,30 @@ test('withdrawal after dealing retains seat, revokes recovery and adjusts ready 
   const ready = await f.read(code, owner);
   const begun = await f.post(owner, { type: 'begin', code, expectedRevision: ready.room.revision });
   assert.equal(begun.room.phase, 'playing'); assert.equal(begun.room.readyPlayerIds.length, 4);
+});
+
+test('v14 HTTP powers: choices, Ghost moderation, wolf timeout, role privacy and moderator authorization',async t=>{
+ const f=await fixture(t),owner=credential();const created=await f.post(owner,{type:'create',name:'Quản trò'}),code=created.room.code;
+ const tokens=Array.from({length:8},credential);for(let i=0;i<tokens.length;i++)await f.post(tokens[i],{type:'join',code,name:'E'+i});
+ let host=await f.post(owner,{type:'start',code,expectedRevision:(await f.read(code,owner)).room.revision,roles:['wolf','ghost','bogeyman','vampire','nostradamus','villager','villager','villager'],settings:{witchSeesBite:false,skipVoteDays:3}});
+ const byId=new Map<string,string>();for(const tok of tokens){const v=await f.read(code,tok);byId.set(v.me.id,tok);assert.ok(!('extra' in v.game!));}
+ const villagers=host.game.players.filter((p:{role:string})=>p.role==='villager').map((p:{id:string})=>p.id);
+ async function send(command:Record<string,unknown>,token=owner,status=200){const state=await f.read(code,owner);return f.post(token,{type:'command',code,stepId:state.game!.stepId,command},status);}
+ assert.equal((await send({type:'wolfTimeout'},tokens[0],403)).error.code,'MODERATOR_REQUIRED');
+ let timed=false;
+ for(let n=0;n<40;n++){
+  host=await f.read(code,owner);assert.equal(host.viewer,'moderator');if(host.viewer!=='moderator')assert.fail();const g=host.game!;
+  if(g.step==='review')break;
+  if(g.step==='wolves'){await send({type:'wolfTimeout'});timed=true;continue;}
+  for(const progress of g.progress){const tok=byId.get(progress.id)!;await send({type:'wake'},tok);const v=await f.read(code,tok);if(v.viewer!=='player')assert.fail();const turn=v.game!.turn!;
+   const action=turn.power?{type:'ability',targets:turn.power.count?[villagers[0]]:[],...(turn.power.input==='prediction'?{choice:'village'}:turn.power.input==='note'?{text:'rừng'}:{})}:null;
+   assert.ok(action);await send({type:'act',action},tok);
+  }
+  await send({type:'advance'});
+ }
+ assert.equal(timed,true);host=await f.read(code,owner);if(host.viewer!=='moderator')assert.fail();const ghost=host.game!.players.find(p=>p.role==='ghost')!;
+ for(const tok of tokens){const v=await f.read(code,tok);assert.ok(!JSON.stringify(v.game).includes('"notes"'));assert.ok(!JSON.stringify(v.game!.announcements).includes('rừng'));}
+ assert.equal((await send({type:'reviewNote',actor:ghost.id,approve:true},tokens[0],403)).error.code,'MODERATOR_REQUIRED');
+ await send({type:'reviewNote',actor:ghost.id,approve:true});const seen=await f.read(code,tokens[0]);assert.ok(JSON.stringify(seen.game!.announcements).includes('rừng'));
+ await send({type:'resolve'});await send({type:'publish'});host=await f.read(code,owner);assert.equal(host.game!.players.find((p:{id:string})=>p.id===villagers[0])!.alive,false);
 });

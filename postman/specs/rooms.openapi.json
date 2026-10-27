@@ -294,6 +294,16 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too many new requests in the same turn; acknowledged request IDs remain replayable. Moderator can finish or proxy the turn.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       },
@@ -483,7 +493,7 @@
           },
           "command": {
             "type": "object",
-            "description": "Validated core command: wake, act (all supported abilities), chat (pack-only), dayPhase start/next (day clocks, v11/schema6 games), advance, resolve, publish, verdict or nextNight. Sender identity is derived from Bearer token; actor/principal fields are forbidden."
+            "description": "Validated core command: wake, act (all supported abilities), chat (pack-only), dayPhase start/next (day clocks, v11/schema6 games), advance, resolve, publish, verdict or nextNight. Sender identity is derived from Bearer token; actor/principal fields are forbidden. v14 adds moderator-only reviewNote {actor,approve:boolean} to approve/reject a Ghost single-word note, penalty {target} for explicit rule violations, and wolfTimeout (only current wolves step, clears unfinished ballots and permits Bogeyman). Player act supports ability {targets:string[],pass?:boolean,text?:string,choice?:string}; legal targets/choices are supplied only in the authorized turn projection."
           }
         },
         "required": [
@@ -844,7 +854,7 @@
           },
           "command": {
             "type": "object",
-            "description": "Validated core command: wake, act (all supported abilities), chat (pack-only), dayPhase start/next (day clocks, v11/schema6 games), advance, resolve, publish, verdict or nextNight. Sender identity is derived from Bearer token; actor/principal fields are forbidden."
+            "description": "Validated core command: wake, act (all supported abilities), chat (pack-only), dayPhase start/next (day clocks, v11/schema6 games), advance, resolve, publish, verdict or nextNight. Sender identity is derived from Bearer token; actor/principal fields are forbidden. v14 adds moderator-only reviewNote {actor,approve:boolean} to approve/reject a Ghost single-word note, penalty {target} for explicit rule violations, and wolfTimeout (only current wolves step, clears unfinished ballots and permits Bogeyman). Player act supports ability {targets:string[],pass?:boolean,text?:string,choice?:string}; legal targets/choices are supplied only in the authorized turn projection."
           }
         },
         "required": [

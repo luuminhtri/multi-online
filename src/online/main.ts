@@ -1,14 +1,16 @@
 import { pickTarget, visiblePackIds, type TargetSlot } from './target-picker.ts';
 import type { Snapshot, Mutation } from '../server/types.ts';
-import type { Action, Command, DayTimers, GameEvent, Role } from '../engine/types.ts';
+import { votingRule } from '../engine/extensions.ts';
+import type { Game, Action, Command, DayTimers, GameEvent, Role } from '../engine/types.ts';
 import { LocalTable, localCatalog, type LocalMutation } from '../offline/table.ts';
 import { actors, RuleError } from '../engine/engine.ts';
 import { playerView } from '../engine/views.ts';
 import { MODERATOR_SCRIPTS } from '../engine/rules.ts';
 import './style.css';
+import { ROLE_CATALOG } from '../catalog/roles.ts';
 import { icon } from './icons.ts';
 import deathBloodX from './assets/death-blood-x.png';
-import { latestNightDeaths, publicEventText } from './presentation.ts';
+import { latestNightDeaths, missingLibraryRoles, publicEventText } from './presentation.ts';
 
 type Session = { token: string };
 type Pending = { token: string; operation: LocalMutation };
@@ -49,6 +51,7 @@ const formMemory = new Map<string, string | boolean>();
 function persist() { localStorage.setItem('ma-soi:sessions:v1', JSON.stringify(sessions)); if (pending) localStorage.setItem('ma-soi:pending:v1', JSON.stringify(pending)); else localStorage.removeItem('ma-soi:pending:v1'); }
 const name = (id: unknown) => snapshot?.room.members.find(m => m.id === id)?.name ?? String(id ?? 'không ai');
 const roleName = (id: unknown) => catalog.find(r => r.id === id)?.name ?? String(id);
+const roleLibraryMissing = () => missingLibraryRoles(catalog.map(r => r.id), ROLE_CATALOG);
 const roleById = (id: unknown) => catalog.find(r => r.id === id);
 const initial = (v: string) => [...v.trim()][0]?.toLocaleUpperCase('vi') ?? '?';
 const cardImage = (roleId: string, fallbackText: string) => {
@@ -66,8 +69,9 @@ function describeAction(a: Action): string {
     case 'maul': return `Cắn ${a.targets.map(name).join(' và ')}`;
     case 'protect': return `Bảo vệ ${name(a.target)}`;
     case 'inspect': return `Soi ${name(a.target)}`;
+    case 'ability': return a.pass ? 'Không dùng năng lực' : a.text?`Gửi gợi ý: ${a.text}`:a.choice==='draw'?'Bốc vai thật':a.choice?`Dự đoán: ${winnerText(a.choice)}`:a.targets.length ? 'Chọn ' + a.targets.map(name).join(', ') : 'Đã xác nhận';
     case 'hold': return 'Giữ lại phát bắn';
-    case 'shoot': return `${snapshot?.game && (snapshot.viewer === 'moderator' ? snapshot.game.rulesVersion === 'classic-core-v13' && !snapshot.game.settings?.hunterActiveShot : snapshot.game.hunterMode === 'passive') ? 'Ghim' : 'Bắn'} ${name(a.target)}`;
+    case 'shoot': return `${snapshot?.game && (snapshot.viewer === 'moderator' ? ['classic-core-v13','classic-core-v14'].includes(snapshot.game.rulesVersion) && !snapshot.game.settings?.hunterActiveShot : snapshot.game.hunterMode === 'passive') ? 'Ghim' : 'Bắn'} ${name(a.target)}`;
     case 'mimic': return `Nhân bản ${name(a.target)}`;
     case 'bond': return `Liên kết với ${name(a.target)}`;
     case 'pair': return `Kết duyên ${a.targets.map(name).join(' và ')}`;
@@ -78,6 +82,19 @@ function describeAction(a: Action): string {
     case 'potion': return [a.heal ? `Cứu ${a.healTarget ? name(a.healTarget) : 'nạn nhân'}` : '', a.poison ? `Độc ${name(a.poison)}` : ''].filter(Boolean).join(' · ') || 'Không dùng thuốc';
   }
 }
+function abilityResultText(e: GameEvent): string {
+ const d=e.data, kind=String(d.kind), people=(key:string)=>Array.isArray(d[key])?(d[key] as string[]).map(name).join(', '):'';
+ if(kind==='drunk')return `Vai thật của bạn: ${roleName(String(d.role))}.`;
+ if(kind==='mason')return `Sinh đôi khác: ${people('people') || 'Không có'}.`;
+ if(kind==='minion')return `Phe Sói: ${people('people') || 'Không có'}.`;
+ if(kind==='beholder')return `Tiên tri: ${people('people') || 'Không có Tiên tri còn sống'}.`;
+ if(kind==='count')return `Nửa thứ nhất (${people('first')}): ${d.firstCount} Sói. Nửa thứ hai (${people('second')}): ${d.secondCount} Sói.`;
+ if(kind==='insomniac')return d.awake?'Có người bên cạnh thức dậy đêm nay.':'Không ai bên cạnh thức dậy đêm nay.';
+ if(kind==='sorceress')return `${name(d.target)} ${d.isSeer?'là':'không phải'} Tiên tri.`;
+ if(kind==='paranormal_investigator')return d.isWolf?'Có Sói trong ba người đã kiểm tra.':'Không có Sói trong ba người đã kiểm tra.';
+ if(kind==='the_thing')return `Đã vỗ vai ${name(d.target)}.`;
+ return String(d.message??'Kết quả đã được lưu.');
+}
 function eventText(e: GameEvent): string {
   const d = e.data;
   switch (e.type) {
@@ -85,11 +102,20 @@ function eventText(e: GameEvent): string {
     case 'morning': case 'deaths': case 'verdict': case 'prince-revealed':
       return publicEventText(e, name)!;
     case 'game-ended': return `Sáng ${e.night}: ${winnerText(String(d.winner))}.`;
+    case 'ghost-hint': return `Gợi ý của Con ma: ${String(d.text)}.`;
+    case 'wolf-timeout': return 'Quản trò xác nhận bầy Sói quá giờ.';
+    case 'rule-penalty': return `Quản trò ghi hình phạt đêm cho ${name(d.target)}.`;
+    case 'metal-sound': return 'Trong đêm vang lên tiếng kim loại chạm vào nhau.';
+    case 'ability-result': return abilityResultText(e);
+    case 'day-restrictions': return `Ban ngày: ${[Array.isArray(d.absent)&&d.absent.length?'Vắng mặt: '+d.absent.map(name).join(', '):'',Array.isArray(d.silent)&&d.silent.length?'Không nói: '+d.silent.map(name).join(', '):'',Array.isArray(d.controlled)&&d.controlled.length?'Phiếu bị điều khiển: '+d.controlled.map(name).join(', '):'',Array.isArray(d.brainEaten)&&d.brainEaten.length?'Không được bỏ phiếu: '+d.brainEaten.map(name).join(', '):'',d.verdicts===2?'Có hai phán quyết treo cổ':''].filter(Boolean).join(' · ')}.`;
+    case 'tapped': return 'Bạn được The Thing vỗ vai.';
+    case 'blessing': return `${name(d.actor)} ban phước cho ${name(d.target)}.`;
     case 'inspection': return `Soi ${name(d.target)}: ${d.isWolf ? 'Sói' : 'không phải Sói'}.`;
     case 'aura-inspection': return `${name(d.target)} ${d.hasAbility ? 'có' : 'không có'} năng lực đặc biệt.`;
     case 'mystic-inspection': return `${name(d.target)}: ${roleName(d.role)}.`;
     case 'alignment-comparison': return `${(d.targets as string[]).map(name).join(' và ')} ${d.sameTeam ? 'cùng' : 'khác'} phe.`;
     case 'lovers': return `Người yêu của bạn: ${name(d.partner)}.`;
+    case 'power-inherited': return `Bạn nhận thêm kỹ năng ${roleName(d.role)}.`;
     case 'role-inherited': return `Bạn nhận vai ${roleName(d.newRole)}.`;
     case 'transformed-to-wolf': return 'Bạn đã chuyển thành Ma Sói.';
     case 'feared-by': return `${name(d.actor)} đã chọn bạn; bạn sẽ chết theo nếu người đó chết.`;
@@ -114,7 +140,11 @@ function eventText(e: GameEvent): string {
     default: return 'Diễn biến đã được ghi nhận.';
   }
 }
-const winnerText = (w: string) => ({ village: 'Phe Dân thắng', wolves: 'Phe Sói thắng', lovers: 'Tình nhân thắng', draw: 'Hòa' })[w] ?? w;
+function playerViewForVoting(g:Game,id:string){return {...votingRule(g,id),follow:g.extra?.day.mummy.find(p=>p.target===id)?.actor??false};}
+function votingText(v: {canVote:boolean;canSpeak:boolean;weight:number;required:string|null;follow:string|boolean|null}) {
+ return [!v.canSpeak?'Không được phát biểu hôm nay':'',!v.canVote?'Không được bỏ phiếu hôm nay':v.weight===2?'Phiếu tính hai lần':'',v.required==='kill'?'Luôn bỏ phiếu loại người':v.required==='spare'?'Luôn bỏ phiếu giữ người':'',v.follow?typeof v.follow==='string'?'Phiếu theo '+name(v.follow):'Phiếu theo hướng dẫn của quản trò':''].filter(Boolean).join(' · ')||'Thảo luận và bỏ phiếu theo quản trò.';
+}
+const winnerText = (w: string) => ({ village: 'Phe Dân thắng', wolves: 'Phe Sói thắng', lovers: 'Tình nhân thắng', lone_wolf:'Sói đơn độc thắng',vampires:'Ma cà rồng thắng',cult:'Giáo phái thắng',tanner:'Chán đời thắng',hoodlum:'Du côn thắng',nostradamus:'Nostradamus thắng',bogeyman:'Ông kẹ thắng',blob:'Blob thắng',zombie:'Thây ma thắng',dracula:'Dracula thắng',chupacabra:'Chupacabra thắng',bloody_mary:'Bloody Mary thắng',draw: 'Hòa' })[w] ?? w;
 const moon = '<svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M43 8a24 24 0 1 0 13 37A26 26 0 0 1 43 8Z" fill="currentColor"/><path d="m49 15 2 5 5 2-5 2-2 5-2-5-5-2 5-2Z" fill="currentColor"/></svg>';
 // Đồng hồ ban ngày: mặc định 300/15/30/15 giây, quản trò chỉnh trước khi chia vai.
 const DAY_PHASE_NAMES: Record<string, string> = { discussion: 'Thảo luận', nomination: 'Vote chỉ người', defense: 'Thanh minh', finalvote: 'Biểu quyết sống/chết' };
@@ -215,7 +245,7 @@ function updateTargetPicker() {
   }
   const sacrifice = app.querySelector<HTMLInputElement>('#sacrifice')?.checked;
   const healing = app.querySelector<HTMLInputElement>('#heal')?.checked;
-  const ready = sacrifice || slots.every(s => s.optional || s.id === 'healTarget' && !healing || !!values[s.id]);
+  const ready = sacrifice || app.querySelector<HTMLInputElement>('#ability-pass')?.checked || slots.every(s => s.optional || s.id === 'healTarget' && !healing || !!values[s.id]);
   const submit = app.querySelector<HTMLButtonElement>('[data-action="submit"], [data-action="simple-submit"]');
   if (submit) submit.disabled = busy || !!pending || !ready;
 }
@@ -300,6 +330,7 @@ function modalHtml() {
   } else if (modal === 'inspect-result' && g) {
     const last = unseenInspection(g);
     const wolf = Boolean(last?.data.isWolf);
+    if(last && last.type!=='inspection') return modalShell(`<h3>Kết quả năng lực</h3><p class="big-note">${esc(eventText(last))}</p>${button('inspect-ack','Đã rõ',false,'class="primary wide"')}`);
     inner = last ? `<div class="inspect-result ${wolf ? 'wolf' : 'safe'}"><span class="eyebrow">KẾT QUẢ SOI · ĐÊM ${last.night}</span><p class="inspect-target">${esc(name(last.data.target))}</p><p class="inspect-verdict">${wolf ? 'LÀ MA SÓI' : 'KHÔNG PHẢI SÓI'}</p><p class="muted">Chỉ mình bạn biết — giữ bí mật.</p></div>${button('inspect-ack', 'Đã rõ', false, 'class="primary wide"')}` : '<p class="empty">Không có kết quả soi mới.</p>';
   } else if (modal === 'local-inspect-result' && gm) {
     const last = gm.events.find(e => e.id === snapshot?.room.inspection);
@@ -317,7 +348,7 @@ function modalHtml() {
   } else if (modal === 'secret' && gm) {
     const nightFilter = `<label class="notebook-filter">Đêm<select id="notebook-night"><option value="all" ${notebookNight === 'all' ? 'selected' : ''}>Tất cả</option>${Array.from({ length: gm.night }, (_, i) => i + 1).reverse().map(n => `<option value="${n}" ${String(n) === notebookNight ? 'selected' : ''}>Đêm ${n}</option>`).join('')}</select></label>`;
     if (notebookTab === 'players') {
-      inner = `<p class="muted notebook-rules">${gm.rulesVersion === 'classic-core-v8' ? 'Ván cũ giữ luật v8.' : gm.rulesVersion === 'classic-core-v9' ? 'Ván cũ giữ luật v9 (không có chat bầy).' : gm.rulesVersion === 'classic-core-v10' ? 'Ván cũ giữ luật v10 (không có đồng hồ).' : `Phù thủy ${gm.settings?.witchSeesBite ? 'được xem nạn nhân (trừ người được Bảo vệ chặn)' : 'không xem nạn nhân · dùng thuốc không lộ tên'}.`}</p><ul class="secret-roster">${gm.players.map((p, i) => `<li class="${p.alive ? '' : 'dead'}"><span class="seat-no">${String(i + 1).padStart(2, '0')}</span><div><strong>${esc(p.name)}</strong><small>${esc(roleName(p.role))}</small></div><span>${snapshot?.room.members.find(m => m.id === p.id)?.left ? 'Đã rời' : p.alive ? 'Sống' : !gm.publicDead.includes(p.id) ? 'Chưa công bố' : 'Đã chết'}</span></li>`).join('')}</ul>`;
+      inner = `<p class="muted notebook-rules">${gm.rulesVersion === 'classic-core-v8' ? 'Ván cũ giữ luật v8.' : gm.rulesVersion === 'classic-core-v9' ? 'Ván cũ giữ luật v9 (không có chat bầy).' : gm.rulesVersion === 'classic-core-v10' ? 'Ván cũ giữ luật v10 (không có đồng hồ).' : `Phù thủy ${gm.settings?.witchSeesBite ? 'được xem nạn nhân (trừ người được Bảo vệ chặn)' : 'không xem nạn nhân · dùng thuốc không lộ tên'}.`}</p><ul class="secret-roster">${gm.players.map((p, i) => `<li class="${p.alive ? '' : 'dead'}"><span class="seat-no">${String(i + 1).padStart(2, '0')}</span><div><strong>${esc(p.name)}</strong><small>${esc(roleName(p.role))}</small>${gm.step==='day'&&gm.rulesVersion==='classic-core-v14'?`<small>${esc(votingText(playerViewForVoting(gm,p.id)))}</small>`:''}</div><span>${snapshot?.room.members.find(m => m.id === p.id)?.left ? 'Đã rời' : p.alive ? 'Sống' : !gm.publicDead.includes(p.id) ? 'Chưa công bố' : 'Đã chết'}</span></li>`).join('')}</ul>`;
     } else if (notebookTab === 'chat') {
       const messages = (gm.chat ?? []).filter(m => notebookNight === 'all' || String(m.night) === notebookNight);
       inner = `${nightFilter}${messages.map(m => `<p class="log-entry"><small>Đêm ${m.night} · ${esc(name(m.from))}</small><span>${esc(m.text)}</span></p>`).join('') || '<p class="empty">Chưa có chat trong mục này.</p>'}`;
@@ -330,10 +361,11 @@ function modalHtml() {
     const rows = Object.entries(selected).filter(([, count]) => count > 0)
       .sort((a, b) => b[1] - a[1] || roleName(a[0]).localeCompare(roleName(b[0]), 'vi'))
       .map(([id, count]) => `<button type="button" class="role-row" data-action="modal-open" data-modal="role:${esc(id)}"><span>${esc(roleName(id))}</span><b>×${count}</b></button>`);
-    inner = `<h3>Vai trong ván này</h3>${rows.length ? `<p class="muted">Bấm vào vai để xem ảnh và mô tả.</p><div class="role-rows">${rows.join('')}</div>` : '<p class="empty">Quản trò chưa chọn bộ vai.</p>'}${button('modal-open', 'Toàn bộ vai trong game ' + icon('chevron'), false, 'class="secondary wide" data-modal="allroles"')}`;
+    inner = `<h3>Vai trong ván này</h3>${rows.length ? `<p class="muted">Bấm vào vai để xem ảnh và mô tả.</p><div class="role-rows">${rows.join('')}</div>` : '<p class="empty">Quản trò chưa chọn bộ vai.</p>'}${button('modal-open', `Vai đã hỗ trợ (${catalog.length}/${ROLE_CATALOG.length}) ` + icon('chevron'), false, 'class="secondary wide" data-modal="allroles"')}`;
   } else if (modal === 'allroles') {
     const roles = [...catalog].sort((a, b) => a.name.localeCompare(b.name, 'vi'));
-    inner = `<h3>Toàn bộ vai trong game</h3><div class="role-rows">${roles.map(r => `<button type="button" class="role-row" data-action="modal-open" data-modal="role:${esc(r.id)}"><span>${esc(r.name)}</span>${icon('chevron')}</button>`).join('')}</div>`;
+    const missing = roleLibraryMissing();
+    inner = `<h3>Vai đã hỗ trợ (${roles.length}/${ROLE_CATALOG.length})</h3><p class="muted">Các vai này đã chạy được và là vai duy nhất chọn vào bộ vai.</p><div class="role-rows">${roles.map(r => `<button type="button" class="role-row" data-action="modal-open" data-modal="role:${esc(r.id)}"><span>${esc(r.name)}</span>${icon('chevron')}</button>`).join('')}</div>${missing.length ? `<h3>Thư viện nguồn — chưa hỗ trợ (${missing.length})</h3><p class="muted">Có trong dữ liệu nguồn nhưng chưa thể chơi.</p><p class="library-missing">${missing.map(r => `<span class="library-role"><span>${esc(r.displayName)}</span><em>Chưa hỗ trợ</em></span>`).join('')}</p>` : ''}`;
   } else if (modal.startsWith('role:')) {
     const id = modal.slice(5);
     const r = roleById(id);
@@ -349,7 +381,7 @@ function unseenInspection(g: Extract<Snapshot, { viewer: 'player' }>['game']) {
   if (!g) return null;
   let seen = 0;
   try { seen = Number(sessionStorage.getItem(inspectionSeenKey(g.gameId, g.self.id)) ?? 0); } catch {}
-  return [...g.messages].reverse().find(m => m.type === 'inspection' && m.id > seen) ?? null;
+  return [...g.messages].reverse().find(m => ['inspection','aura-inspection','mystic-inspection','alignment-comparison','ability-result'].includes(m.type) && m.id > seen) ?? null;
 }
 function markInspectionSeen(g: Extract<Snapshot, { viewer: 'player' }>['game']) {
   if (!g) return;
@@ -371,7 +403,7 @@ function chatPanel(g: Extract<Snapshot, { viewer: 'player' }>['game']): string {
 function roleInfo(g: Extract<Snapshot, { viewer: 'player' }>['game']) {
   if (!g) return '';
   const self = g.self;
-  return `<div class="modal-role"><div class="card-hero">${cardImage(self.role, roleName(self.role))}</div><h3>${esc(roleName(self.role))}</h3><p class="team-chip">${self.team === 'wolves' ? 'Phe Sói' : self.team === 'lovers' ? 'Phe Tình nhân' : 'Phe Dân'}</p>${self.role === 'hunter' ? `<p class="muted">${esc(self.description)}</p>` : ''}<p class="role-desc">${esc(roleById(self.role)?.description ?? '')}</p></div>`;
+  return `<div class="modal-role"><div class="card-hero">${cardImage(self.role, roleName(self.role))}</div><h3>${esc(roleName(self.role))}</h3><p class="team-chip">${({wolves:'Phe Sói',lovers:'Phe Tình nhân',village:'Phe Dân',vampires:'Phe Ma cà rồng',cult:'Giáo phái',independent:'Thắng riêng'})[self.team]}</p>${self.powers?.length?`<p class="muted">Kỹ năng đã nhận: ${self.powers.map(roleName).map(esc).join(', ')}.</p>`:''}${self.role === 'hunter' ? `<p class="muted">${esc(self.description)}</p>` : ''}<p class="role-desc">${esc(roleById(self.role)?.description ?? '')}</p></div>`;
 }
 function roleRevealOverlay(g: Extract<Snapshot, { viewer: 'player' }>['game']) {
   if (!g) return '';
@@ -409,6 +441,14 @@ function lobby(s: Snapshot) {
 function hubLabel(step: string, night: number) { return step === 'ended' ? 'Kết thúc' : step === 'day' ? 'Ban ngày' : step === 'review' ? 'Chưa công bố' : `Đêm ${night}`; }
 function actionForm(g: NonNullable<Extract<Snapshot, { viewer: 'player' }>['game']>): string {
   const t = g.turn!;
+  if(t.power) {
+    const p=t.power;
+    if(p.input==='note')return '<label>Gợi ý một từ<input id="power-note" maxlength="40" autocomplete="off"></label><p class="muted">Không dùng tên hoặc viết tắt tên. Quản trò duyệt trước khi công khai.</p>';
+    if(p.input==='prediction')return `<label>Dự đoán phe thắng<select id="power-choice">${p.choices!.map(c=>`<option value="${c}">${esc(winnerText(c))}</option>`).join('')}</select></label>`;
+    if(p.input==='draw')return '<p class="muted">Xác nhận bốc vai thật. Vai được lưu lại và không thể bốc lại.</p>';
+    const fields=p.count===2?['first','second']:p.count===1?['target']:[];
+    return `<p class="muted">${p.kind==='leprechaun'?'Chọn một nạn nhân cắn, rồi chọn người thay ở bên cạnh; có thể giữ nguyên.':p.input==='ack'?'Xác nhận để nhận thông tin riêng.':'Bấm avatar để chọn người.'}</p>${fields.map((id,i)=>`<label>${p.count===2?'Người '+(i+1):'Mục tiêu'}<select id="${id}">${options(t.targets)}</select></label>`).join('')}${p.allowPass?'<label class="check"><input id="ability-pass" type="checkbox">Giữ lại năng lực đêm nay</label>':''}`;
+  }
       let form = `<label>${t.ability === 'hunter' && g.hunterMode === 'passive' ? 'Ghim một người đêm nay' : 'Chọn một người'}<select id="target">${options(t.targets)}</select></label>`;
       if (t.ability === 'hunter' && g.hunterMode === 'active') form = `<p class="muted">Một phát trong cả ván. Bắn sai phe Sói thì cả hai chết.</p><label>Bắn ai đêm nay?<select id="target">${options(t.targets, 'Giữ lại phát bắn')}</select></label>`;
       if (t.ability === 'wolves') {
@@ -420,6 +460,10 @@ function actionForm(g: NonNullable<Extract<Snapshot, { viewer: 'player' }>['game
       } else if (t.ability === 'cupid' || t.ability === 'mentalist') form = `<label>Người thứ nhất<select id="first">${options(t.targets)}</select></label><label>Người thứ hai<select id="second">${options(t.targets)}</select></label>`;
       else if (t.ability === 'alpha_wolf') form = `<label>Chuyển hóa<select id="convert">${options(t.targets, 'Không dùng quyền')}</select></label>`;
   return form;
+}
+function gmNotesHtml(){
+ if(snapshot?.viewer!=='moderator'||!snapshot.game?.extra)return '';
+ return snapshot.game.extra.notes.filter(n=>n.approved===null).map(n=>`<div class="notice"><p>Con ma gửi: <strong>${esc(n.text)}</strong></p>${button('hint-approve','Duyệt',false,`data-player-id="${esc(n.actor)}"`)}${button('hint-reject','Từ chối',false,`data-player-id="${esc(n.actor)}"`)}</div>`).join('');
 }
 function simpleView(g: NonNullable<Extract<Snapshot, { viewer: 'moderator' }>['game']>) {
   const ids = actors(g);
@@ -434,7 +478,7 @@ function player(s: Extract<Snapshot, { viewer: 'player' }>) {
   const dayInfo = g.phase === 'day' && g.dayPhase ? `<p class="day-note">${esc(DAY_PHASE_NAMES[g.dayPhase] ?? g.dayPhase)}</p>${dayClockHtml(g.dayPhase, g.dayEndsAt ?? null)}` : '';
   let controls = g.phase === 'night' && alive
     ? `<div class="rest-box">${moon}<p>Mời bạn đi ngủ.<br><small>Quản trò sẽ gọi vai của bạn.</small></p></div>`
-    : `<div class="rest-box"><p>${g.phase === 'ended' ? esc(winnerText(g.winner!)) : alive ? 'Cả làng thức dậy.' : 'Bạn đã rời cuộc chơi.'}</p>${dayInfo}</div>`;
+    : `<div class="rest-box"><p>${g.phase === 'ended' ? esc(winnerText(g.winner!)) : alive ? 'Cả làng thức dậy.' : 'Bạn đã rời cuộc chơi.'}</p>${dayInfo}${g.phase==='day'&&g.self.voting?`<p class="day-note">${esc(votingText(g.self.voting))}</p>`:''}</div>`;
   if (t) {
     if (!t.awake) controls = '<p class="muted">Quản trò đang gọi bạn.</p>';
     else if (t.sleepReady && editingWolfStep !== t.stepId) controls = `<div class="rest-box sent"><span class="receipt">ĐÃ GỬI</span><p>${esc(describeAction(t.action!))}</p><p class="muted">${t.ability === 'hunter' && !g.hunterMode ? 'Chờ công bố kết quả.' : 'Mời bạn đi ngủ.'}</p>${t.ability === 'wolves' ? button('edit-wolf', 'Đổi lựa chọn', false, 'class="quiet"') : ''}</div>`;
@@ -466,22 +510,22 @@ function moderator(s: Extract<Snapshot, { viewer: 'moderator' }>) {
   const allDone = g.progress.length > 0 && done === g.progress.length;
   if (g.step === 'review') controls = g.resolved ? `<div class="review-result"><span class="eyebrow">CHƯA CÔNG BỐ</span><p class="big-note">${g.pendingDeaths.length ? `Người chết: ${g.pendingDeaths.map(name).map(esc).join(', ')}.` : 'Đêm nay không ai chết.'}</p></div>${button('publish', 'Gọi cả làng thức dậy', false, 'class="primary wide"')}` : button('resolve', 'Tổng kết diễn biến đêm', false, 'class="primary wide"');
   else if (g.step === 'day') {
-    const skipBudget = ['classic-core-v12', 'classic-core-v13'].includes(g.rulesVersion) ? g.settings?.skipVoteDays : undefined;
+    const skipBudget = ['classic-core-v12', 'classic-core-v13', 'classic-core-v14'].includes(g.rulesVersion) ? g.settings?.skipVoteDays : undefined;
     const skipLeft = skipBudget === undefined ? null : skipBudget - (g.daySkipsUsed ?? 0);
     const canSkip = skipLeft === null || skipLeft > 0;
     const verdictBlock = g.verdictDone ? button('nextNight', 'Bắt đầu đêm tiếp', false, 'class="primary wide"')
       : `<label>Phán quyết<select id="verdict">${options(g.players.filter(p => p.alive).map(p => p.id), canSkip ? 'Không loại ai' : undefined)}</select></label>${skipLeft !== null ? `<p class="muted">${canSkip ? `Còn ${skipLeft} ngày được không loại ai.` : 'Ngày này phải vote loại một người.'}</p>` : ''}${button('verdict', 'Chốt phán quyết', false, 'class="primary wide"')}`;
     const clockRunning = !!g.dayPhaseEndsAt;
-    controls = `${dayPhaseBar(g.dayPhase ?? null)}${dayClockHtml(g.dayPhase ?? null, g.dayPhaseEndsAt ?? null, true)}<div class="day-buttons">${button('phase-start', clockRunning ? 'Bấm lại' : 'Bắt đầu giờ', !g.dayPhase, 'class="secondary wide"')}${button('phase-next', 'Pha tiếp', !g.dayPhase)}</div>${verdictBlock}`;
+    controls = `${dayPhaseBar(g.dayPhase ?? null)}${dayClockHtml(g.dayPhase ?? null, g.dayPhaseEndsAt ?? null, true)}<div class="day-buttons">${button('phase-start', clockRunning ? 'Bấm lại' : 'Bắt đầu giờ', !g.dayPhase, 'class="secondary wide"')}${button('phase-next', 'Pha tiếp', !g.dayPhase)}</div>${g.extra&&g.extra.verdictsRemaining>1?'<p class="day-note">Hôm nay còn hai phán quyết treo cổ.</p>':''}${verdictBlock}`;
   }
   else if (g.step === 'ended') controls = `<div class="positive">${esc(winnerText(g.winner!))}</div>`;
-  else controls = `<div class="progress-head"><span>${done}/${g.progress.length} đã gửi</span></div><ul class="progress-list">${g.progress.map(p => `<li class="${p.submitted ? 'complete' : ''}"><strong>${esc(name(p.id))}</strong><small>${p.submitted ? esc(describeAction(g.actions[p.id])) : p.awake ? 'Đang chọn' : 'Chờ thức'}</small></li>`).join('') || '<li class="empty">Không ai cần hành động — chốt để qua.</li>'}</ul>${allDone && g.step !== 'wolves' && MODERATOR_SCRIPTS[g.step].sleep ? `<p class="sleep-cue">“${esc((g.step === 'hunter' && g.rulesVersion === 'classic-core-v13' ? 'Thợ săn đi ngủ.' : MODERATOR_SCRIPTS[g.step].sleep))}”</p>` : ''}${button('advance', 'Gọi vai tiếp', !g.progress.every(p => p.submitted), 'class="primary wide"')}`;
+  else controls = `<div class="progress-head"><span>${done}/${g.progress.length} đã gửi</span></div><ul class="progress-list">${g.progress.map(p => `<li class="${p.submitted ? 'complete' : ''}"><strong>${esc(name(p.id))}</strong><small>${p.submitted ? esc(describeAction(g.actions[p.id])) : p.awake ? 'Đang chọn' : 'Chờ thức'}</small></li>`).join('') || '<li class="empty">Không ai cần hành động — chốt để qua.</li>'}</ul>${allDone && g.step !== 'wolves' && MODERATOR_SCRIPTS[g.step].sleep ? `<p class="sleep-cue">“${esc((g.step === 'hunter' && ['classic-core-v13','classic-core-v14'].includes(g.rulesVersion) ? 'Thợ săn đi ngủ.' : MODERATOR_SCRIPTS[g.step].sleep))}”</p>` : ''}${button('advance', 'Gọi vai tiếp', !g.progress.every(p => p.submitted), 'class="primary wide"')}`;
   if (s.room.simplified && !['day', 'review', 'ended'].includes(g.step)) {
     const view = simpleView(g);
     controls = s.room.inspection != null ? button('local-result', 'Xem kết quả soi', false, 'class="primary wide"')
       : view ? `<p class="muted">${g.step === 'wolves' ? 'Nhập lựa chọn chung của bầy Sói.' : esc(name(view.self.id))}</p>${actionForm(view)}${button('simple-submit', 'Xác nhận', false, 'class="primary wide"')}` : '';
   }
-  return `<section class="panel moderator-controls"><span class="eyebrow">${g.step === 'ended' ? 'KẾT THÚC' : g.step === 'day' ? 'BAN NGÀY' : 'ĐÊM ' + g.night}</span><h2>${esc(g.step === 'review' ? 'Tổng kết đêm' : g.step === 'day' ? 'Cả làng thảo luận' : g.step === 'wolves' ? 'Bầy Sói' : g.step === 'ended' ? 'Kết thúc' : roleName(g.step))}</h2><blockquote>${esc(s.room.simplified && !['day', 'review', 'ended'].includes(g.step) ? ({ guard: 'Bảo vệ chọn ai?', seer: 'Tiên tri soi ai?', wolves: 'Bầy Sói cắn ai?', witch: 'Phù thủy dùng thuốc nào?', hunter: g.rulesVersion === 'classic-core-v13' ? g.settings?.hunterActiveShot ? 'Thợ săn bắn ai, hay giữ lại phát bắn?' : 'Thợ săn ghim ai đêm nay?' : 'Thợ săn bắn ai?' } as Record<string, string>)[g.step] ?? `Nhập lựa chọn của ${roleName(g.step)}.` : g.step === 'hunter' && g.rulesVersion === 'classic-core-v13' ? (g.settings?.hunterActiveShot ? 'Thợ săn thức dậy, chọn bắn hoặc giữ lại phát bắn duy nhất.' : 'Thợ săn thức dậy, ghim một người cho đêm nay rồi đi ngủ.') : MODERATOR_SCRIPTS[g.step].wake)}</blockquote>${controls}${offlineQueue(s)}</section>
+  return `<section class="panel moderator-controls"><span class="eyebrow">${g.step === 'ended' ? 'KẾT THÚC' : g.step === 'day' ? 'BAN NGÀY' : 'ĐÊM ' + g.night}</span><h2>${esc(g.step === 'review' ? 'Tổng kết đêm' : g.step === 'day' ? 'Cả làng thảo luận' : g.step === 'wolves' ? 'Bầy Sói' : g.step === 'ended' ? 'Kết thúc' : roleName(g.step))}</h2><blockquote>${esc(s.room.simplified && !['day', 'review', 'ended'].includes(g.step) ? ({ guard: 'Bảo vệ chọn ai?', seer: 'Tiên tri soi ai?', wolves: 'Bầy Sói cắn ai?', witch: 'Phù thủy dùng thuốc nào?', hunter: ['classic-core-v13','classic-core-v14'].includes(g.rulesVersion) ? g.settings?.hunterActiveShot ? 'Thợ săn bắn ai, hay giữ lại phát bắn?' : 'Thợ săn ghim ai đêm nay?' : 'Thợ săn bắn ai?' } as Record<string, string>)[g.step] ?? `Nhập lựa chọn của ${roleName(g.step)}.` : g.step === 'hunter' && ['classic-core-v13','classic-core-v14'].includes(g.rulesVersion) ? (g.settings?.hunterActiveShot ? 'Thợ săn thức dậy, chọn bắn hoặc giữ lại phát bắn duy nhất.' : 'Thợ săn thức dậy, ghim một người cho đêm nay rồi đi ngủ.') : MODERATOR_SCRIPTS[g.step].wake)}</blockquote>${controls}${g.step==='wolves'&&g.rulesVersion==='classic-core-v14'&&g.players.some(p=>p.alive&&(p.role==='bogeyman'||p.role==='frankenstein'&&g.extra?.players[p.id]?.powers?.includes('bogeyman')))?button('wolf-timeout','Bầy Sói quá giờ',false,'class="text-button"'):''}${gmNotesHtml()}${g.rulesVersion==='classic-core-v14'&&g.players.some(p=>p.initialRole==='mason'||p.alive&&p.role==='teen_wolf')?`<details><summary>Vi phạm luật vai</summary><label>Người vi phạm<select id="penalty-player">${options(g.players.filter(p=>p.alive&&(p.role==='teen_wolf'||g.players.some(v=>v.initialRole==='mason'))).map(p=>p.id))}</select></label>${button('rule-penalty','Xác nhận phạt vào đêm')}</details>`:''}${offlineQueue(s)}</section>
     <section class="table-stage"><div class="section-heading"><h2>Bàn chơi</h2><span class="live-label">${g.players.length - g.publicDead.length}/${g.players.length} còn sống</span></div>${roundTable(g.players.map(p => ({ id: p.id, name: p.name, alive: !g.publicDead.includes(p.id) })), { hub: hubLabel(g.step, g.night), recentDeaths: latestNightDeaths(g.events) })}</section>
     <nav class="game-utilities" aria-label="Công cụ quản trò">${foldTrigger('secret', 'Sổ tay bí mật')}${foldTrigger('feed', 'Vừa nhận', done ? String(done) : '')}</nav>`;
 }
@@ -690,6 +734,7 @@ const value = (id: string) => document.querySelector<HTMLInputElement | HTMLSele
 function ownAction(view = snapshot?.viewer === 'player' ? snapshot.game : null): Action {
   if (!view?.turn) throw new Error('Chưa đến lượt của bạn.');
   const g = view, t = g.turn!;
+  if(t.power) return {type:'ability',...(t.power.input==='note'?{text:value('power-note')}:{}),...(t.power.input==='prediction'?{choice:value('power-choice')}:t.power.input==='draw'?{choice:'draw'}:{}),targets: document.querySelector<HTMLInputElement>('#ability-pass')?.checked?[]:t.power.count===2?[value('first'),value('second')]:t.power.count===1?[value('target')]:[], ...(document.querySelector<HTMLInputElement>('#ability-pass')?.checked?{pass:true}:{})};
   if (t.ability === 'hunter' && g.hunterMode === 'active' && !value('target')) return { type: 'hold' };
   if (t.ability === 'wolves') {
     if (!t.wolfPlan!.maxTargets) return { type: 'fast' };
@@ -710,7 +755,7 @@ app.addEventListener('change', e => {
   if (input.id === 'notebook-night') { notebookNight = input.value; notebookScroll.chat = notebookScroll.history = 0; render(); }
 });
 app.addEventListener('input', e => { const input = e.target as HTMLInputElement;
-  if (input.id === 'heal' || input.id === 'sacrifice') updateTargetPicker();
+  if (input.id === 'heal' || input.id === 'sacrifice' || input.id === 'ability-pass') updateTargetPicker();
   if (input.id === 'local-simplified') localSimplified = input.checked;
   if (input.id === 'hunter-active-shot') lobbySettings.hunterActiveShot = input.checked;
   if (input.id === 'witch-sees-bite') lobbySettings.witchSeesBite = input.checked;
@@ -819,6 +864,10 @@ app.addEventListener('click', async e => {
     }
     if (debug && await debug.handle(action, el, { request, random, refresh, accepted })) return;
     if (!snapshot) return;
+    if(['hint-approve','hint-reject','wolf-timeout','rule-penalty'].includes(action)&&snapshot.viewer==='moderator'&&snapshot.game){
+      const command:Command=action==='wolf-timeout'?{type:'wolfTimeout'}:action==='rule-penalty'?{type:'penalty',target:value('penalty-player')}:{type:'reviewNote',actor:el.dataset.playerId!,approve:action==='hint-approve'};
+      await mutate({type:'command',code,requestId:random(),stepId:snapshot.game.stepId,command});return;
+    }
     if (action === 'begin') { await mutate({ type: 'begin', code, requestId: random(), expectedRevision: snapshot.room.revision! }); return; }
     if (action === 'save-deck') {
       await mutate({ type: 'setDeck', code, requestId: random(), expectedRevision: snapshot.room.revision!, roles: catalog.flatMap(r => Array.from({ length: deck[r.id] ?? 0 }, () => r.id)) });

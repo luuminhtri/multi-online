@@ -1,6 +1,9 @@
+import { hasPower, isProtected, isHealed } from './power-policy.ts';
+import { EXTRA_OPENING } from './extension-types.ts';
+import { isExtended, isModernHunter, isExtraStep, extraState, extraPlayer, extraActors, extraTargets, applyExtraAction, finishExtraStep, nightImmune, publishDayPowers, wolverineCue, independentWinner, overrideWinner, progressSignature } from './extensions.ts';
 import { baseTeam, hasSpecialAbility, isWolf, seenAsWolf } from './role-policy.ts';
 import { adjacentLivingSeats, biteChoices, offeredCub, wolfActors, wolfPlan, canSacrifice, fruitMustFast, packMembers, canWolfTarget, roleCanWake } from './wolf-pack.ts';
-import { NIGHT_STEPS, ROLES, RULES } from './rules.ts';
+import { NIGHT_STEPS, ROLES, RULES, LEGACY_V13_ROLES } from './rules.ts';
 import { healableBites, legacyWitchRules, witchSeesBite } from './witch.ts';
 import type { Action, Command, Game, GameSettings, Principal, Request, Role, Step } from './types.ts';
 
@@ -13,14 +16,15 @@ function requireRule(ok: unknown, code: string): asserts ok {
 }
 export function stepId(g: Game): string { return `${g.id}:${g.night}:${g.stepSequence}:${g.step}`; }
 export function actors(g: Game): string[] {
+  if (isExtraStep(g.step)) return extraActors(g,g.step);
   if (g.step === 'wolves') return wolfActors(g);
-  if (g.step === 'alpha_wolf') return g.alphaEligibleNight === g.night && g.biteTargets.length > 0 ? g.players.filter(p => p.alive && p.role === 'alpha_wolf' && !p.alphaUsed).map(p => p.id) : [];
-  if (g.step === 'cupid') return g.night === 1 && !g.lovers ? g.players.filter(p => p.alive && p.role === 'cupid').map(p => p.id) : [];
-  if (g.step === 'doppelganger') return g.night === 1 ? g.players.filter(p => p.alive && p.role === 'doppelganger').map(p => p.id) : [];
-  if (g.step === 'dire_wolf' || g.step === 'virginia_woolf') return g.players.filter(p => p.alive && p.role === g.step && p.deathBond === null).map(p => p.id);
-  if (g.step === 'hunter') return g.rulesVersion === 'classic-core-v13' ? g.players.filter(p => p.alive && p.role === 'hunter' && (!g.settings?.hunterActiveShot || p.resources.hunterShot > 0)).map(p => p.id) : g.activeHunterId ? [g.activeHunterId] : [];
+  if (g.step === 'alpha_wolf') return g.alphaEligibleNight === g.night && g.biteTargets.length > 0 ? g.players.filter(p => p.alive && hasPower(g,p,'alpha_wolf') && !p.alphaUsed).map(p => p.id) : [];
+  if (g.step === 'cupid') return (g.night === 1 || isExtended(g)&&g.players.some(p=>p.alive&&p.role==='frankenstein'&&hasPower(g,p,g.step)) || isExtended(g)&&g.players.some(p=>p.initialRole==='drunk'&&p.role==='cupid')) && !g.lovers ? g.players.filter(p => p.alive && hasPower(g,p,'cupid')).map(p => p.id) : [];
+  if (g.step === 'doppelganger') return (g.night === 1 || isExtended(g)&&g.players.some(p=>p.alive&&p.role==='frankenstein'&&hasPower(g,p,g.step)) || isExtended(g)&&g.players.some(p=>p.initialRole==='drunk'&&p.role==='doppelganger'&&!p.doppelgangerTarget)) ? g.players.filter(p => p.alive && hasPower(g,p,'doppelganger')&&(!isExtended(g)||!(g.extra?.players[p.id]?.initialized??[]).includes('doppelganger'))).map(p => p.id) : [];
+  if (g.step === 'dire_wolf' || g.step === 'virginia_woolf') return g.players.filter(p => p.alive && hasPower(g,p,g.step) && p.deathBond === null).map(p => p.id);
+  if (g.step === 'hunter') return isModernHunter(g) ? g.players.filter(p => p.alive && hasPower(g,p,'hunter') && (!g.settings?.hunterActiveShot || p.resources.hunterShot > 0)).map(p => p.id) : g.activeHunterId ? [g.activeHunterId] : [];
   const role = g.step;
-  return g.players.filter(p => p.alive && p.role === role).map(p => p.id);
+  return g.players.filter(p => p.alive && hasPower(g,p,role)).map(p => p.id);
 }
 function event(g: Game, type: string, data: Record<string, unknown>, recipient?: string) {
   g.events.push({ id: g.events.length + 1, night: g.night, type, data,
@@ -33,7 +37,7 @@ function move(g: Game, step: Step) {
   if (step === 'day') { g.dayPhase = 'discussion'; g.dayPhaseEndsAt = null; }
 }
 function nextOpening(g: Game, after?: Step): Step {
-  const steps: Step[] = ['cupid', 'doppelganger', 'dire_wolf', 'virginia_woolf'];
+  const steps: Step[] = ['cupid', 'doppelganger', ...(isExtended(g)?EXTRA_OPENING:[]), 'dire_wolf', 'virginia_woolf'];
   return steps.slice(after ? steps.indexOf(after) + 1 : 0).find(step => actors({ ...g, step }).length > 0) ?? 'guard';
 }
 export function createGame(id: string, roster: { id: string; name: string; role: Role }[], settings: GameSettings = { witchSeesBite: true }): Game {
@@ -49,14 +53,14 @@ export function createGame(id: string, roster: { id: string; name: string; role:
   requireRule(new Set(roster.map(p => p.id)).size === roster.length, 'DUPLICATE_ID');
   requireRule(new Set(roster.map(p => p.name.trim().toLocaleLowerCase('vi'))).size === roster.length, 'DUPLICATE_NAME');
   for (const p of roster) requireRule(p.id.trim() && p.name.trim() && Object.hasOwn(ROLES, p.role), 'INVALID_PLAYER');
-  for (const role of Object.keys(ROLES).filter(role => role !== 'wolf' && role !== 'villager' && role !== 'wolf_man')) {
+  for (const role of Object.keys(ROLES).filter(role => role !== 'wolf' && role !== 'villager' && role !== 'wolf_man' && role !== 'mason')) {
     requireRule(roster.filter(p => p.role === role).length <= 1, 'DUPLICATE_SPECIAL_ROLE');
   }
   const wolves = roster.filter(p => isWolf(p.role)).length;
   requireRule(wolves > 0 && wolves < roster.length - wolves, 'UNBALANCED_START');
-  const startStep = roster.some(p => p.role === 'cupid') ? 'cupid' : roster.some(p => p.role === 'doppelganger') ? 'doppelganger' : roster.some(p => p.role === 'dire_wolf') ? 'dire_wolf' : roster.some(p => p.role === 'virginia_woolf') ? 'virginia_woolf' : 'guard';
-  return {
-    schemaVersion: 8, settings: { witchSeesBite: settings.witchSeesBite, hunterActiveShot: settings.hunterActiveShot ?? false, dayTimers, skipVoteDays }, id, rulesVersion: RULES.version, revision: 0, night: 1, step: startStep, stepSequence: 0,
+  const startStep: Step = 'guard';
+  const game: Game = {
+    schemaVersion: 9, settings: { witchSeesBite: settings.witchSeesBite, hunterActiveShot: settings.hunterActiveShot ?? false, dayTimers, skipVoteDays }, id, rulesVersion: RULES.version, revision: 0, night: 1, step: startStep, stepSequence: 0,
     players: roster.map(p => ({ ...p, name: p.name.trim(), initialRole: p.role,
       team: baseTeam(p.role), alive: true,
       hunterMark: null, lastProtected: null, delayedDeathNight: null, alphaUsed: false, deathBond: null, knownWolves: [], cursedTransformed: false, doppelgangerTarget: null,
@@ -73,6 +77,7 @@ export function createGame(id: string, roster: { id: string; name: string; role:
     winner: null, lovers: null, pendingHunters: [], activeHunterId: null, postHunterStep: 'day',
     events: [], receipts: {},
   };
+  const state=extraState(game);state.players=Object.fromEntries(game.players.map(p=>[p.id,{}]));state.roundStart=progressSignature(game); game.step = nextOpening(game); return game;
 }
 function target(g: Game, id: string) {
   const p = g.players.find(p => p.id === id);
@@ -87,11 +92,23 @@ function refreshTeams(g: Game) {
     if (pair[0].team !== pair[1].team) pair.forEach(p => { p.team = 'lovers'; });
   }
 }
+function inheritPowers(g:Game,deadIds:string[]){
+ for(const holder of g.players.filter(p=>p.alive&&p.role==='frankenstein')){
+  const s=extraPlayer(g,holder.id);s.powers??=[];
+  for(const id of deadIds){const victim=g.players.find(p=>p.id===id)!,role=victim.role;if(['wolf','villager','frankenstein'].includes(role)||s.powers.includes(role))continue;
+   s.powers.push(role);if(role==='alpha_wolf')holder.alphaUsed=holder.alphaUsed||victim.alphaUsed;const source=g.extra?.players[id];s.used=[...new Set([...(s.used??[]),...(source?.used??[])])];
+   for(const key of ['heal','poison','hunterShot'] as const)holder.resources[key]=Math.max(holder.resources[key],victim.resources[key]);
+   event(g,'power-inherited',{role,from:id},holder.id);
+  }
+ }
+}
 function checkDoppelgangerInheritance(g: Game, deadIds: string[]) {
   for (const p of g.players) {
-    if (p.alive && p.role === 'doppelganger' && p.doppelgangerTarget && deadIds.includes(p.doppelgangerTarget)) {
+    if (p.alive && hasPower(g,p,'doppelganger') && p.doppelgangerTarget && deadIds.includes(p.doppelgangerTarget)) {
       const victim = g.players.find(v => v.id === p.doppelgangerTarget)!;
+      if(p.role==='frankenstein'){inheritPowers(g,[victim.id]);p.doppelgangerTarget=null;continue;}
       p.role = victim.role;
+      if(isExtended(g))extraState(g).players[p.id]=structuredClone(g.extra?.players[victim.id]??{});
       p.resources = { ...victim.resources };
       p.lastProtected = victim.lastProtected;
       p.cursedTransformed = victim.cursedTransformed;
@@ -101,7 +118,7 @@ function checkDoppelgangerInheritance(g: Game, deadIds: string[]) {
       p.deathBond = null;
       p.hunterMark = null;
       p.knownWolves = [];
-      if (p.role === 'hunter' && g.rulesVersion !== 'classic-core-v13') p.resources.hunterShot = 1;
+      if (p.role === 'hunter' && !isModernHunter(g)) p.resources.hunterShot = 1;
       event(g, 'doppelganger-inherited', { actor: p.id, newRole: p.role, from: victim.id });
       event(g, 'role-inherited', { newRole: p.role, roleName: ROLES[p.role].name }, p.id);
     }
@@ -116,6 +133,7 @@ function checkDoppelgangerInheritance(g: Game, deadIds: string[]) {
       event(g, 'role-inherited', { newRole: 'seer', roleName: ROLES.seer.name }, apprentice.id);
     }
   }
+  if(isExtended(g))inheritPowers(g,deadIds);
   refreshTeams(g);
   // Remember identities learned at publication too (for example a Cursed
   // becoming a wolf after Fang Face's first-night ballot). Sleep must never
@@ -142,10 +160,18 @@ function applyDeaths(g: Game, causes: Map<string, string[]>): string[] {
   const dead: string[] = [];
   const mark = (id: string, reasons: string[]) => {
     const p = g.players.find(p => p.id === id)!;
-    if (!p.alive) return;
+    if (!p.alive || nightImmune(g,id,reasons)) return;
     p.alive = false;
+    if(isExtended(g)){
+     const s=extraPlayer(g,id);s.deathNight=g.night;
+     if(p.role==='bloody_mary'){
+      const cause=reasons[0];const attack=g.extra!.attacks.find(a=>a.target===id&&a.cause===cause);
+      const actor=attack?.actor??(cause==='poison'?g.players.find(p=>p.role==='witch')?.id:cause==='shot'?g.players.find(p=>p.hunterMark?.target===id&&p.hunterMark.night===g.night)?.id:undefined);
+      s.killerId=actor;s.grudge=cause==='bite'?'wolves':cause==='verdict'?'village':cause==='drained'?'vampires':actor?g.players.find(p=>p.id===actor)!.team:'village';
+     }
+    }
     dead.push(id);
-    if (p.role === 'wolf_cub' && !reasons.includes('sacrifice')) g.doubleAttackNight = g.night + 1;
+    if (hasPower(g,p,'wolf_cub') && !reasons.includes('sacrifice')) g.doubleAttackNight = g.night + 1;
     if (isWolf(p.role) && (g.step === 'day' || g.step === 'hunter')) g.alphaEligibleNight = g.night + 1;
     event(g, 'death', { player: id, causes: [...reasons] });
   };
@@ -157,16 +183,16 @@ function applyDeaths(g: Game, causes: Map<string, string[]>): string[] {
       const partner = g.lovers.find(p => p !== id)!;
       mark(partner, ['heartbreak']);
     }
-    for (const follower of g.players.filter(p => p.alive && p.role === 'dire_wolf' && p.deathBond?.kind === 'follow' && p.deathBond.target === id)) {
+    for (const follower of g.players.filter(p => p.alive && hasPower(g,p,'dire_wolf') && p.deathBond?.kind === 'follow' && p.deathBond.target === id)) {
       mark(follower.id, ['companion']);
     }
     const deceased = g.players.find(p => p.id === id)!;
-    if (deceased.role === 'virginia_woolf' && deceased.deathBond?.kind === 'revenge') mark(deceased.deathBond.target, ['fear']);
-    if (g.rulesVersion === 'classic-core-v13' && g.step !== 'day' && !g.settings?.hunterActiveShot && deceased.role === 'hunter' && deceased.hunterMark?.night === g.night && g.players.some(p => p.id === deceased.hunterMark!.target && p.alive)) {
+    if (hasPower(g,deceased,'virginia_woolf') && deceased.deathBond?.kind === 'revenge') mark(deceased.deathBond.target, ['fear']);
+    if (isModernHunter(g) && g.step !== 'day' && !g.settings?.hunterActiveShot && hasPower(g,deceased,'hunter') && deceased.hunterMark?.night === g.night && g.players.some(p => p.id === deceased.hunterMark!.target && p.alive)) {
       event(g, 'hunter-shot', { hunter: id, target: deceased.hunterMark.target });
       mark(deceased.hunterMark.target, ['shot']);
     }
-    if (deceased.role === 'mad_bomber') {
+    if (hasPower(g,deceased,'mad_bomber')) {
       const neighbors = livingNeighbors(g, id);
       event(g, 'bomb-exploded', { actor: id, targets: neighbors });
       for (const neighbor of neighbors) mark(neighbor, ['explosion']);
@@ -186,7 +212,7 @@ function announceDeaths(g: Game, dead: string[]) {
   g.events.at(-1)!.audience = 'public';
 }
 function queueHunters(g: Game, dead: string[]) {
-  if (g.rulesVersion === 'classic-core-v13') return;
+  if (isModernHunter(g)) return;
   for (const id of dead) {
     const p = g.players.find(p => p.id === id)!;
     if (p.role === 'hunter' && p.resources.hunterShot > 0 && !g.pendingHunters.includes(id) && g.activeHunterId !== id) {
@@ -215,7 +241,13 @@ function applyAction(g: Game, actorId: string, a: Action) {
   requireRule(g.step === 'wolves' || !Object.hasOwn(g.actions, actorId), 'ACTION_ALREADY_CONFIRMED');
   const p = g.players.find(p => p.id === actorId)!;
   requireRule(a && typeof a.type === 'string', 'INVALID_ACTION');
-  if (g.step === 'dire_wolf' || g.step === 'virginia_woolf') {
+  if (isExtraStep(g.step) && isExtended(g)) {
+    applyExtraAction(g,actorId,a,{check:requireRule,event,neighbors:livingNeighbors});
+    if(g.step==='drunk'){
+     const pool=(Object.keys(ROLES) as Role[]).filter(r=>!['drunk','ghost','frankenstein'].includes(r)&&(r==='wolf'||r==='villager'||!g.players.some(p=>p.role===r)));
+     const role=pool[Math.floor(Math.random()*pool.length)];extraPlayer(g,actorId).drawnRole=role;event(g,'ability-result',{kind:'drunk',role},actorId);
+    }
+  } else if (g.step === 'dire_wolf' || g.step === 'virginia_woolf') {
     requireRule(a.type === 'bond' && typeof a.target === 'string', 'WRONG_ABILITY');
     requireRule(a.target !== actorId, 'SELF_TARGET');
     target(g, a.target);
@@ -236,7 +268,7 @@ function applyAction(g: Game, actorId: string, a: Action) {
     requireRule(a.type === 'inspect' && typeof a.target === 'string', 'WRONG_ABILITY');
     const t = target(g, a.target);
     requireRule(t.id !== actorId, 'SELF_TARGET');
-    event(g, 'inspection', { target: t.id, isWolf: seenAsWolf(t.role) }, actorId);
+    event(g, 'inspection', { target: t.id, isWolf: seenAsWolf(t.role)||t.role==='frankenstein'&&(hasPower(g,t,'lycan')||hasPower(g,t,'bigfoot')) }, actorId);
   } else if (g.step === 'aura_seer' || g.step === 'mystic_seer') {
     requireRule(a.type === 'inspect' && typeof a.target === 'string', 'WRONG_ABILITY');
     const t = target(g, a.target);
@@ -250,13 +282,13 @@ function applyAction(g: Game, actorId: string, a: Action) {
     event(g, 'alignment-comparison', { targets: [...a.targets], sameTeam: first.team === second.team }, actorId);
   } else if (g.step === 'wolves') {
     if (a.type === 'fast') {
-      requireRule(p.role === 'fruit_wolf' && fruitMustFast(g), 'CANNOT_FAST');
+      requireRule((hasPower(g,p,'fruit_wolf') || isExtended(g)&&p.role==='minion') && fruitMustFast(g), 'CANNOT_FAST');
     } else if (a.type === 'sacrifice') {
       requireRule(canSacrifice(g), 'PACK_MEMBER_ASLEEP');
       requireRule(typeof a.target === 'string' && g.sacrificedCubId === null, 'INVALID_SACRIFICE');
       // Only the Cub may reveal itself by offering. Other wolves cannot probe
       // secret roles by submitting guesses for a sacrifice target.
-      requireRule((p.role === 'wolf_cub' && a.target === actorId) || offeredCub(g) === a.target, 'SACRIFICE_NOT_OFFERED');
+      requireRule((hasPower(g,p,'wolf_cub') && a.target === actorId) || offeredCub(g) === a.target, 'SACRIFICE_NOT_OFFERED');
     } else {
       requireRule(a.type === 'bite' || (a.type === 'maul' && Array.isArray(a.targets)), 'WRONG_ABILITY');
       const chosen = biteChoices(a)!;
@@ -291,7 +323,7 @@ function applyAction(g: Game, actorId: string, a: Action) {
     requireRule(a.heal || a.healTarget === undefined, 'INVALID_HEAL_TARGET');
     if (a.poison !== null) { requireRule(p.resources.poison > 0, 'NO_POISON_AVAILABLE'); target(g, a.poison); }
   } else if (g.step === 'hunter') {
-    if (g.rulesVersion === 'classic-core-v13' && g.settings?.hunterActiveShot && a.type === 'hold') {
+    if (isModernHunter(g) && g.settings?.hunterActiveShot && a.type === 'hold') {
       Object.defineProperty(g.actions, actorId, { value: structuredClone(a), enumerable: true, writable: true, configurable: true });
       event(g, 'action-confirmed', { actor: actorId, action: structuredClone(a) });
       return;
@@ -303,7 +335,23 @@ function applyAction(g: Game, actorId: string, a: Action) {
   Object.defineProperty(g.actions, actorId, { value: structuredClone(a), enumerable: true, writable: true, configurable: true });
   event(g, 'action-confirmed', { actor: actorId, action: structuredClone(a) });
 }
+function nightSequence(g: Game): Step[] {
+  return NIGHT_STEPS.filter(step => step===g.step || (isExtraStep(step) ? isExtended(g)&&g.players.some(p=>hasPower(g,p,step)) : (step!=='hunter'||isModernHunter(g)) && (['guard','seer','wolves','witch'].includes(step)||g.players.some(p=>hasPower(g,p,step)))));
+}
 function advance(g: Game) {
+  if (isExtraStep(g.step) && isExtended(g)) {
+    const expected=actors(g);
+    requireRule(expected.every(id=>Object.hasOwn(g.actions,id)), 'WAITING_FOR_ACTIONS');
+    finishExtraStep(g,expected);
+    if(g.step==='drunk'){
+     for(const id of expected){const p=g.players.find(p=>p.id===id)!,role=extraPlayer(g,id).drawnRole as Role;if(p.role==='frankenstein'){extraPlayer(g,id).powers=[...new Set([...(extraPlayer(g,id).powers??[]),role])];}else{p.role=role;p.team=baseTeam(role);}const resources={heal:role==='witch'?1:0,poison:role==='witch'?1:0,hunterShot:role==='hunter'?1:0};if(p.role==='frankenstein')for(const key of ['heal','poison','hunterShot'] as const)resources[key]=Math.max(resources[key],p.resources[key]);p.resources=resources;event(g,'role-inherited',{newRole:role,roleName:ROLES[role].name},id);}
+     move(g,nextOpening(g));return;
+    }
+    const opening=EXTRA_OPENING.includes(g.step as typeof EXTRA_OPENING[number]);
+    if(opening) move(g,nextOpening(g,g.step));
+    else {const steps=nightSequence(g); const index=steps.indexOf(g.step); requireRule(index>=0,'WRONG_PHASE'); move(g,steps[index+1]??'review');}
+    return;
+  }
   if (g.step === 'dire_wolf' || g.step === 'virginia_woolf') {
     const step = g.step;
     const expected = actors(g);
@@ -340,6 +388,7 @@ function advance(g: Game) {
   }
   if (g.step === 'doppelganger') {
     const expected = actors(g);
+    if(isExtended(g))finishExtraStep(g,expected);
     requireRule(expected.every(id => Object.hasOwn(g.actions, id)), 'WAITING_FOR_ACTIONS');
     const actions = expected.map(id => g.actions[id]);
     if (expected[0]) {
@@ -353,7 +402,7 @@ function advance(g: Game) {
     move(g, nextOpening(g, 'doppelganger'));
     return;
   }
-  if (g.step === 'hunter' && g.rulesVersion !== 'classic-core-v13') {
+  if (g.step === 'hunter' && !isModernHunter(g)) {
     const expected = actors(g);
     requireRule(expected.length > 0 && Object.hasOwn(g.actions, expected[0]), 'WAITING_FOR_ACTIONS');
     const action = g.actions[expected[0]];
@@ -372,11 +421,12 @@ function advance(g: Game) {
     return;
   }
 
-  const steps = NIGHT_STEPS.filter(step => (step !== 'hunter' || g.rulesVersion === 'classic-core-v13') && ( ['guard', 'seer', 'wolves', 'witch'].includes(step) || g.players.some(p => p.role === step)));
+  const steps = nightSequence(g);
   const index = steps.indexOf(g.step);
   requireRule(index >= 0, 'WRONG_PHASE');
   const expected = actors(g);
   requireRule(expected.every(id => Object.hasOwn(g.actions, id)), 'WAITING_FOR_ACTIONS');
+  if(isExtended(g))finishExtraStep(g,expected);
   const actions = expected.map(id => g.actions[id]);
   if (g.step === 'hunter') {
     for (const id of expected) {
@@ -389,11 +439,13 @@ function advance(g: Game) {
       event(g, g.settings?.hunterActiveShot ? 'hunter-fired' : 'hunter-marked', { actor: id, target: action.target });
     }
   }
-  if (g.step === 'guard' && expected[0]) {
-    const action = actions[0];
+  if(g.step==='guard'&&isExtended(g))extraState(g).protectedTargets=[];
+  if (g.step === 'guard') for(const id of expected){
+    const action = g.actions[id];
     requireRule(action?.type === 'protect', 'INVALID_ACTION');
     g.protectedTarget = action.target;
-    g.players.find(p => p.id === expected[0])!.lastProtected = g.protectedTarget;
+    g.players.find(p => p.id === id)!.lastProtected = action.target;
+    if(isExtended(g))extraState(g).protectedTargets!.push(action.target);
   }
   if (g.step === 'wolves' && expected.length > 0 && !fruitMustFast(g)) {
     if (actions.every(a => a.type === 'sacrifice')) {
@@ -410,6 +462,7 @@ function advance(g: Game) {
     requireRule(choices.every(c => c !== null && JSON.stringify(c) === JSON.stringify(choices[0])), 'WOLVES_DISAGREE');
     g.biteTargets = g.players.filter(p => choices[0]!.includes(p.id)).map(p => p.id);
     g.biteTarget = g.biteTargets[0] ?? null;
+    if(isExtended(g))wolverineCue(g,event);
   }
   if (g.step === 'alpha_wolf' && expected[0]) {
     const action = actions[0];
@@ -417,11 +470,11 @@ function advance(g: Game) {
     g.alphaTarget = action.target;
     g.alphaActorId = action.target !== null ? expected[0] : null;
   }
-  if (g.step === 'witch' && expected[0]) {
-    const p = g.players.find(p => p.id === expected[0])!, a = actions[0];
+  if (g.step === 'witch') for(const id of expected){
+    const p = g.players.find(p => p.id === id)!, a = g.actions[id];
     if (a.type === 'potion') {
-      if (a.heal) { g.healTarget = a.healTarget ?? healableBites(g)[0] ?? null; p.resources.heal--; }
-      if (a.poison !== null) { g.poisonTarget = a.poison; p.resources.poison--; }
+      if (a.heal) { g.healTarget = a.healTarget ?? healableBites(g)[0] ?? null; p.resources.heal--;if(isExtended(g)&&g.healTarget)(extraState(g).healedTargets??=[]).push(g.healTarget); }
+      if (a.poison !== null) { g.poisonTarget = a.poison; p.resources.poison--;if(isExtended(g))(extraState(g).poisonTargets??=[]).push(a.poison); }
     }
   }
   move(g, steps[index + 1] ?? 'review');
@@ -430,30 +483,33 @@ function resolve(g: Game) {
   requireRule(g.step === 'review' && !g.resolved, 'ALREADY_RESOLVED_OR_WRONG_PHASE');
   const causes = new Map<string, string[]>();
   const kill = (id: string, cause: string) => causes.set(id, [...(causes.get(id) ?? []), cause]);
+  if(isExtended(g))for(const id of extraState(g).penalties??[])kill(id,'penalty');
+  if(isExtended(g))extraState(g).penalties=[];
+  if(isExtended(g)&&g.night===1)for(const p of g.players.filter(p=>p.alive&&p.role==='ghost'))kill(p.id,'missing');
   if (g.sacrificedCubId) kill(g.sacrificedCubId, 'sacrifice');
   for (const id of g.biteTargets) {
-    const blocked = id === g.protectedTarget || id === g.healTarget;
-    if (blocked) event(g, 'bite-blocked', { target: id, protected: id === g.protectedTarget, healed: id === g.healTarget });
+    const blocked = isProtected(g,id) || isHealed(g,id) || nightImmune(g,id,['bite']);
+    if (blocked) event(g, 'bite-blocked', { target: id, protected: isProtected(g,id), healed: isHealed(g,id) });
     else {
       const bitten = g.players.find(p => p.id === id)!;
-      if (isWolf(bitten.role)) {
+      if (isWolf(bitten.role)||isExtended(g)&&bitten.role==='vampire') {
         // Do not turn validation into an oracle for an undiscovered Dream Wolf.
         event(g, 'pack-bite-blocked', { target: id });
         continue;
       }
       // Conversions and delayed wounds commit at publication. Poison and
       // automatic death reactions may still kill the intended survivor.
-      if (id !== g.alphaTarget && (bitten.role !== 'cursed' || bitten.cursedTransformed) && bitten.role !== 'tough_guy') kill(id, 'bite');
+      if (id !== g.alphaTarget && (!hasPower(g,bitten,'cursed') || bitten.cursedTransformed) && !hasPower(g,bitten,'tough_guy')) kill(id, 'bite');
     }
   }
-  if (g.poisonTarget) {
-    if (RULES.protectionBlocksPoison && g.poisonTarget === g.protectedTarget) event(g, 'poison-blocked', { target: g.poisonTarget });
-    else kill(g.poisonTarget, 'poison');
+  for(const poison of [...new Set([...(g.poisonTarget?[g.poisonTarget]:[]),...(isExtended(g)?g.extra?.poisonTargets??[]:[])])]) {
+    if (RULES.protectionBlocksPoison && isProtected(g,poison)) event(g, 'poison-blocked', { target: poison });
+    else kill(poison, 'poison');
   }
   for (const p of g.players) {
     if (p.alive && p.delayedDeathNight !== null && p.delayedDeathNight <= g.night) kill(p.id, 'delayed-bite');
   }
-  if (g.rulesVersion === 'classic-core-v13' && g.settings?.hunterActiveShot) {
+  if (isModernHunter(g) && g.settings?.hunterActiveShot) {
     for (const p of g.players) {
       const mark = p.hunterMark;
       if (mark?.active && mark.night === g.night) {
@@ -462,32 +518,33 @@ function resolve(g: Game) {
       }
     }
   }
-  g.pendingDeaths = applyDeaths(g, causes);
+  if(isExtended(g))for(const attack of extraState(g).attacks)kill(attack.target,attack.cause);
+  g.pendingDeaths = [...new Set([...g.pendingDeaths,...applyDeaths(g, causes)])];
   g.resolved = true;
 }
 function publishRoleChanges(g: Game) {
   for (const id of g.biteTargets) {
     const bitten = g.players.find(p => p.id === id)!;
-    if (!bitten.alive || id === g.protectedTarget || id === g.healTarget) continue;
+    if (!bitten.alive || isProtected(g,id) || isHealed(g,id) || nightImmune(g,id,['bite'])) continue;
     if (id === g.alphaTarget) {
       bitten.role = 'wolf';
       const alpha = g.players.find(p => p.id === g.alphaActorId)!;
       alpha.alphaUsed = true;
       event(g, 'alpha-converted', { actor: alpha.id, target: id });
       event(g, 'transformed-to-wolf', { message: 'Bạn đã được Sói Alpha chuyển thành Ma Sói.' }, id);
-    } else if (bitten.role === 'cursed' && !bitten.cursedTransformed) {
+    } else if (hasPower(g,bitten,'cursed') && !bitten.cursedTransformed) {
       bitten.cursedTransformed = true;
-      bitten.role = 'wolf';
+      if(bitten.role==='frankenstein')extraPlayer(g,id).powers=[...new Set([...(extraPlayer(g,id).powers??[]),'wolf'])];else bitten.role = 'wolf';
       event(g, 'cursed-transformed', { target: id });
       event(g, 'transformed-to-wolf', { message: 'Bạn đã bị Sói cắn và biến thành Ma Sói.' }, id);
-    } else if (bitten.role === 'tough_guy' && bitten.delayedDeathNight === null) {
+    } else if (hasPower(g,bitten,'tough_guy') && bitten.delayedDeathNight === null) {
       bitten.delayedDeathNight = g.night + 1;
       event(g, 'bite-delayed', { target: id, deathNight: bitten.delayedDeathNight });
     }
   }
   for (const id of g.pendingDeaths) {
     const dead = g.players.find(p => p.id === id)!;
-    if (dead.role === 'diseased' && g.events.some(e => e.night === g.night && e.type === 'death' && e.data.player === id && (e.data.causes as string[]).includes('bite'))) {
+    if (hasPower(g,dead,'diseased') && g.events.some(e => e.night === g.night && e.type === 'death' && e.data.player === id && (e.data.causes as string[]).includes('bite'))) {
       g.wolvesBlockedNight = g.night + 1;
       event(g, 'wolves-infected', { blockedNight: g.wolvesBlockedNight });
     }
@@ -496,8 +553,10 @@ function publishRoleChanges(g: Game) {
 }
 
 function checkWinner(g: Game) {
+  if(isExtended(g)&&!g.players.some(p=>p.role==='tanner'&&g.publicDead.includes(p.id)&&!g.extra!.withdrawn.includes(p.id))&&g.extra!.vampireVictims.some(id=>g.players.some(p=>p.id===id&&p.alive)))return;
   const alive = g.players.filter(p => p.alive);
-  if (alive.length === 0) {
+  const special=isExtended(g)?independentWinner(g):null;
+  if(special){g.winner=special;}else if (alive.length === 0) {
     g.winner = 'draw';
   } else if (
     g.lovers &&
@@ -507,18 +566,25 @@ function checkWinner(g: Game) {
   ) {
     g.winner = 'lovers';
   } else {
+    const vampires=alive.filter(p=>p.role==='vampire');
+    if(isExtended(g)&&vampires.length>0&&vampires.length>=alive.length-vampires.length)g.winner='vampires';
     const wolves = alive.filter(p => isWolf(p.role)).length;
-    if (wolves === 0) {
+    const blockers=isExtended(g)&&alive.some(p=>['cult_leader','blob','zombie','dracula','chupacabra','bogeyman'].includes(p.role));
+    if(g.winner==='vampires'){}else if (wolves === 0 && vampires.length===0&&!blockers) {
       g.winner = 'village';
     } else {
       const pureWolves = alive.filter(p => isWolf(p.role) && p.team === 'wolves').length;
-      if (pureWolves > 0 && pureWolves >= alive.length - pureWolves) g.winner = 'wolves';
+      if (pureWolves > 0 && alive.some(p=>isWolf(p.role)&&p.role!=='lone_wolf') && pureWolves >= alive.length - pureWolves || alive.length===1&&alive[0].role==='lone_wolf') g.winner = 'wolves';
       else g.winner = null;
     }
   }
   if (g.winner) {
+    if(isExtended(g)){
+     const e=extraState(g);e.winnerIds=g.players.filter(p=>!e.withdrawn.includes(p.id)&&!e.players[p.id]?.disqualified&&(g.winner==='tanner'?p.role==='tanner':g.winner==='lovers'?g.lovers?.includes(p.id):g.winner==='wolves'?(alive.length===1&&alive[0].role==='lone_wolf'?p.id===alive[0].id:p.team==='wolves'&&p.role!=='lone_wolf'):g.winner==='village'?p.team==='village':g.winner==='vampires'?p.role==='vampire':g.winner==='cult'?p.alive&&p.role==='cult_leader':p.role===g.winner)).map(p=>p.id);
+     overrideWinner(g);
+    }
     move(g, 'ended');
-    event(g, 'game-ended', { winner: g.winner });
+    event(g, 'game-ended', { winner: g.winner, ...(g.extra?.winnerIds?{winnerIds:g.extra.winnerIds}:{}) });
     g.events.at(-1)!.audience = 'public';
   }
 }
@@ -529,6 +595,7 @@ export function withdrawPlayer(input: Game, id: string): Game {
   const p = g.players.find(p => p.id === id);
   requireRule(p, 'UNKNOWN_PLAYER');
   p.alive = false;
+  if(isExtended(g))extraState(g).withdrawn.push(id);
   p.resources.hunterShot = 0;
   p.hunterMark = null;
   g.awake = g.awake.filter(v => v !== id);
@@ -558,8 +625,30 @@ export function withdrawPlayer(input: Game, id: string): Game {
   else if (g.step !== 'ended' && !(g.step === 'review' && g.resolved)) checkWinner(g);
   return g;
 }
+function finishVerdictPowers(g:Game){
+ if(!isExtended(g)||!g.verdictDone)return;
+ const e=extraState(g);if(e.dayKills===0)for(const p of g.players.filter(p=>p.alive&&hasPower(g,p,'bigfoot')))extraPlayer(g,p.id).angry=true;
+ const victims=[...new Set(e.vampireVictims)];e.vampireVictims=[];if(!victims.length)return;
+ g.step='review';const dead=applyDeaths(g,new Map(victims.map(id=>[id,['drained']])));g.step='day';
+ publishDeaths(g,dead);announceDeaths(g,dead);checkDoppelgangerInheritance(g,dead);
+}
 function moderatorCommand(g: Game, cmd: Command, now: number) {
   switch (cmd.type) {
+    case 'wolfTimeout':{
+      requireRule(isExtended(g)&&g.step==='wolves'&&g.players.some(p=>p.alive&&hasPower(g,p,'bogeyman')),'WRONG_PHASE');
+      const voting=actors(g),choices=voting.map(id=>g.actions[id]);requireRule(voting.length>0&&!(choices.every(Boolean)&&choices.every(a=>JSON.stringify(a)===JSON.stringify(choices[0]))),'WOLVES_ALREADY_AGREED');
+      extraState(g).wolfTimedOut=true;g.actions={};g.biteTargets=[];g.biteTarget=null;
+      const sequence=nightSequence(g);move(g,sequence[sequence.indexOf('wolves')+1]??'review');event(g,'wolf-timeout',{});break;
+    }
+    case 'reviewNote':{
+      requireRule(isExtended(g),'WRONG_PHASE');const note=[...extraState(g).notes].reverse().find(n=>n.actor===cmd.actor&&n.approved===null);requireRule(note,'INVALID_ACTION');note.approved=cmd.approve;
+      event(g,'hint-reviewed',{actor:cmd.actor,approved:cmd.approve});if(cmd.approve){event(g,'ghost-hint',{text:note.text});g.events.at(-1)!.audience='public';}break;
+    }
+    case 'penalty':{
+      requireRule(isExtended(g)&&!['ended','review'].includes(g.step),'WRONG_PHASE');const p=target(g,cmd.target);requireRule(p.role==='teen_wolf'||g.players.some(v=>v.initialRole==='mason'||hasPower(g,v,'mason')),'INVALID_TARGET');extraPlayer(g,p.id).disqualified=true;
+      const e=extraState(g);e.penalties=[...new Set([...(e.penalties??[]),p.id])];
+      event(g,'rule-penalty',{target:p.id});break;
+    }
     case 'advance': advance(g); break;
     case 'resolve': resolve(g); break;
     case 'dayPhase': {
@@ -567,7 +656,8 @@ function moderatorCommand(g: Game, cmd: Command, now: number) {
       // and only signal; the moderator still transitions every phase manually.
       requireRule((g.rulesVersion === 'classic-core-v11' && g.schemaVersion === 6) ||
         (g.rulesVersion === 'classic-core-v12' && g.schemaVersion === 7) ||
-        (g.rulesVersion === RULES.version && g.schemaVersion === 8), 'DAY_PHASE_UNAVAILABLE');
+        (g.rulesVersion === 'classic-core-v13' && g.schemaVersion === 8) ||
+        (g.rulesVersion === RULES.version && g.schemaVersion === 9), 'DAY_PHASE_UNAVAILABLE');
       requireRule(g.step === 'day' && !g.winner, 'WRONG_PHASE');
       const phases = RULES.dayPhases;
       if (cmd.action === 'start') {
@@ -583,9 +673,10 @@ function moderatorCommand(g: Game, cmd: Command, now: number) {
     }
     case 'publish': {
       requireRule(g.step === 'review' && g.resolved, 'NOT_READY_TO_PUBLISH');
-      if (g.rulesVersion === 'classic-core-v13') for (const p of g.players) if (!p.alive && p.role === 'hunter') p.resources.hunterShot = 0;
+      if (isModernHunter(g)) for (const p of g.players) if (!p.alive && p.role === 'hunter') p.resources.hunterShot = 0;
       publishDeaths(g, g.pendingDeaths);
       publishRoleChanges(g);
+      publishDayPowers(g,event);
       event(g, 'morning', { dead: [...g.pendingDeaths] });
       g.events.at(-1)!.audience = 'public';
       queueHunters(g, g.pendingDeaths);
@@ -595,21 +686,22 @@ function moderatorCommand(g: Game, cmd: Command, now: number) {
     }
     case 'verdict': {
       requireRule(g.step === 'day' && !g.verdictDone, 'WRONG_PHASE');
-      if (cmd.target === null && ['classic-core-v12', 'classic-core-v13'].includes(g.rulesVersion)) {
+      if (cmd.target === null && ['classic-core-v12', 'classic-core-v13', 'classic-core-v14'].includes(g.rulesVersion)) {
         // From v12 a no-execution morning spends the pre-game skip budget.
         requireRule((g.daySkipsUsed ?? 0) < g.settings!.skipVoteDays!, 'VOTE_REQUIRED');
         g.daySkipsUsed = (g.daySkipsUsed ?? 0) + 1;
       }
-      g.verdictDone = true;
+      g.verdictDone = !isExtended(g) || --extraState(g).verdictsRemaining === 0;
       if (cmd.target !== null) {
         const condemned = target(g, cmd.target);
-        if (condemned.role === 'prince') {
+        if (hasPower(g,condemned,'prince')) {
           event(g, 'prince-revealed', { player: condemned.id, role: 'prince' });
           g.events.at(-1)!.audience = 'public';
-          checkWinner(g);
+          finishVerdictPowers(g);checkWinner(g);
           return;
         }
         const dead = applyDeaths(g, new Map([[cmd.target, ['verdict']]]));
+        if(isExtended(g))extraState(g).dayKills+=dead.length;
         publishDeaths(g, dead);
         event(g, 'verdict', { target: cmd.target });
         g.events.at(-1)!.audience = 'public';
@@ -617,18 +709,24 @@ function moderatorCommand(g: Game, cmd: Command, now: number) {
         checkDoppelgangerInheritance(g, dead);
         queueHunters(g, dead);
         g.postHunterStep = 'day';
-        continueHunters(g);
+        finishVerdictPowers(g);continueHunters(g);
         return;
       } else {
         event(g, 'verdict', { target: null });
         g.events.at(-1)!.audience = 'public';
       }
-      checkWinner(g);
+      finishVerdictPowers(g);checkWinner(g);
       break;
     }
     case 'nextNight':
       requireRule(g.step === 'day' && g.verdictDone, 'VERDICT_REQUIRED');
+      if(isExtended(g)){
+       const e=extraState(g),signature=progressSignature(g);e.staleRounds=signature===e.roundStart?(e.staleRounds??0)+1:0;e.roundStart=signature;
+       if(e.staleRounds>=2&&g.players.some(p=>p.alive&&['lone_wolf','vampire','chupacabra','cult_leader','bogeyman','blob','zombie','dracula'].includes(p.role))){g.winner='draw';e.winnerIds=[];move(g,'ended');event(g,'game-ended',{winner:'draw',winnerIds:[]});g.events.at(-1)!.audience='public';break;}
+      }
       for (const p of g.players) p.hunterMark = null;
+      if(isExtended(g)){const e=extraState(g);e.protectedTargets=[];e.healedTargets=[];e.poisonTargets=[];e.woke=[];e.attacks=[];e.pending=[];e.wolfTimedOut=false;}
+      if(isExtended(g))for(const p of g.players.filter(p=>p.alive&&hasPower(g,p,'bigfoot')&&g.extra?.players[p.id]?.angry)){if(p.role==='frankenstein')extraPlayer(g,p.id).powers=[...new Set([...(extraPlayer(g,p.id).powers??[]),'wolf'])];else{p.role='wolf';p.team='wolves';}event(g,'transformed-to-wolf',{message:'Không ai bị treo cổ. Bạn đã chuyển thành Ma Sói.'},p.id);}
       g.night++; g.resolved = false; g.pendingDeaths = []; g.verdictDone = false;
       g.biteTargets = []; g.sacrificedCubId = null; g.alphaTarget = g.alphaActorId = null;
       g.biteTarget = g.protectedTarget = g.healTarget = g.poisonTarget = null;
@@ -640,12 +738,13 @@ export function dispatch(input: Game, principal: Principal, request: Request, no
   // Version pairs are accepted exactly, including legacy snapshots. Old games
   // keep playing forever; chat requires v10/schema5, day clocks require v11/6.
   requireRule(input.rulesVersion === 'classic-core-v8' || input.rulesVersion === 'classic-core-v9' ||
-    input.rulesVersion === 'classic-core-v10' || input.rulesVersion === 'classic-core-v11' || input.rulesVersion === 'classic-core-v12' ||
+    input.rulesVersion === 'classic-core-v10' || input.rulesVersion === 'classic-core-v11' || input.rulesVersion === 'classic-core-v12' || input.rulesVersion === 'classic-core-v13' ||
     input.rulesVersion === RULES.version, 'UNSUPPORTED_RULES_VERSION');
   const expectedSchema = input.rulesVersion === 'classic-core-v8' ? 3
     : input.rulesVersion === 'classic-core-v9' ? 4
     : input.rulesVersion === 'classic-core-v10' ? 5
-    : input.rulesVersion === 'classic-core-v11' ? 6 : input.rulesVersion === 'classic-core-v12' ? 7 : 8;
+    : input.rulesVersion === 'classic-core-v11' ? 6 : input.rulesVersion === 'classic-core-v12' ? 7 : input.rulesVersion === 'classic-core-v13' ? 8 : 9;
+  requireRule(isExtended(input)||input.players.every(p=>LEGACY_V13_ROLES.includes(p.role)), 'UNSUPPORTED_ROLE');
   requireRule(input.schemaVersion === expectedSchema, 'UNSUPPORTED_SCHEMA_VERSION');
   requireRule(input.rulesVersion === 'classic-core-v8' || typeof input.settings?.witchSeesBite === 'boolean', 'INVALID_SETTINGS');
   requireRule(request.gameId === input.id && typeof request.id === 'string' && request.id.length > 0 && request.id.length <= 128, 'INVALID_REQUEST');
@@ -656,12 +755,21 @@ export function dispatch(input: Game, principal: Principal, request: Request, no
   if (prior) { requireRule(prior.fingerprint === fingerprint, 'REQUEST_ID_REUSED'); return structuredClone(input); }
   requireRule(request.stepId === stepId(input), 'STALE_STEP');
   const g = structuredClone(input), cmd = request.command;
+  const windowStep = stepId(input);
+  const window = g.requestWindow?.step === windowStep ? g.requestWindow : { step: windowStep, counts: {} };
+  const sender = principal.kind === 'moderator' ? 'moderator' : principal.playerId;
+  const transition = principal.kind === 'moderator' && ['advance', 'resolve', 'publish', 'verdict', 'nextNight', 'reviewNote','penalty','wolfTimeout'].includes(cmd.type);
+  const firstAction = principal.kind === 'player' && cmd.type === 'act' && !Object.hasOwn(g.actions, principal.playerId);
+  requireRule(transition || firstAction || principal.kind === 'player' && principal.proxy || (Object.hasOwn(window.counts,sender)?window.counts[sender]:0) < 64, 'REQUEST_LIMIT');
+  Object.defineProperty(window.counts,sender,{value:(Object.hasOwn(window.counts,sender)?window.counts[sender]:0)+1,enumerable:true,writable:true,configurable:true});
+  g.requestWindow = window;
   if (cmd.type === 'wake' || cmd.type === 'act') {
     requireRule(principal.kind === 'player', 'PLAYER_REQUIRED');
     const id = principal.playerId;
     requireRule(actors(g).includes(id), 'NOT_YOUR_TURN');
     if (cmd.type === 'wake') {
       if (!g.awake.includes(id)) g.awake.push(id);
+      if (g.step === 'wolves' && isExtended(g)) {const p=g.players.find(p=>p.id===id)!;p.knownWolves=[...new Set([...p.knownWolves,...g.players.filter(v=>hasPower(g,v,'minion')||v.role==='frankenstein'&&roleCanWake(g,v)).map(v=>v.id)])];}
       if (g.step === 'wolves') g.players.find(p => p.id === id)!.knownWolves = packMembers(g, g.players.find(p => p.id === id)!)!.map(p => p.id);
     }
     else applyAction(g, id, cmd.action);
@@ -683,7 +791,8 @@ function applyChat(g: Game, principal: Principal, raw: string) {
   requireRule((g.rulesVersion === 'classic-core-v10' && g.schemaVersion === 5) ||
     (g.rulesVersion === 'classic-core-v11' && g.schemaVersion === 6) ||
     (g.rulesVersion === 'classic-core-v12' && g.schemaVersion === 7) ||
-        (g.rulesVersion === RULES.version && g.schemaVersion === 8), 'CHAT_UNAVAILABLE');
+        (g.rulesVersion === 'classic-core-v13' && g.schemaVersion === 8) ||
+        (g.rulesVersion === RULES.version && g.schemaVersion === 9), 'CHAT_UNAVAILABLE');
   requireRule(g.step === 'wolves', 'WRONG_PHASE');
   requireRule(actors(g).includes(principal.playerId), 'NOT_YOUR_TURN');
   requireRule(g.awake.includes(principal.playerId), 'NOT_AWAKE');

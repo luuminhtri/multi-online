@@ -1,0 +1,36 @@
+{
+  "$kind": "http-request",
+  "name": "Create isolated table",
+  "order": 200,
+  "method": "POST",
+  "url": "{{baseUrl}}/api/room",
+  "auth": {
+    "type": "noauth"
+  },
+  "headers": [
+    {
+      "key": "Content-Type",
+      "value": "application/json"
+    },
+    {
+      "key": "Authorization",
+      "value": "Bearer {{roleToken}}"
+    }
+  ],
+  "scripts": [
+    {
+      "type": "beforeRequest",
+      "language": "text/javascript",
+      "code": "pm.collectionVariables.set('roleToken',pm.variables.replaceIn('{{$guid}}').replace(/-/g,'')+pm.variables.replaceIn('{{$guid}}').replace(/-/g,''));"
+    },
+    {
+      "type": "afterResponse",
+      "language": "text/javascript",
+      "code": "pm.test('HTTP 200',()=>pm.response.to.have.status(200));const s=pm.response.json();pm.collectionVariables.set('roleCode',s.room.code);pm.collectionVariables.set('roleRevision',String(s.room.revision));"
+    }
+  ],
+  "body": {
+    "type": "json",
+    "content": "{\"type\": \"create\", \"requestId\": \"roles14-create\", \"name\": \"Roles14 contract\"}"
+  }
+}

@@ -37,13 +37,13 @@ let selected = 'p6';
 let notice = 'Bắt đầu ở lượt Thần tình yêu Cupid. Bấm “Đã thức dậy” rồi chọn 2 người kết duyên.';
 let error = false;
 const app = document.querySelector<HTMLDivElement>('#app')!;
-const labels: Record<Step, string> = {
+const labels: Partial<Record<Step, string>> = {
   dire_wolf: 'Sói tuyết chọn bạn', virginia_woolf: 'Virginia chọn liên kết', alpha_wolf: 'Sói Alpha',
   aura_seer: 'Tiên tri hào quang', mystic_seer: 'Tiên tri huyền bí', mentalist: 'Nhà tinh thần học',
   cupid: 'Thần tình yêu', doppelganger: 'Nhân bản', guard: 'Bảo vệ', seer: 'Tiên tri', wolves: 'Bầy Sói',
   witch: 'Phù thủy', hunter: 'Thợ săn nổ súng', review: 'Tổng kết đêm', day: 'Ban ngày', ended: 'Kết thúc',
 };
-const winners = { village: 'Phe Dân thắng', wolves: 'Phe Sói thắng', lovers: 'Phe Tình nhân thắng ❤️', draw: 'Hòa' };
+const winners: Record<string,string> = { village: 'Phe Dân thắng', wolves: 'Phe Sói thắng', lovers: 'Phe Tình nhân thắng ❤️', draw: 'Hòa' };
 const errors: Record<string, string> = {
   INVALID_TARGET_COUNT: 'Chọn đúng số nạn nhân của bầy trong đêm này.',
   TARGETS_NOT_ADJACENT: 'Hai nạn nhân phải là hai người sống ngồi cạnh nhau.',
@@ -75,6 +75,7 @@ function options(ids: string[], empty?: string) {
 function describeAction(a: Action): string {
   switch (a.type) {
     case 'bond': return `Liên kết với ${name(a.target)}`;
+    case 'ability': return a.pass ? 'Không dùng năng lực' : 'Đã chọn năng lực';
     case 'hold': return 'Giữ lại phát bắn';
     case 'fast': return 'Xác nhận không cắn vì là Sói ăn chay cuối cùng';
     case 'compare': return `So sánh phe ${name(a.targets[0])} và ${name(a.targets[1])}`;

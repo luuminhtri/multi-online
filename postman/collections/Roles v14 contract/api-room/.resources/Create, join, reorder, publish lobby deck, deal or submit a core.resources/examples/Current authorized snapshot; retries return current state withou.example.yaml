@@ -1,0 +1,58 @@
+$kind: http-example
+name: Current authorized snapshot; retries return current state without applying twice. Create is idempotent by token+requestId. Join preserves the same member. Start never reshuffles on retry. Core commands are rebased on fresh state after CAS conflicts.
+request:
+  url: "{{baseUrl}}/api/room"
+  method: POST
+  headers:
+    - key: Authorization
+      value: Bearer <token>
+      description: "Added as a part of security scheme: bearer"
+    - key: Accept
+      value: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "type": {},
+        "requestId": "E-nhEPeR0bYDYz1SM4q8TUeitOhazqx5aQN-isRmDI7qlmKc418MOLSXMx_FD1IZnQA1MeE1k0OaQgR9NHMatz_T-kH5Fbd_",
+        "name": "string"
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "room": {},
+        "me": {},
+        "viewer": "string",
+        "game": {},
+        "viewVersion": "string",
+        "storage": "string",
+        "serverTime": "1966-04-03T14:48:10.251Z",
+        "catalog": [
+          {
+            "id": "string",
+            "name": "string",
+            "description": "string",
+            "image": "string"
+          },
+          {
+            "id": "string",
+            "name": "string",
+            "description": "string",
+            "image": "string"
+          }
+        ],
+        "deck": {
+          "key_0": 3663,
+          "key_1": 1750,
+          "key_2": 7634,
+          "key_3": 250
+        },
+        "controller": {}
+      }
+order: 1000

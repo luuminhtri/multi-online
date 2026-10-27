@@ -1,7 +1,8 @@
-export type Role = 'wolf' | 'villager' | 'seer' | 'guard' | 'witch' | 'hunter' | 'cupid' | 'cursed' | 'doppelganger' | 'apprentice_seer' | 'aura_seer' | 'mystic_seer' | 'mentalist' | 'lycan' | 'wolf_man' | 'tough_guy' | 'diseased' | 'prince' | 'mad_bomber' | 'wolf_cub' | 'big_bad_wolf' | 'alpha_wolf' | 'dire_wolf' | 'virginia_woolf' | 'fruit_wolf' | 'fang_face' | 'dream_wolf';
-export type Team = 'wolves' | 'village' | 'lovers';
-export type Step = 'dire_wolf' | 'virginia_woolf' | 'alpha_wolf' | 'aura_seer' | 'mystic_seer' | 'mentalist' | 'cupid' | 'doppelganger' | 'guard' | 'seer' | 'wolves' | 'witch' | 'hunter' | 'review' | 'day' | 'ended';
-export type Principal = { kind: 'moderator' } | { kind: 'player'; playerId: string };
+import type { ExtraRole, ExtraStep, ExtraState, ExtraTurn } from './extension-types.ts';
+export type Role = 'wolf' | 'villager' | 'seer' | 'guard' | 'witch' | 'hunter' | 'cupid' | 'cursed' | 'doppelganger' | 'apprentice_seer' | 'aura_seer' | 'mystic_seer' | 'mentalist' | 'lycan' | 'wolf_man' | 'tough_guy' | 'diseased' | 'prince' | 'mad_bomber' | 'wolf_cub' | 'big_bad_wolf' | 'alpha_wolf' | 'dire_wolf' | 'virginia_woolf' | 'fruit_wolf' | 'fang_face' | 'dream_wolf' | ExtraRole;
+export type Team = 'wolves' | 'village' | 'lovers' | 'vampires' | 'cult' | 'independent';
+export type Step = 'dire_wolf' | 'virginia_woolf' | 'alpha_wolf' | 'aura_seer' | 'mystic_seer' | 'mentalist' | 'cupid' | 'doppelganger' | 'guard' | 'seer' | 'wolves' | 'witch' | 'hunter' | 'review' | 'day' | 'ended' | ExtraStep;
+export type Principal = { kind: 'moderator' } | { kind: 'player'; playerId: string; proxy?: boolean };
 export interface Player {
   id: string;
   name: string;
@@ -20,6 +21,7 @@ export interface Player {
   doppelgangerTarget?: string | null;
 }
 export type Action =
+  | { type: 'ability'; targets: string[]; pass?: boolean; text?: string; choice?: string }
   | { type: 'protect'; target: string }
   | { type: 'inspect'; target: string }
   | { type: 'compare'; targets: [string, string] }
@@ -43,7 +45,10 @@ export type Command =
   | { type: 'resolve' }
   | { type: 'publish' }
   | { type: 'verdict'; target: string | null }
-  | { type: 'nextNight' };
+  | { type: 'nextNight' }
+  | { type:'reviewNote'; actor:string; approve:boolean }
+  | { type:'penalty'; target:string }
+  | { type:'wolfTimeout' };
 export interface Request {
   id: string;
   gameId: string;
@@ -62,7 +67,7 @@ export interface Game {
   // v8/schema3 through v10/schema5 snapshots retain their original rules; new
   // games use v13/schema8 (Hunter mode); v12/schema7 (day clocks since v11, mandatory-vote budget since
   // v12). Older optional fields exist only in later schemas.
-  schemaVersion: 3 | 4 | 5 | 6 | 7 | 8;
+  schemaVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9;
   settings?: GameSettings;
   id: string;
   rulesVersion: string;
@@ -95,12 +100,14 @@ export interface Game {
   pendingDeaths: string[];
   publicDead: string[];
   verdictDone: boolean;
-  winner: Team | 'draw' | null;
+  winner: Team | 'lone_wolf' | 'draw' | 'tanner' | 'hoodlum' | 'nostradamus' | 'bogeyman' | 'blob' | 'zombie' | 'dracula' | 'chupacabra' | 'bloody_mary' | null;
   lovers: [string, string] | null;
   pendingHunters: string[];
   activeHunterId: string | null;
   postHunterStep: Step;
   events: GameEvent[];
+  extra?: ExtraState;
+  requestWindow?: { step: string; counts: Record<string, number> };
   receipts: Record<string, { fingerprint: string; revision: number }>;
 }
 export interface GameSettings { witchSeesBite: boolean; hunterActiveShot?: boolean; dayTimers?: DayTimers; skipVoteDays?: number; }

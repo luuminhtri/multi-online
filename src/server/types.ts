@@ -5,6 +5,7 @@ export interface Room {
   schemaVersion: 1 | 2 | 3 | 4; lobbyRoles?: Role[]; readyPlayerIds?: string[]; gameStarted?: boolean; code: string; revision: number; createKey: string;
   createdAt: string; expiresAt: string; moderator: Member; members: Member[];
   game: Game | null;
+  requestWindow?: { scope: string; counts: Record<string, number> };
   receipts: Record<string, string>;
 }
 export interface RoomRepository {

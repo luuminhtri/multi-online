@@ -31,8 +31,8 @@ function night(g: Game, mark: Action, bite = 'a', poison: string | null = null, 
 const alive = (g: Game, id: string) => g.players.find(p => p.id === id)!.alive;
 const rejects = (f: () => unknown, code: string) => assert.throws(f, (e: unknown) => e instanceof RuleError && e.code === code);
 
-test('v13 default is passive; living hunter is called nightly and must pin a valid other player', () => {
-  let g = game(); assert.equal(g.schemaVersion, 8); assert.equal(g.rulesVersion, 'classic-core-v13'); assert.equal(g.settings!.hunterActiveShot, false);
+test('current default is passive; living hunter is called nightly and must pin a valid other player', () => {
+  let g = game(); assert.equal(g.schemaVersion, 9); assert.equal(g.rulesVersion, 'classic-core-v14'); assert.equal(g.settings!.hunterActiveShot, false);
   g = cmd(g, { type: 'advance' }); assert.equal(g.step, 'hunter'); assert.deepEqual(actors(g), ['h']);
   assert.equal(playerView(g, 'h').hunterMode, 'passive');
   rejects(() => cmd(g, { type: 'advance' }), 'WAITING_FOR_ACTIONS');

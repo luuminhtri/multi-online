@@ -1,6 +1,10 @@
-# Luật classic-core-v13
+# Luật classic-core-v14
 
-Mặc định của dự án, không khẳng định là luật Ma Sói phổ quát. Có tùy chọn Phù thủy, chat bầy và đồng hồ ban ngày theo yêu cầu của người dùng. Ván mới v13 có **27 vai**, schema **8**; ván v12/schema7 (Thợ săn bắn sau khi chết), ván v11/schema6 (không giới hạn bỏ vote), v10/schema5 (không đồng hồ), v9/schema4 (không chat) và v8/schema3 đã lưu giữ luật cũ đến hết ván. Dữ liệu cards.json vẫn là nguồn thô, không tự quyết định hành vi runtime.
+Mặc định của dự án, không khẳng định là luật Ma Sói phổ quát. Có tùy chọn Phù thủy, chat bầy và đồng hồ ban ngày theo yêu cầu của người dùng. Ván mới v14 có **64 vai**, schema **9**; ván v13/schema8, ván v12/schema7 (Thợ săn bắn sau khi chết), ván v11/schema6 (không giới hạn bỏ vote), v10/schema5 (không đồng hồ), v9/schema4 (không chat) và v8/schema3 đã lưu giữ luật cũ đến hết ván. Dữ liệu cards.json vẫn là nguồn thô, không tự quyết định hành vi runtime.
+
+## Phần mở rộng v14
+
+Luật cho 37 vai mới, thứ tự thắng nhiều phe, Vampire sau treo cổ, Frankenstein và thao tác quản trò được chốt tại [hợp đồng v14](verification/role-contracts-v14.md). Mục đó ưu tiên cho v14 khi các phần lịch sử v8–v13 bên dưới mô tả phạm vi 27 vai nền. Mô tả nguồn không bị sửa.
 
 ## Vai nền và thông tin
 
@@ -86,7 +90,7 @@ Khi tạo ván: tối thiểu ba người, ít nhất một Sói thật và số
 
 ## Schema và tương thích
 
-Ván mới dùng v12/schemaVersion=7, lưu settings (witchSeesBite, dayTimers, skipVoteDays), daySkipsUsed, chat và pha ban ngày. skipVoteDays là số nguyên 0–30, mặc định 0; mỗi phán quyết không loại ai dùng một lượt, hết lượt máy chủ từ chối VOTE_REQUIRED. Ngân sách tính tổng cả ván, không bắt buộc sử dụng ở những ngày đầu. Phiếu vẫn diễn ra ngoài app. Hoàng tử vẫn giữ ngoại lệ sống sau phán quyết theo luật vai.
+Ván mới dùng v14/schemaVersion=9 (các trường đồng hồ/ngân sách được thêm từ v11/v12),, lưu settings (witchSeesBite, dayTimers, skipVoteDays), daySkipsUsed, chat và pha ban ngày. skipVoteDays là số nguyên 0–30, mặc định 0; mỗi phán quyết không loại ai dùng một lượt, hết lượt máy chủ từ chối VOTE_REQUIRED. Ngân sách tính tổng cả ván, không bắt buộc sử dụng ở những ngày đầu. Phiếu vẫn diễn ra ngoài app. Hoàng tử vẫn giữ ngoại lệ sống sau phán quyết theo luật vai.
 
 Giữ nguyên cặp v8/3, v9/4, v10/5, v11/6 đã lưu; không tự nâng version hay thay luật giữa ván. Ván v10 vẫn có chat, v11 vẫn có chat và đồng hồ; v11 trở về trước không giới hạn phán quyết trống. Room schema hiện là 4, độc lập Game schema; không cần SQL migration cho field trong Game JSON. Muốn áp dụng giới hạn mới phải tạo ván mới.
 

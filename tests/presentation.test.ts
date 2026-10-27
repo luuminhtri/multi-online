@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { latestNightDeaths, publicEventText } from '../src/online/presentation.ts';
+import { latestNightDeaths, missingLibraryRoles, publicEventText } from '../src/online/presentation.ts';
+import { ROLE_CATALOG } from '../src/catalog/roles.ts';
 import type { GameEvent } from '../src/engine/types.ts';
 const event = (night: number, type: string, dead: string[], audience: GameEvent['audience'] = 'public'): GameEvent => ({ id: night, night, type, audience, data: { dead } });
 
@@ -26,4 +27,22 @@ test('Diễn biến ghi đúng Đêm/Sáng, người bị vote và trường h�
   assert.equal(publicEventText({ ...event(1, 'verdict', []), data: { target: 'c' } }, name), 'Sáng 1: C bị vote chết.');
   assert.equal(publicEventText({ ...event(2, 'verdict', []), data: { target: null } }, name), 'Sáng 2: Không có ai chết.');
   assert.equal(publicEventText(event(1, 'deaths', ['c']), name), 'Sáng 1: C đã chết.');
+});
+
+test('Thư viện nguồn tách đúng vai đã hỗ trợ khỏi vai chưa hỗ trợ', () => {
+  const supported = [{ id: 'wolf', displayName: 'Ma Sói' }, { id: 'seer', displayName: 'Tiên tri' }];
+  const library = [...supported, { id: 'mason', displayName: 'Sinh đôi' }, { id: 'tanner', displayName: 'Chán đời' }];
+  assert.deepEqual(missingLibraryRoles(supported.map(r => r.id), library), [
+    { id: 'mason', displayName: 'Sinh đôi' }, { id: 'tanner', displayName: 'Chán đời' },
+  ]);
+  assert.deepEqual(missingLibraryRoles(supported.map(r => r.id), supported), []);
+});
+test('Nhãn số vai: catalog đã hỗ trợ + vai thiếu bằng đúng 64 vai nguồn', async () => {
+  const { supportedCatalog } = await import('../src/server/rooms.ts');
+  const supported = supportedCatalog();
+  const missing = missingLibraryRoles(supported.map(r => r.id), ROLE_CATALOG.map(r => ({ id: r.id, displayName: r.displayName })));
+  assert.equal(supported.length + missing.length, ROLE_CATALOG.length);
+  assert.equal(ROLE_CATALOG.length, 64);
+  // Mọi vai đã hỗ trợ phải nằm trong thư viện nguồn (không có vai ngoài nguồn).
+  for (const s of supported) assert.ok(!missing.some(m => m.id === s.id), s.id);
 });

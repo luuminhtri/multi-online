@@ -1,3 +1,4 @@
+import { isExtraStep } from '../engine/extensions.ts';
 import { randomId } from '../shared/random-id.ts';
 import { actors, createGame, dispatch, stepId, withdrawPlayer } from '../engine/engine.ts';
 import { moderatorView, playerView } from '../engine/views.ts';
@@ -53,7 +54,7 @@ export class LocalTable {
     return { ...base, viewVersion: `${r.code}:${r.revision}:${proxy ?? 'host'}`, serverTime: new Date(this.now()).toISOString() } as Snapshot;
   }
   private command(g: Game, command: Command, actor?: string): Game {
-    return dispatch(g, actor ? { kind: 'player', playerId: actor } : { kind: 'moderator' },
+    return dispatch(g, actor ? { kind: 'player', playerId: actor, proxy:true } : { kind: 'moderator' },
       { id: randomId(), gameId: g.id, stepId: stepId(g), command }, this.now());
   }
   private settle(g: Game): Game {
@@ -87,16 +88,17 @@ export class LocalTable {
       let g = r.game!;
       if (operation.type === 'simpleAck') {
         ensure(saved.inspection !== null, 'Không có kết quả đang chờ xác nhận.'); saved.inspection = null;
-        if (['seer', 'aura_seer', 'mystic_seer', 'mentalist'].includes(g.step)) g = this.command(g, { type: 'advance' });
+        if (actors(g).every(id=>Object.hasOwn(g.actions,id))) g = this.command(g, { type: 'advance' });
       } else {
         ensure(saved.inspection === null, 'Hãy xác nhận kết quả soi trước.');
-        let ids = actors(g); if (g.step === 'hunter' && g.rulesVersion === 'classic-core-v13') ids = ids.filter(id => !Object.hasOwn(g.actions, id)).slice(0, 1); ensure(ids.length > 0, 'Không có vai đang hành động.');
+        let ids = actors(g); if (g.step !== 'wolves') ids = ids.filter(id => !Object.hasOwn(g.actions, id)).slice(0, 1); ensure(ids.length > 0, 'Không có vai đang hành động.');
         if (operation.action.type === 'sacrifice') ids = [...ids].sort((a, b) => Number(b === (operation.action as { target: string }).target) - Number(a === (operation.action as { target: string }).target));
         for (const id of ids) {
           g = this.command(g, { type: 'wake' }, id);
           g = this.command(g, { type: 'act', action: operation.action }, id);
         }
-        if (['seer', 'aura_seer', 'mystic_seer', 'mentalist'].includes(g.step)) saved.inspection = [...g.events].reverse().find(e => ['inspection', 'aura-inspection', 'mystic-inspection', 'alignment-comparison'].includes(e.type))!.id;
+        const result=[...g.events].reverse().find(e=>e.id>(saved.room.game!.events.at(-1)?.id??0)&&['inspection','aura-inspection','mystic-inspection','alignment-comparison','ability-result'].includes(e.type));
+        if(result) saved.inspection=result.id;
         else if (actors(g).every(id => Object.hasOwn(g.actions, id))) g = this.command(g, { type: 'advance' });
       }
       r.game = saved.inspection === null ? this.settle(g) : g;

@@ -1,11 +1,30 @@
 # Trạng thái làm việc
 
+## 2026-10-27 — Tiếp quản và mở rộng 64 vai (nhánh riêng, chưa deploy)
+
+- Ván mới classic-core-v14/schema9: catalog/core/ảnh offline đủ 64 ID nguồn. Bổ sung 37 vai, lượt chọn/xác nhận/thông tin riêng, phe thứ ba, thắng thay thế, Vampire sau treo cổ, Ghost cần duyệt, Minion cắn cùng bầy và Frankenstein tích lũy kỹ năng. Giữ nguyên mô tả nguồn và luật Hunter của người dùng.
+- Ván v8–v13 giữ version/schema cũ và 27 ID legacy đóng băng. Không cần SQL migration. Lựa chọn ghế/avatar và luồng một máy dùng chung engine; hai Mason không còn dùng chung một lượt kết quả.
+- Sửa lỗi cắt receipt của bản nháp: replay hơn 300 yêu cầu không đổi lại mục tiêu cũ. Giữ receipt, thêm quota per-step cùng đường hỗ trợ của quản trò. Không tuyên bố document được giới hạn tuyệt đối cho ván dài vô hạn.
+- Kiểm: 263/263 Node tests (gồm 100 ván nền và 100 bàn trộn v14), 8/8 data tests; typecheck/build đạt. HTTP audit 40 kiểm tra; Postman v14 4 requests/8 assertions/0 failed và Hunter 46 requests/50 assertions/0 failed. Syntax lint đạt, governance lint chưa chạy vì CLI chưa đăng nhập.
+- Chrome mobile 390×844: hai Mason xác nhận riêng, form Nostradamus, avatar cắn/Vampire, gửi và duyệt Ghost khi mất mạng; bản build cache đủ 64 ảnh, reload và tạo bàn offline khi network fetch bị chặn. Không tràn ngang ở màn đã kiểm.
+- Ba vòng **tự rà soát nối tiếp**, không giả danh reviewer độc lập. Chưa kiểm mọi tổ hợp, điện thoại vật lý hoặc v14 trên production. Không push/merge/deploy. Bản production vẫn ở v13; thay đổi nằm trong `.agent-roles64-worktree`, nhánh `agent/roles-64`.
+- Luật/quy ước: [role-contracts-v14.md](verification/role-contracts-v14.md). Kiểm chứng và giới hạn: [roles-v14-review.md](verification/roles-v14-review.md).
+
+## 2026-10-27 — Sửa độ trễ production và trạng thái gửi
+
+- Chẩn đoán trực tiếp dashboard: default Function Region iad1 (Mỹ), Supabase ap-southeast-1 (Singapore). Đã đặt regions sin1 trong vercel.json, commit d905db6; guard đọc cũ ở 6f8ccd8. Production asset đã khớp build mới.
+- Pending không đồng nghĩa thất bại: khi busy chỉ hiện Đang gửi thao tác, không có nút retry. Chỉ khi mất ACK mới cho retry. Giữ nguyên capability/requestId; xóa notice cũ lúc retry. Client timeout 12s bao phủ hai lượt upstream 5s. ACK thành công dùng snapshot trả về, bỏ GET dư; đọc bắt đầu trước write bị vô hiệu bằng readSequence để tránh đè ACK. Poll thường giữ 1.5s; ván/luật/schema không thay đổi.
+- Đo từ cùng máy, 3 lượt create/read/write trước/sau (verification/latency-before.json và latency-after.json): create median 1420→260ms; read 1126→144ms; write 1437→342ms. Một write sau 835ms; số liệu nhỏ, không cam kết p95 hay mọi mạng. Không lộ token/key/role vào artifacts.
+- Kiểm: typecheck/build đạt, 16 test boundaries/rooms đạt; Postman Room codes 5 requests/9 assertions/0 failures. Chrome chạy production bundle qua proxy cục bộ giữ ACK: đang gửi không hiện retry; mô phỏng đã lưu nhưng mất phản hồi rồi retry trở về đúng phòng cũ, cùng requestId, không tạo trùng. GET đầu tiên sau ACK 1522ms (không còn GET tức thì). Debug in-memory tránh network/database, do đó vẫn nhanh hơn online; chưa chuyển sang Realtime.
+
+
 ## 2026-10-27 — Thợ săn v13 và avatar mục tiêu
 
 - Luật người dùng chốt: mặc định bị động ghim mỗi đêm, chết đêm mọi nguyên nhân kéo người ghim đêm đó chết theo; chết ban ngày không bắn. Tùy chọn chủ động thay thế: một phát cả ván, được giữ lại; trúng team Sói lúc chốt thì sống, sai thì cả hai chết. Bảo vệ/cứu không chặn phát bắn. Tổng kết cùng đợt đêm; không lộ nguyên nhân.
 - classic-core-v13/schema8 cho ván mới; v8–v12 giữ đúng luật/ghép schema cũ (gồm chat, clocks, skip budget). Thợ săn Nhân bản không nạp lại đạn chủ động hay sao chép ghim. Không cần SQL migration. Test tương tác luật Thợ săn cũ được đánh dấu legacyHunter rõ, vẫn có kiểm tra 100 ván seed theo luật mới.
 - Chọn mục tiêu đêm qua avatar, nhiều mục tiêu có từng ô chọn; giữ Xác nhận riêng. Viền vàng mục tiêu, đỏ đồng đội sống từ pack projection khi thức ở lượt bầy. Sửa giảm sáng awaiting-ready; offline không làm người sống tối đi. Menu quản lý riêng trên avatar khi đang chọn mục tiêu ở chế độ tối giản.
 - Kiểm: 225/225 Node tests, typecheck và build đạt. Spec syntax lint/collection lint đạt. Postman Night modes 46 requests/50 assertions/0 failures (log verification/hunter-modes-postman.txt). Chrome đã thử ghim Thợ săn, tự sang Sói, chọn avatar, menu quản lý; đo tất cả ghế sống opacity 1, 0 select mục tiêu, viền đỏ chỉ đúng Sói đã biết và viền chọn độc lập. Chiều rộng 390 không tràn ngang.
+- Đã push 3aae288 và 5aea8c0, production asset khớp build mới. Đã chạy trọn lượt đêm thật trên Vercel + Supabase cho cả passive và active: schema8/v13, mục tiêu và Thợ săn sống/chết đúng, thắng được xét sau đợt chết. Hai bàn dữ liệu thử sẽ hết hạn theo TTL thường.
 - Chưa thử nhiều điện thoại vật lý hoặc mọi tổ hợp vai trên giao diện; core/privacy/legacy/offline có test tự động.
 
 

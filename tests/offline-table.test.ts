@@ -1,3 +1,4 @@
+import { ROLES } from '../src/engine/rules.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { LocalTable, localCatalog, type LocalMutation } from '../src/offline/table.ts';
@@ -98,7 +99,7 @@ test('empty roles skip automatically while actual abilities and deaths use the s
 });
 
 test('offline catalog ships local images and original descriptions for every supported role', () => {
-  assert.equal(localCatalog().length, 27);
+  assert.equal(localCatalog().length, 64);
   assert(localCatalog().every(r => r.image.startsWith('/offline-cards/') && r.description.length > 0));
 });
 
@@ -172,4 +173,15 @@ test('offline active hunter retains ammunition across reload after holding, then
   f.act({ type: 'bite', target: f.id('hunter') }); f.cmd({ type: 'publish' });
   assert.equal(f.s.game!.players.find(p => p.role === 'wolf')!.alive, false);
   assert.equal(f.s.game!.players.find(p => p.role === 'hunter')!.resources.hunterShot, 0);
+});
+
+test('expanded offline table handles two Masons separately, persists each result and supports prediction/ghost moderation',()=>{
+ const f=fixture(true,['wolf','mason','mason','nostradamus','ghost','vampire','villager','villager','villager']);f.begin();assert.equal(f.s.game!.step,'mason');
+ f.act({type:'ability',targets:[]});const first=f.s.room.inspection!;assert.ok(first);assert.equal(new LocalTable(f.storage).read(f.s.room.code).room.inspection,first);
+ f.send({type:'simpleAck',stepId:f.s.game!.stepId});assert.equal(f.s.game!.step,'mason');
+ f.act({type:'ability',targets:[]});const second=f.s.room.inspection!;assert.notEqual(first,second);assert.notEqual(f.s.game!.events.find(e=>e.id===first)!.recipient,f.s.game!.events.find(e=>e.id===second)!.recipient);
+ f.send({type:'simpleAck',stepId:f.s.game!.stepId});assert.equal(f.s.game!.step,'nostradamus');f.act({type:'ability',targets:[],choice:'village'});assert.equal(f.s.game!.step,'wolves');
+ const victims=f.s.game!.players.filter(p=>p.role==='villager').map(p=>p.id);f.act({type:'bite',target:victims[0]});assert.equal(f.s.game!.step,'vampire');f.act({type:'ability',targets:[victims[1]]});assert.equal(f.s.game!.step,'ghost');
+ f.act({type:'ability',targets:[],text:'rừng'});assert.equal(f.s.game!.step,'review');assert.equal(f.s.game!.events.some(e=>e.type==='ghost-hint'),false);
+ f.cmd({type:'reviewNote',actor:f.id('ghost'),approve:true});f.cmd({type:'publish'});assert.equal(f.s.game!.players.find(p=>p.id===victims[1])!.alive,true);f.cmd({type:'verdict',target:victims[2]});assert.equal(f.s.game!.players.find(p=>p.id===victims[1])!.alive,false);
 });

@@ -1,0 +1,32 @@
+
+> ma-soi-multi-online@0.1.0 test:data
+> python3 -m unittest discover -s tests -p 'test_*.py' && python3 beauti.py --check
+
+........
+----------------------------------------------------------------------
+Ran 8 tests in 0.190s
+
+OK
+{
+  "source": "response.html",
+  "sourceSha256": "a1360a0ad6fae3c2a31db14c2e15a456a17a3e8634b652270924c78297519da1",
+  "previousCardsSha256": "a3f06955015a38019ef44244064170bf02fd973fe5e12df5af7c0d297a20c500",
+  "groups": {
+    "Phe dân làng": 22,
+    "Phe sói": 5,
+    "Đổi phe": 3,
+    "Phe thứ 3": 4,
+    "Bản mở rộng Wolf Pack": 6,
+    "Bản mở rộng Hunting Party": 6,
+    "Bản mở rộng Urban Legends": 6,
+    "Bản mở rộng Night Terrors": 6,
+    "Bản mở rộng Classic Movie Monster": 6
+  },
+  "totalRoles": 64,
+  "changes": {
+    "added": [],
+    "removed": [],
+    "changed": []
+  },
+  "backup": null
+}

@@ -21,7 +21,7 @@
     {
       "type": "afterResponse",
       "language": "text/javascript",
-      "code": "pm.test('HTTP 200',()=>pm.response.to.have.status(200));const s=pm.response.json();if(s.room){pm.collectionVariables.set('hunterCode',s.room.code);if(s.room.revision!==null)pm.collectionVariables.set('hunterRevision',String(s.room.revision));}if(s.game){pm.collectionVariables.set('hunterStep',s.game.stepId??s.game.turn?.stepId??'');if(s.viewer==='moderator')for(const p of s.game.players)pm.collectionVariables.set('hunter_'+p.role,p.id);}pm.test('v13 settings',()=>{pm.expect(s.game.schemaVersion).eq(8);pm.expect(s.game.settings.hunterActiveShot).eq(false);});pm.collectionVariables.set('hunterMemberIds',JSON.stringify(s.room.members.map(p=>p.id)));"
+      "code": "pm.test('HTTP 200',()=>pm.response.to.have.status(200));const s=pm.response.json();if(s.room){pm.collectionVariables.set('hunterCode',s.room.code);if(s.room.revision!==null)pm.collectionVariables.set('hunterRevision',String(s.room.revision));}if(s.game){pm.collectionVariables.set('hunterStep',s.game.stepId??s.game.turn?.stepId??'');if(s.viewer==='moderator')for(const p of s.game.players)pm.collectionVariables.set('hunter_'+p.role,p.id);}pm.test('v14 settings',()=>{pm.expect(s.game.schemaVersion).eq(9);pm.expect(s.game.settings.hunterActiveShot).eq(false);});pm.collectionVariables.set('hunterMemberIds',JSON.stringify(s.room.members.map(p=>p.id)));"
     }
   ],
   "body": {

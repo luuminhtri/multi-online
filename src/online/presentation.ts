@@ -6,6 +6,14 @@ export function latestNightDeaths(events: readonly GameEvent[]): string[] {
   return Array.isArray(morning?.data.dead) ? morning.data.dead.filter((id): id is string => typeof id === 'string') : [];
 }
 
+// Vai nguồn chưa được engine hỗ trợ: hiện trong thư viện nhưng không chọn được vào bộ vai.
+export function missingLibraryRoles(
+  supportedIds: readonly string[],
+  library: readonly { id: string; displayName: string }[],
+): { id: string; displayName: string }[] {
+  return library.filter(r => !supportedIds.includes(r.id));
+}
+
 // Các công bố dùng cùng nhãn ở quản trò và người chơi.
 export function publicEventText(e: GameEvent, name: (id: unknown) => string): string | null {
   const dead = Array.isArray(e.data.dead) ? e.data.dead : [];

@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { actors, createGame, dispatch, livingNeighbors, RuleError, stepId } from '../src/engine/engine.ts';
 import { playerView, publicView } from '../src/engine/views.ts';
-import { ROLES } from '../src/engine/rules.ts';
+import { ROLES, LEGACY_V13_ROLES } from '../src/engine/rules.ts';
 import { biteChoices } from '../src/engine/wolf-pack.ts';
 import { isWolf } from '../src/engine/role-policy.ts';
 import type { Action, Command, Game, Role } from '../src/engine/types.ts';
@@ -237,11 +237,11 @@ test('mimic inherits new role after bomber secondary death and joins correct nex
   assert.deepEqual(actors(g), ['d']);
 });
 
-test('all 27 runtime roles complete 100 seeded games with automatic death chains and no leaked night secrets', () => {
+test('the original 27 roles complete 100 seeded games with automatic death chains and no leaked night secrets', () => {
   for (let seed = 1; seed <= 100; seed++) {
     let rand = seed;
     const pick = <T>(xs: T[]) => { assert.ok(xs.length, `seed ${seed}: empty choice`); rand = (Math.imul(rand, 1664525) + 1013904223) >>> 0; return xs[rand % xs.length]; };
-    const roster = (Object.keys(ROLES) as Role[]).map((role, i) => ({ id: `p${i}`, name: `n${i}`, role }));
+    const roster = LEGACY_V13_ROLES.map((role, i) => ({ id: `p${i}`, name: `n${i}`, role }));
     // Shuffle seating as well as actions; bomber must not depend on role ordering.
     for (let i = roster.length - 1; i > 0; i--) { const j = pick(Array.from({ length: i + 1 }, (_, k) => k)); [roster[i], roster[j]] = [roster[j], roster[i]]; }
     let g = createGame(`seed-${seed}`, roster, { witchSeesBite: true, skipVoteDays: 30 });
@@ -264,7 +264,7 @@ test('all 27 runtime roles complete 100 seeded games with automatic death chains
           const pair = () => { const first = pick(ts); return [first, pick(ts.filter(t => t !== first))] as [string, string]; };
           const useHeal = g.step === 'witch' && v.self.resources.heal > 0 && v.biteTargets.length > 0 && pick([true, false]);
           const healTarget = useHeal ? pick(v.biteTargets) : undefined;
-          const action: Action = g.step === 'dire_wolf' || g.step === 'virginia_woolf' ? { type: 'bond', target: pick(ts) } : g.step === 'cupid' ? { type: 'pair', targets: pair() }
+          const action: Action = v.turn!.power ? {type:'ability',targets:v.turn!.power.count===2?pair():v.turn!.power.count===1?[pick(ts)]:[]} : g.step === 'dire_wolf' || g.step === 'virginia_woolf' ? { type: 'bond', target: pick(ts) } : g.step === 'cupid' ? { type: 'pair', targets: pair() }
             : g.step === 'doppelganger' ? { type: 'mimic', target: pick(ts) }
             : g.step === 'guard' ? { type: 'protect', target: pick(ts) }
             : ['seer', 'aura_seer', 'mystic_seer'].includes(g.step) ? { type: 'inspect', target: pick(ts) }

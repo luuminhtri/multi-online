@@ -3,6 +3,10 @@ import { ApiError, parseMutation, roomCode, token } from './validation.ts';
 import { RoomService, supportedCatalog } from './rooms.ts';
 
 const messages: Record<string, string> = {
+  INVALID_HINT:'Gợi ý chỉ gồm một từ, không được dùng tên hoặc viết tắt tên người chơi.',
+  INVALID_ACTION:'Lựa chọn không hợp lệ cho năng lực này.',
+  WOLVES_ALREADY_AGREED:'Bầy đã thống nhất. Hãy chốt lượt thay vì báo quá giờ.',
+  REQUEST_LIMIT: 'Đã gửi quá nhiều thao tác trong lượt này. Hãy nhờ quản trò chuyển lượt hoặc thao tác thay.',
   VOTE_REQUIRED: 'Đã hết lượt không loại ai. Hãy chọn một người để vote.',
   PLAYER_LEFT: 'Bạn đã rời trò chơi.', PLAYER_NOT_FOUND: 'Người chơi không còn tham gia phòng.',
   OFFLINE_PLAYER_REQUIRED: 'Chỉ thao tác thay người đang dùng máy quản trò.', DEBUG_UNAVAILABLE: 'Tính năng này chỉ có trong debug.', AMBIGUOUS_NAME: 'Tên trùng giữa quản trò và người chơi.',

@@ -1,0 +1,262 @@
+No authorization data found. Please use the `postman login` command.
+Refer:https://learning.postman.com/docs/postman-cli/postman-cli-options/#postman-login
+
+Running your collection...
+postman
+
+Hunter modes contract
+
+Folder Night modes
+Sub-folder Passive create
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 28.61 KB, 32 ms]
+  Pass  HTTP 200
+
+Sub-folder Passive player 0
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 28.7 KB, 8 ms]
+  Pass  HTTP 200
+
+Sub-folder Passive player 1
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 28.8 KB, 4 ms]
+  Pass  HTTP 200
+
+Sub-folder Passive player 2
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 28.9 KB, 6 ms]
+  Pass  HTTP 200
+
+Sub-folder Passive player 3
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 29 KB, 6 ms]
+  Pass  HTTP 200
+
+Sub-folder Passive deal
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 32.44 KB, 10 ms]
+  Pass  HTTP 200
+  Pass  v14 settings
+
+Sub-folder Passive ready 0
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 30.1 KB, 6 ms]
+  Pass  HTTP 200
+
+Sub-folder Passive ready 1
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 30.14 KB, 6 ms]
+  Pass  HTTP 200
+
+Sub-folder Passive ready 2
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 30.31 KB, 5 ms]
+  Pass  HTTP 200
+
+Sub-folder Passive ready 3
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 30.34 KB, 6 ms]
+  Pass  HTTP 200
+
+Sub-folder Passive refresh moderator revision
+
+  GET http://127.0.0.1:5203/api/room?code=677765 [200 OK, 32.6 KB, 1 ms]
+  Pass  HTTP 200
+
+Sub-folder Passive begin
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 32.6 KB, 6 ms]
+  Pass  HTTP 200
+
+Sub-folder Passive skip guard
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 32.97 KB, 7 ms]
+  Pass  HTTP 200
+
+Sub-folder Passive hunter wake
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 30.64 KB, 4 ms]
+  Pass  HTTP 200
+
+Sub-folder Passive hunter choose
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 30.7 KB, 5 ms]
+  Pass  HTTP 200
+
+Sub-folder Passive finish hunter
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 34.16 KB, 6 ms]
+  Pass  HTTP 200
+
+Sub-folder Passive skip seer
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 34.38 KB, 4 ms]
+  Pass  HTTP 200
+
+Sub-folder Passive wolf wake
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 30.72 KB, 5 ms]
+  Pass  HTTP 200
+
+Sub-folder Passive wolf bite
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 30.83 KB, 6 ms]
+  Pass  HTTP 200
+
+Sub-folder Passive finish wolf
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 35.42 KB, 6 ms]
+  Pass  HTTP 200
+
+Sub-folder Passive skip witch
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 35.57 KB, 6 ms]
+  Pass  HTTP 200
+
+Sub-folder Passive resolve
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 36.29 KB, 6 ms]
+  Pass  HTTP 200
+
+Sub-folder Passive publish
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 36.89 KB, 6 ms]
+  Pass  HTTP 200
+  Pass  night result
+
+Sub-folder Active create
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 28.61 KB, 5 ms]
+  Pass  HTTP 200
+
+Sub-folder Active player 0
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 28.7 KB, 6 ms]
+  Pass  HTTP 200
+
+Sub-folder Active player 1
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 28.8 KB, 7 ms]
+  Pass  HTTP 200
+
+Sub-folder Active player 2
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 28.9 KB, 5 ms]
+  Pass  HTTP 200
+
+Sub-folder Active player 3
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 29 KB, 6 ms]
+  Pass  HTTP 200
+
+Sub-folder Active deal
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 32.44 KB, 6 ms]
+  Pass  HTTP 200
+  Pass  v14 settings
+
+Sub-folder Active ready 0
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 30.22 KB, 4 ms]
+  Pass  HTTP 200
+
+Sub-folder Active ready 1
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 30.14 KB, 5 ms]
+  Pass  HTTP 200
+
+Sub-folder Active ready 2
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 30.18 KB, 6 ms]
+  Pass  HTTP 200
+
+Sub-folder Active ready 3
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 30.36 KB, 6 ms]
+  Pass  HTTP 200
+
+Sub-folder Active refresh moderator revision
+
+  GET http://127.0.0.1:5203/api/room?code=802794 [200 OK, 32.59 KB, 1 ms]
+  Pass  HTTP 200
+
+Sub-folder Active begin
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 32.6 KB, 6 ms]
+  Pass  HTTP 200
+
+Sub-folder Active skip guard
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 32.97 KB, 5 ms]
+  Pass  HTTP 200
+
+Sub-folder Active hunter wake
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 30.65 KB, 6 ms]
+  Pass  HTTP 200
+
+Sub-folder Active hunter choose
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 30.71 KB, 6 ms]
+  Pass  HTTP 200
+
+Sub-folder Active finish hunter
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 34.16 KB, 4 ms]
+  Pass  HTTP 200
+
+Sub-folder Active skip seer
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 34.37 KB, 6 ms]
+  Pass  HTTP 200
+
+Sub-folder Active wolf wake
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 30.72 KB, 5 ms]
+  Pass  HTTP 200
+
+Sub-folder Active wolf bite
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 30.83 KB, 4 ms]
+  Pass  HTTP 200
+
+Sub-folder Active finish wolf
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 35.42 KB, 6 ms]
+  Pass  HTTP 200
+
+Sub-folder Active skip witch
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 35.56 KB, 4 ms]
+  Pass  HTTP 200
+
+Sub-folder Active resolve
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 36.12 KB, 5 ms]
+  Pass  HTTP 200
+
+Sub-folder Active publish
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 36.88 KB, 6 ms]
+  Pass  HTTP 200
+  Pass  night result
+
+-------------------------------------------------------------------
+|                         |          executed |            failed |
+--------------------------+-------------------+--------------------
+|              iterations |                 1 |                 0 |
+--------------------------+-------------------+--------------------
+|                requests |                46 |                 0 |
+--------------------------+-------------------+--------------------
+|            test-scripts |                46 |                 0 |
+--------------------------+-------------------+--------------------
+|      prerequest-scripts |                10 |                 0 |
+--------------------------+-------------------+--------------------
+|              assertions |                50 |                 0 |
+-------------------------------------------------------------------
+| total run duration: 2.1 s                                       |
+-------------------------------------------------------------------
+| total data received: 1.42 MB (approx)                           |
+-------------------------------------------------------------------
+| average response time: 6 ms [min: 1 ms, max: 32 ms, s.d.: 4 ms] |
+-------------------------------------------------------------------

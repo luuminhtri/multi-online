@@ -1,3 +1,5 @@
+import { hasPower } from './power-policy.ts';
+import { isExtended, isModernHunter, isExtraStep, extraTurn, extraTargets, votingRule } from './extensions.ts';
 import { actors, stepId } from './engine.ts';
 import { offeredCub, wolfPlan, packMembers, roleCanWake, canSacrifice, canWolfTarget } from './wolf-pack.ts';
 import { isWolf } from './role-policy.ts';
@@ -10,7 +12,7 @@ import type { Game } from './types.ts';
 export function publicView(g: Game) {
   return {
     gameId: g.id, night: g.night,
-    phase: g.step === 'ended' ? 'ended' : (g.step === 'day' || g.step === 'hunter') ? 'day' : 'night',
+    phase: g.step === 'ended' ? 'ended' : (g.step === 'day' || g.step === 'hunter' && !isModernHunter(g)) ? 'day' : 'night',
     // Day phase names and deadlines are public; clocks only count down.
     dayPhase: g.step === 'day' ? g.dayPhase ?? null : null,
     dayEndsAt: g.step === 'day' ? g.dayPhaseEndsAt ?? null : null,
@@ -25,7 +27,7 @@ export function playerView(g: Game, id: string) {
   // Use the published life state until morning: an early death flag leaks night results.
   const canAct = actors(g).includes(id);
   const pack = packMembers(g, p);
-  const witchTurn = canAct && p.role === 'witch' && g.step === 'witch';
+  const witchTurn = canAct && g.step === 'witch';
   const visibleBites = witchTurn && p.resources.heal > 0 && witchSeesBite(g) ? healableBites(g) : [];
   const submitted = Object.hasOwn(g.actions, id);
   const wolfChoice = (actorId: string) => {
@@ -38,25 +40,26 @@ export function playerView(g: Game, id: string) {
     ...publicView(g),
     self: { id, role: p.role, description: legacyWitchRules(g) && p.role === 'witch'
       ? 'Ván này giữ luật v8: khi còn thuốc cứu, Phù thủy thấy cả mục tiêu cắn được bảo vệ. Có một cứu và một độc, được tự cứu, dùng cả hai hoặc giữ thuốc. Luật Phù thủy mới áp dụng khi tạo ván mới.'
-      : p.role === 'hunter' && g.rulesVersion === 'classic-core-v13' ? (g.settings?.hunterActiveShot ? 'Bắn chủ động: một phát trong cả ván, được giữ lại. Mục tiêu chết trong đêm; trúng phe Sói thì bạn sống, bắn sai thì cả hai chết. Bảo vệ và thuốc cứu không chặn phát bắn.' : 'Bắn bị động: mỗi đêm ghim một người khác còn sống. Nếu bạn chết trong đêm vì bất kỳ nguyên nhân nào, người ghim đêm đó chết theo. Chết ban ngày không kích hoạt.') : p.role === 'hunter' && g.rulesVersion !== 'classic-core-v13' ? 'Ván cũ: khi chết, Thợ săn chọn một người còn sống để bắn, kể cả chết ban ngày.' : ROLES[p.role].description, team: p.team,
-      resources: { ...p.resources } },
+      : hasPower(g,p,'hunter') && isModernHunter(g) ? (g.settings?.hunterActiveShot ? 'Bắn chủ động: một phát trong cả ván, được giữ lại. Mục tiêu chết trong đêm; trúng phe Sói thì bạn sống, bắn sai thì cả hai chết. Bảo vệ và thuốc cứu không chặn phát bắn.' : 'Bắn bị động: mỗi đêm ghim một người khác còn sống. Nếu bạn chết trong đêm vì bất kỳ nguyên nhân nào, người ghim đêm đó chết theo. Chết ban ngày không kích hoạt.') : p.role === 'hunter' && !isModernHunter(g) ? 'Ván cũ: khi chết, Thợ săn chọn một người còn sống để bắn, kể cả chết ban ngày.' : ROLES[p.role].description, team: p.team,
+      voting: isExtended(g)?votingRule(g,id):null, powers: p.role==='frankenstein'?[...(g.extra?.players[id]?.powers??[])]:null, resources: { ...p.resources } },
     turn: canAct ? {
+      power: extraTurn(g,id),
       stepId: stepId(g), ability: g.step, awake: g.awake.includes(id),
       submitted,
       sleepReady: submitted && (g.step !== 'wolves' || (packAgrees && g.actions[id].type !== 'sacrifice')),
       action: Object.hasOwn(g.actions, id) ? structuredClone(g.actions[id]) : null,
       wolfPlan: g.step === 'wolves' ? { ...wolfPlan(g),
         sacrificeTarget: offeredCub(g),
-        canOfferSacrifice: p.role === 'wolf_cub' && canSacrifice(g),
+        canOfferSacrifice: hasPower(g,p,'wolf_cub') && canSacrifice(g),
       } : null,
-      targets: g.players.filter(t => t.alive && (
+      targets: isExtraStep(g.step)&&isExtended(g) ? extraTargets(g,id) : g.players.filter(t => t.alive && (
         g.step === 'wolves' ? canWolfTarget(g, p, t) :
         g.step === 'alpha_wolf' ? g.biteTargets.includes(t.id) :
         ['seer', 'aura_seer', 'mystic_seer', 'mentalist'].includes(g.step) || g.step === 'hunter' || g.step === 'doppelganger' || g.step === 'dire_wolf' || g.step === 'virginia_woolf' ? t.id !== id :
         g.step === 'guard' ? t.id !== p.lastProtected : true
       )).map(t => t.id),
     } : null,
-    hunterMode: p.role === 'hunter' && g.rulesVersion === 'classic-core-v13' ? (g.settings?.hunterActiveShot ? 'active' as const : 'passive' as const) : null,
+    hunterMode: hasPower(g,p,'hunter') && isModernHunter(g) ? (g.settings?.hunterActiveShot ? 'active' as const : 'passive' as const) : null,
     deathBond: (p.role === 'dire_wolf' || p.role === 'virginia_woolf') && p.deathBond ? structuredClone(p.deathBond) : null,
     lover: g.lovers && g.lovers.includes(id) ? {
       partnerId: g.lovers[0] === id ? g.lovers[1] : g.lovers[0],
@@ -69,6 +72,7 @@ export function playerView(g: Game, id: string) {
     // Legacy single-target convenience is intentionally null for a multi-bite.
     biteTarget: visibleBites.length === 1 ? visibleBites[0] : null,
     biteTargets: visibleBites,
+    redirectBites: canAct&&g.step==='leprechaun'?[...g.biteTargets]:[],
     witchInfo: witchTurn ? {
       visibility: !p.resources.heal ? 'unavailable' as const : witchSeesBite(g) ? 'visible' as const : 'hidden' as const,
       canHeal: p.resources.heal > 0 && (!witchSeesBite(g) || visibleBites.length > 0),
@@ -82,7 +86,7 @@ export function playerView(g: Game, id: string) {
     // Pack chat is addressed by the engine to the awake pack at send time; a
     // player only ever sees messages that list them as a recipient.
     packChat: {
-      open: canAct && g.step === 'wolves' && g.awake.includes(id) && isWolf(p.role),
+      open: canAct && g.step === 'wolves' && g.awake.includes(id) && roleCanWake(g,p),
       items: (g.chat ?? []).filter(m => m.recipients.includes(id))
         .map(m => ({ id: m.id, night: m.night, mine: m.from === id, from: g.players.find(pl => pl.id === m.from)!.name, text: m.text })),
     },

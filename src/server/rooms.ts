@@ -1,7 +1,7 @@
 import { createHash, randomInt, randomUUID } from 'node:crypto';
 import { createGame, dispatch, withdrawPlayer, RuleError } from '../engine/engine.ts';
 import { moderatorView, playerView } from '../engine/views.ts';
-import { ROLES, RULES } from '../engine/rules.ts';
+import { ROLES, RULES, LEGACY_V13_ROLES } from '../engine/rules.ts';
 import { legacyWitchRules } from '../engine/witch.ts';
 import { ROLE_DESCRIPTIONS } from '../catalog/descriptions.ts';
 import { ROLE_IMAGES } from '../catalog/images.ts';
@@ -56,8 +56,9 @@ export class RoomService {
     const game = room.game;
     const legacy = !!game && ((game.rulesVersion === 'classic-core-v9' && game.schemaVersion === 4) ||
       (game.rulesVersion === 'classic-core-v10' && game.schemaVersion === 5) ||
-      (game.rulesVersion === 'classic-core-v11' && game.schemaVersion === 6) || (game.rulesVersion === 'classic-core-v12' && game.schemaVersion === 7));
-    const current = !!game && game.rulesVersion === RULES.version && game.schemaVersion === 8;
+      (game.rulesVersion === 'classic-core-v11' && game.schemaVersion === 6) || (game.rulesVersion === 'classic-core-v12' && game.schemaVersion === 7) || (game.rulesVersion === 'classic-core-v13' && game.schemaVersion === 8));
+    requireApi(!game||game.rulesVersion==='classic-core-v14'||game.players.every(p=>LEGACY_V13_ROLES.includes(p.role)),'GAME_VERSION_UNSUPPORTED',409);
+    const current = !!game && game.rulesVersion === RULES.version && game.schemaVersion === 9;
     requireApi(!game || legacyWitchRules(game) ||
       (legacy && typeof game.settings?.witchSeesBite === 'boolean') || current, 'GAME_VERSION_UNSUPPORTED', 409);
   }
@@ -121,6 +122,12 @@ export class RoomService {
         requireApi(room.receipts[receiptKey] === fingerprint, 'REQUEST_ID_REUSED', 409);
         return this.project(room, tokenHash, proxyId);
       }
+      if (!['command', 'offlineCommand', 'start', 'begin', 'removeMember', 'addOffline'].includes(operation.type)) {
+        const scope = room.game ? room.game.id + ':' + room.game.stepSequence : 'lobby';
+        const window = room.requestWindow?.scope === scope ? room.requestWindow : { scope, counts: {} };
+        requireApi((window.counts[tokenHash] ?? 0) < 64, 'REQUEST_LIMIT', 429);
+        window.counts[tokenHash] = (window.counts[tokenHash] ?? 0) + 1; room.requestWindow = window;
+      }
       if (operation.type === 'join') {
         const existing = room.members.find(m => m.tokenHash === tokenHash);
         if (existing) { requireApi(!existing.left, 'PLAYER_LEFT', 403); return this.project(room, tokenHash); }
@@ -173,9 +180,9 @@ export class RoomService {
           requireApi(room.game, 'GAME_NOT_STARTED', 409);
           requireApi(room.gameStarted, 'GAME_AWAITING_READY', 409);
           if (operation.type === 'offlineCommand') { requireApi(identity.moderator, 'MODERATOR_REQUIRED', 403); identity.member = this.offlineMember(room, operation.playerId); identity.moderator = false; }
-          try { room.game = dispatch(room.game, identity.moderator ? { kind: 'moderator' } : { kind: 'player', playerId: identity.member.id },
+          try { room.game = dispatch(room.game, identity.moderator ? { kind: 'moderator' } : { kind: 'player', playerId: identity.member.id, ...(operation.type === 'offlineCommand' ? { proxy: true } : {}) },
             { id: operation.requestId, gameId: room.game.id, stepId: operation.stepId, command: operation.command }, this.now()); }
-          catch (e) { if (e instanceof RuleError) throw new ApiError(e.code, ['MODERATOR_REQUIRED', 'PLAYER_REQUIRED', 'FORBIDDEN', 'NOT_YOUR_TURN'].includes(e.code) ? 403 : 409); throw e; }
+          catch (e) { if (e instanceof RuleError) throw new ApiError(e.code, e.code === 'REQUEST_LIMIT' ? 429 : ['MODERATOR_REQUIRED', 'PLAYER_REQUIRED', 'FORBIDDEN', 'NOT_YOUR_TURN'].includes(e.code) ? 403 : 409); throw e; }
         } else {
           requireApi(identity.moderator, 'MODERATOR_REQUIRED', 403);
           requireApi(!room.game, 'ROOM_ALREADY_STARTED', 409);

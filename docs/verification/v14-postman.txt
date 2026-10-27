@@ -1,0 +1,52 @@
+No authorization data found. Please use the `postman login` command.
+Refer:https://learning.postman.com/docs/postman-cli/postman-cli-options/#postman-login
+
+Running your collection...
+postman
+
+Roles v14 contract
+
+Folder Checks
+Sub-folder 64 role catalog
+
+  GET http://127.0.0.1:5203/api/room?config=1 [200 OK, 28.24 KB, 6 ms]
+  Pass  HTTP 200
+  Pass  64 enabled roles
+  Pass  includes new role identities
+
+Sub-folder Create isolated table
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 28.61 KB, 17 ms]
+  Pass  HTTP 200
+
+Sub-folder Save expanded public deck
+
+  POST http://127.0.0.1:5203/api/room [200 OK, 28.69 KB, 6 ms]
+  Pass  HTTP 200
+  Pass  expanded lobby composition visible
+
+Sub-folder Reject fabricated role
+
+  POST http://127.0.0.1:5203/api/room [400 Bad Request, 362 B, 953 us]
+  Pass  HTTP 400
+  Pass  unsupported role error
+
+---------------------------------------------------------------------
+|                         |           executed |             failed |
+--------------------------+--------------------+---------------------
+|              iterations |                  1 |                  0 |
+--------------------------+--------------------+---------------------
+|                requests |                  4 |                  0 |
+--------------------------+--------------------+---------------------
+|            test-scripts |                  4 |                  0 |
+--------------------------+--------------------+---------------------
+|      prerequest-scripts |                  1 |                  0 |
+--------------------------+--------------------+---------------------
+|              assertions |                  8 |                  0 |
+---------------------------------------------------------------------
+| total run duration: 290 ms                                        |
+---------------------------------------------------------------------
+| total data received: 84.9 KB (approx)                             |
+---------------------------------------------------------------------
+| average response time: 7 ms [min: 953 us, max: 17 ms, s.d.: 6 ms] |
+---------------------------------------------------------------------

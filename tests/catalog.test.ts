@@ -25,7 +25,7 @@ test('catalog maps every source record exactly once as main and preserves repair
 
 test('catalog metadata never enables unimplemented roles and does not expose mutable entries', () => {
   const coverage = roleCoverage();
-  assert.equal(coverage.filter(r => r.implemented).length, 27);
+  assert.equal(coverage.filter(r => r.implemented).length, 64);
   for (const r of coverage.filter(r => !r.implemented)) {
     assert.equal(isImplementedRole(r.id), false);
     assert.throws(() => createGame('bad', [

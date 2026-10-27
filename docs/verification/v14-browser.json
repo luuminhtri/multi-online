@@ -1,0 +1,12 @@
+{
+  "date": "2026-10-27",
+  "browser": "Chrome",
+  "viewport": "390x844x2 mobile touch",
+  "offlineTwoMasons": {"separateResults": true, "secondAckReachesNostradamus": true},
+  "avatarTargets": ["wolves", "vampire"],
+  "ghost": {"singleWordForm": true, "submitWithoutNetwork": true, "moderatorReviewWithoutNetwork": true},
+  "builtPreview": {"cachedCards": 64, "cachedShell": true, "reloadWithNetworkFetchBlocked": true, "createAndPersistOfflineTable": true},
+  "horizontalOverflowOnCheckedScreens": false,
+  "physicalPhonesTested": false,
+  "productionV14Tested": false
+}

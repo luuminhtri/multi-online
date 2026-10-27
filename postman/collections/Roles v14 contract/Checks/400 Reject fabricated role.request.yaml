@@ -1,0 +1,31 @@
+{
+  "$kind": "http-request",
+  "name": "Reject fabricated role",
+  "order": 400,
+  "method": "POST",
+  "url": "{{baseUrl}}/api/room",
+  "auth": {
+    "type": "noauth"
+  },
+  "headers": [
+    {
+      "key": "Content-Type",
+      "value": "application/json"
+    },
+    {
+      "key": "Authorization",
+      "value": "Bearer {{roleToken}}"
+    }
+  ],
+  "scripts": [
+    {
+      "type": "afterResponse",
+      "language": "text/javascript",
+      "code": "pm.test('HTTP 400',()=>pm.response.to.have.status(400));pm.test('unsupported role error',()=>pm.expect(pm.response.json().error.code).to.equal('UNSUPPORTED_ROLE'));"
+    }
+  ],
+  "body": {
+    "type": "json",
+    "content": "{\"type\": \"setDeck\", \"requestId\": \"roles14-fake\", \"code\": \"{{roleCode}}\", \"expectedRevision\": {{roleRevision}}, \"roles\": [\"invented-role\"]}"
+  }
+}

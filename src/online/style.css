@@ -198,6 +198,9 @@ blockquote { margin: 20px 0; padding: 0 0 0 14px; border-left: 1px solid #bdab80
 .role-rows { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; margin-top: 20px; }
 .role-row { display: flex; justify-content: space-between; width: 100%; text-align: left; min-height: 48px; padding: 12px 0; margin: 0; font-size: 13px; background: transparent; border-radius: 0; border-bottom: 1px solid #ffffff0b; }
 .role-row b { font: 12px ui-monospace, monospace; color: var(--accent); }
+.library-missing { margin: 8px 0 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.library-role { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; font-size: 12px; border: 1px solid #ffffff14; border-radius: 8px; color: var(--muted); }
+.library-role em { font-style: normal; font-size: 10px; color: var(--muted); border: 1px solid #ffffff14; border-radius: 6px; padding: 1px 5px; }
 .modal.role-detail { height: calc(100dvh - 24px); max-width: 940px; }
 .modal.role-detail .modal-body { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
 .overlay { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: var(--bg); padding: 12px; overflow: hidden; }

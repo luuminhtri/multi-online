@@ -1,0 +1,27 @@
+{
+  "$kind": "http-request",
+  "name": "64 role catalog",
+  "order": 100,
+  "method": "GET",
+  "url": "{{baseUrl}}/api/room?config=1",
+  "auth": {
+    "type": "noauth"
+  },
+  "headers": [
+    {
+      "key": "Content-Type",
+      "value": "application/json"
+    },
+    {
+      "key": "Authorization",
+      "value": "Bearer {{roleToken}}"
+    }
+  ],
+  "scripts": [
+    {
+      "type": "afterResponse",
+      "language": "text/javascript",
+      "code": "pm.test('HTTP 200',()=>pm.response.to.have.status(200)); const s=pm.response.json();pm.test('64 enabled roles',()=>pm.expect(s.catalog.length).to.equal(64));pm.test('includes new role identities',()=>['frankenstein','vampire','minion','ghost','dracula'].forEach(id=>pm.expect(s.catalog.some(r=>r.id===id)).to.be.true));"
+    }
+  ]
+}

@@ -19,6 +19,11 @@ export function token(v: unknown): string { requireApi(typeof v === 'string' && 
 function action(v: unknown): Action {
   const a = object(v);
   switch (a.type) {
+    case 'ability': {
+      keys(a,['type','targets','pass','text','choice']);
+      requireApi(a.pass===undefined||typeof a.pass==='boolean','INVALID_ACTION');
+      return {type:'ability', targets:list(a.targets,30), ...(a.pass!==undefined?{pass:a.pass as boolean}:{}), ...(a.text!==undefined?{text:text(a.text,80)}:{}), ...(a.choice!==undefined?{choice:text(a.choice,80)}:{})};
+    }
     case 'hold': keys(a, ['type']); return { type: 'hold' };
     case 'fast': keys(a, ['type']); return { type: 'fast' };
     case 'convert': keys(a, ['type', 'target']); return { type: 'convert', target: a.target === null ? null : text(a.target, 80) };
@@ -38,7 +43,9 @@ function action(v: unknown): Action {
 function command(v: unknown): Command {
   const c = object(v);
   switch (c.type) {
-    case 'wake': case 'advance': case 'resolve': case 'publish': case 'nextNight': keys(c, ['type']); return { type: c.type };
+    case 'wolfTimeout': case 'wake': case 'advance': case 'resolve': case 'publish': case 'nextNight': keys(c, ['type']); return { type: c.type };
+    case 'reviewNote': keys(c,['type','actor','approve']);requireApi(typeof c.approve==='boolean','INVALID_REQUEST');return {type:'reviewNote',actor:text(c.actor,80),approve:c.approve};
+    case 'penalty': keys(c,['type','target']);return {type:'penalty',target:text(c.target,80)};
     case 'verdict': keys(c, ['type', 'target']); return { type: 'verdict', target: c.target === null ? null : text(c.target, 80) };
     case 'act': keys(c, ['type', 'action']); return { type: 'act', action: action(c.action) };
     case 'chat': keys(c, ['type', 'text']); return { type: 'chat', text: text(c.text, 200) };

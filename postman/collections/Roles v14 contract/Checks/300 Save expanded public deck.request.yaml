@@ -1,0 +1,31 @@
+{
+  "$kind": "http-request",
+  "name": "Save expanded public deck",
+  "order": 300,
+  "method": "POST",
+  "url": "{{baseUrl}}/api/room",
+  "auth": {
+    "type": "noauth"
+  },
+  "headers": [
+    {
+      "key": "Content-Type",
+      "value": "application/json"
+    },
+    {
+      "key": "Authorization",
+      "value": "Bearer {{roleToken}}"
+    }
+  ],
+  "scripts": [
+    {
+      "type": "afterResponse",
+      "language": "text/javascript",
+      "code": "pm.test('HTTP 200',()=>pm.response.to.have.status(200));const s=pm.response.json();pm.test('expanded lobby composition visible',()=>{pm.expect(s.deck.frankenstein).to.equal(1);pm.expect(s.deck.mason).to.equal(2)});pm.collectionVariables.set('roleRevision',String(s.room.revision));"
+    }
+  ],
+  "body": {
+    "type": "json",
+    "content": "{\"type\": \"setDeck\", \"requestId\": \"roles14-deck\", \"code\": \"{{roleCode}}\", \"expectedRevision\": {{roleRevision}}, \"roles\": [\"wolf\", \"frankenstein\", \"vampire\", \"ghost\", \"nostradamus\", \"minion\", \"mason\", \"mason\"]}"
+  }
+}

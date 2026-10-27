@@ -1,0 +1,51 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/room?code=581992&offlinePlayerId=string"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    code: "581992"
+    offlinePlayerId: string
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "room": {},
+        "me": {},
+        "viewer": "string",
+        "game": {},
+        "viewVersion": "string",
+        "storage": "string",
+        "serverTime": "1966-04-03T14:48:10.251Z",
+        "catalog": [
+          {
+            "id": "string",
+            "name": "string",
+            "description": "string",
+            "image": "string"
+          },
+          {
+            "id": "string",
+            "name": "string",
+            "description": "string",
+            "image": "string"
+          }
+        ],
+        "deck": {
+          "key_0": 3663,
+          "key_1": 1750,
+          "key_2": 7634,
+          "key_3": 250
+        },
+        "controller": {}
+      }
+order: 1000

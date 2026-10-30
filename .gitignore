@@ -1,5 +1,13 @@
 node_modules/
 dist/
+dist-ios/
+ios/App/App/public/
+ios/App/App/capacitor.config.json
+ios/App/App/config.xml
+ios/App/CapApp-SPM/.build/
+ios/**/xcuserdata/
+ios/build/
+ios/local-signing.xcconfig
 .vercel/
 .env*
 !.env.example

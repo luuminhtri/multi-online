@@ -41,7 +41,7 @@ Dữ liệu thẻ: [cards.json](cards.json), trích từ bản HTML lưu tại [
 ## Nguyên tắc sản phẩm
 
 - Chơi trực tiếp cùng địa điểm, dùng Internet để đồng bộ điện thoại.
-- Không yêu cầu app native. Có chế độ một máy quản trò không cần Internet (D61); phòng nhiều máy vẫn dùng máy chủ để đồng bộ.
+- Web vẫn dùng trực tiếp; có thêm bản iPhone bằng Capacitor (D76). Bàn một máy quản trò không cần Internet (D61); phòng nhiều máy vẫn dùng máy chủ để đồng bộ.
 - Quản trò giữ quyền điều phối; hệ thống giảm việc ghi nhớ, ghi chép và tính luật.
 - Thông tin công khai đến mọi người; bí mật chỉ đến đúng người được phép.
 - Tham khảo trải nghiệm Soi Má Online, xây sản phẩm mới bằng mã của dự án.

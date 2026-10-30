@@ -5,12 +5,15 @@ import { createApiHandler } from './src/server/http.ts';
 import { configuredRepository } from './src/server/repositories.ts';
 import { DebugRoomRepository } from './src/server/debug-rooms.ts';
 import { RoomService } from './src/server/rooms.ts';
+import { DEFAULT_ONLINE_ORIGIN, onlineOrigin } from './src/platform/urls.ts';
 export default defineConfig(({ mode, command }) => {
   const env = { ...process.env, ...loadEnv(mode, process.cwd(), '') };
   const debug = command === 'serve' && mode === 'debug';
+  const native = mode === 'ios';
+  if (native) onlineOrigin(env.VITE_ONLINE_ORIGIN || DEFAULT_ONLINE_ORIGIN);
   return {
-    define: { 'import.meta.env.DEBUG_TOOLS': JSON.stringify(debug) },
-    plugins: [offlineShell(), { name: 'local-room-api', configureServer(server) {
+    define: { 'import.meta.env.DEBUG_TOOLS': JSON.stringify(debug), 'import.meta.env.NATIVE_APP': JSON.stringify(native) },
+    plugins: [...(native ? [] : [offlineShell()]), { name: 'local-room-api', configureServer(server) {
       // Chặn cả HTML và mã nguồn thử nghiệm ở dev thường.
       server.middlewares.use((req, res, next) => {
         let path: string;
@@ -27,6 +30,6 @@ export default defineConfig(({ mode, command }) => {
       server.httpServer?.once('close', () => service?.dispose());
     } }],
     server: { fs: { deny: ['.env', '.env.*', '**/.local-rooms/**', '**/src/server/**', '**/api/**', ...(!debug ? ['**/debug/**', '**/src/debug/**'] : [])] } },
-    build: { rollupOptions: { input: { main: resolve('index.html') } } },
+    build: { outDir: native ? 'dist-ios' : 'dist', rollupOptions: { input: { main: resolve('index.html') } } },
   };
 });

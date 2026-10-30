@@ -1,5 +1,6 @@
 import jsQRModule from 'jsqr';
 import type { Options, QRCode } from 'jsqr';
+import { trustedRoomOrigins } from '../platform/urls.ts';
 // jsQR ships CommonJS; Vite exposes its callable export as default.
 const jsQR = jsQRModule as unknown as (data: Uint8ClampedArray, width: number, height: number, options?: Options) => QRCode | null;
 
@@ -8,11 +9,11 @@ export function roomCodeFromQr(text: string, origin: string): string | null {
   try {
     const url = new URL(text);
     const code = url.searchParams.get('room');
-    return url.origin === origin && code && /^\d{6}$/.test(code) ? code : null;
+    return !url.username && !url.password && trustedRoomOrigins(origin).includes(url.origin) && code && /^\d{6}$/.test(code) ? code : null;
   } catch { return null; }
 }
 
-export function scanRoomQr(onRead: (code: string) => void) {
+export function scanRoomQr(onRead: (code: string) => void, origin = location.origin) {
   const dialog = document.createElement('dialog');
   dialog.className = 'qr-scanner';
   dialog.innerHTML = '<button type="button" class="secondary">Đóng</button><h3>Quét mã phòng</h3><video autoplay muted playsinline></video><p role="status">Đang mở camera…</p>';
@@ -54,7 +55,7 @@ export function scanRoomQr(onRead: (code: string) => void) {
       const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
       const result = jsQR(pixels.data, pixels.width, pixels.height, { inversionAttempts: 'dontInvert' });
       if (result) {
-        const code = roomCodeFromQr(result.data, location.origin);
+        const code = roomCodeFromQr(result.data, origin);
         if (code) { dialog.close(); onRead(code); return; }
         status.textContent = 'Mã này không phải mã phòng Ma Sói. Hãy quét mã của quản trò.';
       }

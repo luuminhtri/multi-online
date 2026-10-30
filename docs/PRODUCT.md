@@ -157,3 +157,13 @@ Sổ tay bí mật chia tab Người chơi, Chat Sói và Nhật ký. Trên đi�
 Người chơi có Rời phòng: xác nhận rồi rút hẳn, lobby bỏ ghế, ván đã chia giữ ghế đánh dấu rời và không kích hoạt chết dây chuyền. Máy chủ xác định người rời từ capability, không nhận ID người khác. Quản trò có icon QR cạnh mã phòng online; QR chỉ chứa link phòng. Tên người chơi được nhớ trên thiết bị sau khi vào thành công, có thể sửa lần sau. Icon góc màn hình mở/thoát fullscreen trình duyệt khi được hỗ trợ, khác icon phóng to bàn; iPhone không hỗ trợ hiện hướng dẫn Thêm vào Màn hình chính. Không ép Chrome qua QR.
 
 - Màn Vào phòng có Quét QR cạnh mã phòng: quét trong web app, điền mã, giữ tên đã lưu/đang nhập; người chơi bấm Vào phòng để xác nhận. Luôn có nhập mã thủ công.
+
+
+## Bản iPhone — D76 (2026-10-28)
+
+Người dùng yêu cầu bắt đầu bản iPhone bằng Capacitor, giữ cả online và offline; dùng chung lõi luật với web. Ưu tiên tốc độ, phản hồi ngay khi chạm, ít khựng và trải nghiệm tinh gọn theo phong cách Apple. Tài nguyên cần thiết cho bàn offline nằm sẵn trong bản cài. Bản iPhone bổ sung, không yêu cầu mọi người chơi phải cài app; người khác tiếp tục tham gia phòng online bằng web. Chưa mở rộng chơi từ xa hoặc nhiều điện thoại không Internet. Chi tiết triển khai/kiểm thiết bị tại [IPHONE.md](IPHONE.md).
+
+
+## QR tên miền riêng, logo và toàn màn hình iPhone — D77 (2026-10-28)
+
+Theo người dùng, QR do masoi.yennhi.tech tạo phải được app iPhone nhận và điền mã. Hai origin production masoi.yennhi.tech/multi-online.vercel.app được nhận chéo; không tự chọn máy chủ từ QR. Giữ nhập/xác nhận tên trước khi vào phòng. Thiết kế logo app riêng theo Sói/trăng, màu nền/vàng hiện tại. iPhone ẩn status bar (giờ, sóng, pin), Home indicator tự ẩn, nền phủ màn hình; tai thỏ/Dynamic Island vật lý vẫn tồn tại và vùng thao tác phải tránh nó. App cần đủ tài nguyên để tạo bàn offline ngay lần mở đầu không có mạng, không yêu cầu tải chuẩn bị trước.

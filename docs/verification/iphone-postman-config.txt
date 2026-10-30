@@ -1,0 +1,41 @@
+No authorization data found. Please use the `postman login` command.
+Refer:https://learning.postman.com/docs/postman-cli/postman-cli-options/#postman-login
+
+Running your collection...
+postman
+
+Roles v14 contract
+
+Folder Checks
+Sub-folder 64 role catalog
+
+  GET https://masoi.yennhi.tech/api/room?config=1 [200 OK, 7.37 KB, 325 ms]
+  Pass  HTTP 200
+  Pass  64 enabled roles
+  Pass  includes new role identities
+
+------------------------------------------------------------------------
+|                         |             executed |              failed |
+--------------------------+----------------------+----------------------
+|              iterations |                    1 |                   0 |
+--------------------------+----------------------+----------------------
+|                requests |                    1 |                   0 |
+--------------------------+----------------------+----------------------
+|            test-scripts |                    1 |                   0 |
+--------------------------+----------------------+----------------------
+|      prerequest-scripts |                    0 |                   0 |
+--------------------------+----------------------+----------------------
+|              assertions |                    3 |                   0 |
+------------------------------------------------------------------------
+| total run duration: 520 ms                                           |
+------------------------------------------------------------------------
+| total data received: 7.02 KB (approx)                                |
+------------------------------------------------------------------------
+| average response time: 325 ms [min: 325 ms, max: 325 ms, s.d.: 0 us] |
+------------------------------------------------------------------------
+
+A new version of Postman CLI is available (v1.80.0). Refer https://go.pstmn.io/cli-release-notes for changelogs.
+To update your Postman CLI, run:
+
+postman update
+

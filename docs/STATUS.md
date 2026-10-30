@@ -1,4 +1,60 @@
+## 2026-10-30 — Làm gọn giao diện danh sách vai
+
+- Bỏ dải nền đậm/in hoa/viền dày của tiêu đề phe; dùng chấm màu, chữ đậm và số lượng nhẹ hơn, giữ nút thu gọn.
+- Tên vai màu chữ chính, giảm đường viền từng dòng; ô số lượng nhỏ gọn, vai đã chọn có nền màu rất nhẹ.
+- Riêng cửa sổ bộ vai/danh sách vai bỏ viền ngoài, giảm bo góc; không đổi các cửa sổ khác.
+- Build/TypeScript đạt; chưa xác minh trực quan trên Chrome. Chưa deploy/iPhone.
+
+## 2026-10-30 — Thu gọn nhóm phe
+
+- Bấm tiêu đề phe để đóng/mở danh sách trong hai mục xem vai và bộ chọn vai quản trò; mặc định mở, giữ trạng thái riêng từng mục trong phiên trang.
+- Tổng thẻ vẫn hiện khi thu gọn; nút hỗ trợ bàn phím, aria-expanded/aria-controls và mũi tên chỉ trạng thái. Không thay số lượng vai khi thu gọn.
+- TypeScript/build đạt; chưa kiểm trực quan Chrome. Chưa deploy/cập nhật iPhone.
+
+## 2026-10-30 — Nhóm phe trong danh sách và bộ chọn vai
+
+- Xếp Phe dân → Phe sói → Phe thứ ba trong cả hai mục xem vai và bộ chọn vai quản trò.
+- Tiêu đề nhóm dùng dải nền màu, chữ lớn/đậm/in hoa, huy hiệu tổng thẻ; dòng vai thụt vào để không nhầm tiêu đề với một vai.
+- Bộ chọn hiển thị tổng thẻ đã chọn mỗi phe, ưu tiên vai có số lượng > 0 lên đầu phe sau khi xác nhận thay đổi ô số; giữ thứ tự catalog trong mỗi nhóm đã chọn/chưa chọn. Vai đã chọn được tô rõ.
+- Kiểm tra: TypeScript và build đạt. Chưa kiểm trực quan Chrome trong phiên này; môi trường chặn mở cổng local (EPERM). Chưa deploy hoặc cập nhật bản iPhone.
+
 # Trạng thái làm việc
+
+## 2026-10-30 — Danh sách vai theo phe
+
+- Cả Vai trong ván này và Vai đã hỗ trợ chia theo thứ tự Phe sói (đỏ), Phe dân (xanh), Phe thứ ba (xám trung tính), có đường kẻ ngang giữa các nhóm. Giữ thứ tự cũ bên trong từng phe và thao tác mở chi tiết vai.
+- Hiện tổng số thẻ trong bộ vai của ván hoặc số vai trong thư viện ở tiêu đề nhóm; bỏ nhóm rỗng. Dùng baseTeam của luật để phân loại vai ban đầu, không suy ra phe hiện tại hay số người còn sống.
+- Kiểm: npm run build (bao gồm typecheck) đạt. Chưa kiểm trực quan trên thiết bị, chưa deploy hoặc cập nhật bản iPhone đã cài.
+- Tiếp theo: kiểm giao diện trên điện thoại khi chơi thử.
+
+## 2026-10-28 — Một ván web ↔ iPhone thật và sửa nối lại lúc đang gửi
+
+- Tái hiện lỗi bằng đúng bundle iOS + plugin web fallback/dịch vụ phòng thật trong RAM: máy chủ đã nhận join nhưng ACK bị mất; foreground đến khi POST busy bị bỏ qua, người chơi mắc ở Thử gửi lại. Đã thêm hàng đợi nối lại sau khi write kết thúc; retry đúng requestId, không tự nhận kết quả khi chưa có ACK. Khi không còn pending, sự kiện nối lại lấy trạng thái mới ngay, không chờ lượt polling cũ.
+- Kiểm có kiểm soát sau sửa đạt: 2 POST join cùng ID nhưng chỉ một người; snapshot GET cũ bị giữ qua background không ghi đè snapshot mới; polling dừng khi nền và khởi động ngay khi trở về. Script `test:ios-reconnect` chạy ở local, không dùng cloud/phiên thật.
+- Đã phối hợp cùng người dùng kiểm một phòng production riêng: quản trò trên web masoi.yennhi.tech, 4 ghế dùng chung máy và 1 người chơi trên bản Release iPhone Test (bundle riêng, không đụng dữ liệu app chính). Đi lobby → chia vai/ready → đêm → ngày → kết thúc. Người dùng xác nhận khóa/mở nhận vai không nhập lại; chuyển app khi công bố sáng thì tự cập nhật và thao tác mượt; vuốt đóng, web kết thúc, cập nhật Test/mở lại vẫn đúng phòng và trạng thái Kết thúc. Web DOM cũng được kiểm hiện Kết thúc; replay cùng verdict không tăng revision.
+- Không ghi là XCTest native tự động đạt: runner ba lượt lỗi bootstrap, UI Automation ban đầu tắt; sau đó cài Test báo giới hạn app của profile miễn phí. Đã gỡ runner do tác vụ tạo, chuyển sang kiểm phối hợp thực tế. Có scheme/Swift test đã build-for-testing để tái dùng khi đủ điều kiện. Thêm scheme App chia sẻ rõ ràng để luồng build chính vẫn hoạt động; suffix/display name tham số hóa chỉ để cô lập bản kiểm.
+- Kiểm: 275/275 Node tests; Chrome 7 tab/UI regression; web/iOS build + typecheck; Release arm64 bản chính và Test; `git diff --check` đạt. Postman request cấu hình production hiện tại: 1 request, 3 assertions, 0 failed, exit 0, không report lên workspace. Chỉ config được Postman xác minh; các tình huống vòng đời do kiểm local và bước iPhone thực tế xác minh.
+- Đã cập nhật/cài/mở bản chính vn.masoi.app trên T21 với bản sửa mới, giữ dữ liệu; gỡ app Test riêng; phòng thử đã kết thúc và đóng profile Chrome tạm. Không deploy web, không đổi server/API/schema/luật. Người dùng có thể tắt lại UI Automation đã bật để thử.
+- Bằng chứng đã lược token/tên/mã phòng: [iphone-online-lifecycle.json](verification/iphone-online-lifecycle.json); đầu ra Postman nguyên văn: [iphone-postman-config.txt](verification/iphone-postman-config.txt). Độ mượt là quan sát người dùng trên T21, chưa có số đo FPS/pin bằng Instruments; không suy thành bảo đảm mọi thiết bị/mọi mạng.
+
+## 2026-10-28 — Sửa QR masoi.yennhi.tech, logo mới và ẩn status bar iPhone (D77)
+
+- Người dùng xác nhận bản đầu mở và thao tác được trên T21. Sau đó báo quét QR từ web đọc được nhưng không điền mã; xác nhận domain `masoi.yennhi.tech`. Nguyên nhân parser chỉ nhận cùng origin Vercel. Cho nhận chéo hai HTTPS origin production, vẫn chặn host lạ/lookalike/credential/HTTP/local và không lấy API host từ QR. Giữ tên và bước bấm Vào phòng.
+- Tạo logo Sói/trăng vàng nền tối bằng imagegen; nguồn/prompt tại docs/branding, icon 1024×1024 sRGB không alpha đã đưa vào asset catalog iOS.
+- Bật SystemBars.hidden và UIStatusBarHidden để ẩn giờ/sóng/pin, Home indicator tự ẩn. Nền phủ màn hình; giữ safe area tránh Dynamic Island/tai thỏ phần cứng. Dùng API cấu hình tích hợp Capacitor; không override thuộc tính Home indicator không-open của framework.
+- Xác nhận hai domain đều trả API config 200, Supabase, 64 vai (chỉ đọc; không ghi production). 10/10 tests QR/native storage/product boundaries đạt, web/iOS build và typecheck đạt, Chrome smoke 7 tab đạt. Script mới `npm run test:ios-shell` dùng đúng bundle iOS, profile mới/chặn HTTPS và plugin web fallback: hình QR custom domain qua video camera giả lập điền mã/giữ tên/đóng camera; tạo/thêm người/lưu bàn và mở lại từ `/`, giải mã đủ 64 ảnh cục bộ, không service worker. Không thay thế kiểm camera/lưu native/máy bay thật.
+- Xcode Release arm64 build thành công, đã cập nhật và mở app trên iPhone T21 đang cắm, giữ dữ liệu app. Kiểm bundle đã ký có SystemBars.hidden, UIStatusBarHidden và đủ 64 WebP. Không deploy web/publish App Store. Bước tiếp theo: người dùng quét lại QR tên miền riêng và xác nhận status bar/icon trên máy thật.
+
+## 2026-10-28 — Bản iPhone Capacitor, đã cài Release lên thiết bị thật (D76)
+
+- Theo yêu cầu người dùng, tạo project `ios/App/App.xcodeproj` (Capacitor 8.5.3/SPM, bundle `vn.masoi.app`, iOS 15+). Giữ online/offline và cùng engine/catalog 64 vai với web. Cập nhật PRODUCT/DECISIONS/AGENTS theo phạm vi native mới.
+- Build iOS riêng `dist-ios`, chứa toàn bộ UI/engine/64 ảnh; không service worker hoặc website tải từ xa. Dùng native HTTP tới máy chủ hiện tại, link/QR mời dùng web origin; giữ hợp đồng máy chủ, kiểm quyền và request ID. Web build vẫn độc lập, không chứa runtime/plugin native.
+- Bộ nhớ native Preferences document v1 hydrate trước main; commit trước xác nhận bàn offline, rollback bộ nhớ khi lỗi ghi và giữ request để retry. Lưu phiên/thao tác đang chờ/route để mở lại. Dữ liệu Safari và app độc lập. Không in bridge chứa token/vai.
+- Startup không chờ mạng khi khôi phục offline; phản hồi nhấn tức thì, rung lựa chọn, safe area/nền tối/status bar sáng; bỏ nút fullscreen trình duyệt trong app. Không blur toàn màn hình native, chỉ giải mã trước 4 ảnh phổ biến khi rảnh, nhường luồng giữa các cặp. Poll dừng khi app xuống nền và nối lại khi trở về/có mạng. Giữ chu kỳ 750/1500 ms và cập nhật DOM từng phần.
+- Có icon theo hình trăng hiện tại, mô tả quyền camera, PrivacyInfo UserDefaults. Chứng chỉ/provisioning không đưa vào Git; Team local trong xcconfig được ignore. Hướng dẫn tại [IPHONE.md](IPHONE.md).
+- Kiểm: 274/274 Node tests đạt; sau tinh chỉnh lifecycle/refresh chạy lại 23/23 tests lưu native/offline/QR/ranh giới build đạt. Smoke Chrome 7 tab đạt (phiên độc lập/reload, retry cùng request, giữ DOM/bố cục 390px, avatar/chat/soi/fullscreen). Build web và iOS/typecheck đạt, `git diff --check` đạt. Audit runtime không có lỗ hổng được báo; npm audit toàn bộ còn 3 moderate trong dependency công cụ CLI (xcode/uuid), không nằm trong runtime app.
+- Xcode build Debug và Release cho iPhone arm64 thành công; ký và cài/mở thành công trên iPhone thật T21 đang cắm (iOS 26.2.1). Người dùng chọn bỏ Simulator; chưa chạy kiểm UI trên Simulator. Bản đang cài cuối mốc là Release. Provisioning bản thử hết hạn 04/11/2026 lúc 03:33 (UTC+7); cần ký/cài lại sau đó nếu tiếp tục dùng cơ chế phát triển này.
+- Giới hạn: thành công cài/mở không thay thế xác nhận UI/chơi thật. Chưa nghiệm thu camera/rung/keyboard/airplane-mode/reconnect/FPS/pin trên điện thoại; đã hỏi người dùng về màn hình thực tế. Không deploy web, không publish App Store, không sửa backend hoặc luật. Bước tiếp theo là thử online cùng web, offline khi máy bay, đóng/mở ván, rồi đo điểm khựng trên iPhone thật.
 
 ## 2026-10-28 — Camera trên HTTP mạng nội bộ
 

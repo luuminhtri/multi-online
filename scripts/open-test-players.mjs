@@ -151,6 +151,22 @@ try {
   await host.evaluate(`document.querySelector('[data-action="refresh"]').click()`);
   await host.wait(`document.querySelectorAll('.seat').length >= 6`);
   await browser('Target.activateTarget', { targetId: host.targetId });
+  if (smoke) {
+    await host.evaluate(`document.querySelector('[data-action="modal-open"][data-modal="deck"]').click()`);
+    await host.wait(`!!document.querySelector('#deck-wolf')`);
+    await host.evaluate(`const input = document.querySelector('#deck-wolf'); input.value = '9'; input.dispatchEvent(new Event('input', { bubbles: true })); document.querySelector('[data-action="preset"]').click()`);
+    assert.equal(await host.evaluate(`document.querySelector('#deck-wolf').value`), '1');
+    assert.equal(await host.evaluate(`[...document.querySelectorAll('[data-role]')].reduce((sum, input) => sum + Number(input.value), 0)`), 6);
+    // Exercise clipboard success and denied-access feedback deterministically.
+    await host.evaluate(`document.querySelector('[data-modal="__close"]').click(); document.querySelector('[data-modal="tools"]').click(); Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async text => { window.__copiedInvite = text; } } }); document.querySelector('[data-action="copy"]').click()`);
+    await host.wait(`!document.querySelector('.modal') && document.querySelector('.notice')?.textContent.includes('Đã sao chép')`);
+    assert.equal(await host.evaluate(`window.__copiedInvite`), `${origin}/?room=${room}`);
+    await host.evaluate(`document.querySelector('[data-modal="tools"]').click(); Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined }); document.execCommand = command => { window.__copyFallback = command; return true; }; document.querySelector('[data-action="copy"]').click()`);
+    await host.wait(`!document.querySelector('.modal') && window.__copyFallback === 'copy'`);
+    await host.evaluate(`document.querySelector('[data-modal="tools"]').click(); document.execCommand = () => false; document.querySelector('[data-action="copy"]').click()`);
+    await host.wait(`!document.querySelector('.modal') && document.querySelector('.notice')?.textContent.includes('Không thể tự sao chép')`);
+    console.log('Gợi ý đặt lại ô đã sửa; clipboard thành công, fallback và lỗi đều có phản hồi nhìn thấy.');
+  }
   console.log(`Phòng ${room}: 1 tab quản trò + 6 tab A–F, cùng cửa sổ, phiên riêng; tải lại vẫn đúng người.`);
   if (!smoke) {
     console.log('Chọn bộ vai và chia vai trên tab quản trò. Ctrl+C để đóng bộ thử và xóa dữ liệu tạm.');

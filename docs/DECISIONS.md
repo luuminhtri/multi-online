@@ -305,3 +305,24 @@ QR tạo cục bộ bằng qrcode, URL same-origin kèm mã phòng, không nhún
 Tinh chỉnh D75 theo người dùng: fullscreen trình duyệt nằm trong thanh công cụ bên trái, icon cửa sổ khác bốn góc phóng bàn; ID/QR bên phải. Bỏ hàng trống dành riêng cho icon. Nút thu nhỏ bàn luôn ở góc bàn, không chồng với nút trình duyệt.
 
 Tinh chỉnh D75 (2026-10-28): gom công cụ vào nút Cài đặt cho cả quản trò và người chơi, chỉ giữ Vai bên ngoài. Cài đặt luật của quản trò nằm trong mục Cài đặt ván chơi ở lobby.
+
+
+## D76 — iPhone bằng Capacitor, giữ online/offline (2026-10-28)
+
+Theo yêu cầu mới của người dùng, bỏ giới hạn cũ không làm native app: tạo iOS shell Capacitor, tái sử dụng giao diện và lõi TypeScript. Ưu tiên tốc độ và trải nghiệm mượt, phản hồi chạm ngay; tối ưu theo kết quả trên iPhone thật, chỉ viết Swift ở nơi cần. Không viết lại luật bằng Swift hoặc tách bộ luật iPhone khỏi web.
+
+Build iOS riêng `dist-ios`, tài nguyên nằm trong app, không tải website từ xa hoặc chờ service worker. Online gọi cùng API Vercel qua native HTTP, giữ kiểm quyền/phân vai/idempotency phía máy chủ. Link và QR dùng web origin, không dùng capacitor://localhost. Offline một máy lưu Preferences native version 1 và khôi phục trước khi đọc phiên; commit trước ACK, không ghi đè dữ liệu khi đọc lỗi. Chưa chuyển bản lưu Safari sang app hoặc đồng bộ offline nhiều máy.
+
+Safe area và vùng cuộn riêng cho iPhone, không có nút fullscreen trình duyệt trong app; phản hồi nhấn tức thì/rung chọn nhẹ; giới hạn ảnh giải mã trước và dừng polling lúc nền. Không thay độ trễ polling backend hoặc hứa số đo FPS/pin khi chưa đo. Người dùng có iPhone thật và yêu cầu bỏ kiểm Simulator; chuẩn bị ký/cài bằng Xcode và kiểm trên thiết bị thật.
+
+
+## D77 — QR custom domain, logo app và chế độ toàn màn hình (2026-10-28)
+
+Người dùng báo camera app đọc QR nhưng không điền mã khi quản trò tạo phòng tại masoi.yennhi.tech. Nguyên nhân parser chỉ chấp nhận cùng origin với máy chủ Vercel cố định. Cho phép nhận chéo đúng hai origin HTTPS production, giữ chặn origin lạ/lookalike/HTTP/credential và không đổi API host từ QR. Quét điền mã, giữ tên và không tự join.
+
+Logo mới tạo bằng imagegen (Sói/trăng vàng trên nền tối), lưu nguồn/prompt tại docs/branding, xuất icon iOS 1024 sRGB không alpha. Bật SystemBars.hidden trong cấu hình Capacitor và UIStatusBarHidden lúc khởi động để ẩn giờ/sóng/pin và tự ẩn Home indicator. Giữ safe area cho tương tác, không hứa bỏ phần cứng tai thỏ/Dynamic Island.
+
+Đã có sẵn engine/catalog/descriptions và 64 WebP trong bundle. Thêm kiểm bản iOS với hồ sơ mới, chặn toàn bộ HTTPS, camera giả lập phát QR hình thật: xác minh tên miền riêng điền mã/giữ tên/đóng camera, tạo và khôi phục bàn offline từ `/`, giải mã đủ ảnh không cần service worker hoặc một lần có mạng trước. Đây là browser integration với plugin web fallback, không thay thế kiểm native trên iPhone thật.
+
+
+Tinh chỉnh D76 — nối lại khi POST còn đang gửi (2026-10-28): foreground hoặc mạng trở lại được ghi nhớ nếu client đang busy. Khi POST kết thúc, tiêu thụ yêu cầu nối lại một lần: còn pending thì retry cùng requestId đã lưu, đã ACK thì đọc trạng thái mới. Không bỏ qua sự kiện trở về chỉ vì request cũ chưa kết thúc; không tạo vòng retry vô hạn hoặc đổi hiệu ứng máy chủ. Đã kiểm mất ACK/stale GET/polling ở local và phối hợp một ván web/iPhone thật. Xem STATUS và verification/iphone-online-lifecycle.json để phân biệt bằng chứng native, browser fallback và giới hạn đo hiệu năng.

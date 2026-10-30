@@ -1,0 +1,65 @@
+{
+  "date": "2026-10-28",
+  "device": {
+    "name": "T21",
+    "model": "iPhone 14 Pro Max",
+    "os": "26.2.1"
+  },
+  "target": "Production web masoi.yennhi.tech + isolated Release iOS app; one disposable room, 5 players (1 native, 4 shared-device seats)",
+  "physicalChecks": [
+    {
+      "case": "Lock while lobby changes and roles are dealt from web",
+      "result": "pass",
+      "evidence": "User confirmed automatic role screen, same session, ready acknowledged; server ready quorum reached 5"
+    },
+    {
+      "case": "Switch to another app while web publishes day",
+      "result": "pass",
+      "evidence": "User confirmed automatic day update and smooth interaction on return"
+    },
+    {
+      "case": "Force-close app, end game on web, update and reopen",
+      "result": "pass",
+      "evidence": "User confirmed same room and ended state without re-entering name/code"
+    },
+    {
+      "case": "End-to-end game and identical verdict replay",
+      "result": "pass",
+      "evidence": "Game reached ended; duplicate request ID did not change server revision; web DOM showed ended"
+    }
+  ],
+  "deterministicChecks": [
+    {
+      "case": "Foreground while join is busy, server commits but acknowledgment is lost",
+      "before": "Failed: foreground request discarded and manual retry required",
+      "after": "Passed: exactly 2 sends sharing the same request ID, exactly 1 room member"
+    },
+    {
+      "case": "Old read held across background and foreground",
+      "result": "Passed: new snapshot stays visible after old response returns"
+    },
+    {
+      "case": "Polling while backgrounded and after return",
+      "result": "Passed: no room reads during inactive interval, immediate restart on return"
+    }
+  ],
+  "validation": {
+    "nodeTests": 275,
+    "nodeFailed": 0,
+    "chrome7ClientSmoke": "passed",
+    "postmanPublicConfig": {
+      "requests": 1,
+      "assertions": 3,
+      "failed": 0,
+      "exitCode": 0
+    },
+    "releaseBuild": "passed"
+  },
+  "limits": [
+    "Physical steps were performed by the user with web/room assertions controlled by the agent; this is not an autonomous native-XCTest pass.",
+    "Native XCTest runner never bootstrapped successfully; a later install explicitly hit the free-profile app limit. The created runner was removed.",
+    "Controlled lost-ACK and stale-response tests run the shipped iOS bundle with Capacitor web fallbacks and the real room service in isolated RAM, not physical network failures.",
+    "Smoothness is the user observation on T21, not a measured FPS, battery or universal-device guarantee."
+  ],
+  "cleanup": "Disposable game ended. Isolated Test app removed; shipping Release updated preserving its data. No web deployment or API contract changes."
+}

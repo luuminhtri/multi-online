@@ -198,6 +198,25 @@ blockquote { margin: 20px 0; padding: 0 0 0 14px; border-left: 1px solid #bdab80
 .role-rows { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; margin-top: 20px; }
 .role-row { display: flex; justify-content: space-between; width: 100%; text-align: left; min-height: 48px; padding: 12px 0; margin: 0; font-size: 13px; background: transparent; border-radius: 0; border-bottom: 1px solid #ffffff0b; }
 .role-row b { font: 12px ui-monospace, monospace; color: var(--accent); }
+.role-faction { --faction-color: #e0e4e8; margin-top: 20px; }
+.role-faction-wolves { --faction-color: #ffaaaa; }
+.role-faction-village { --faction-color: #a4e6c3; }
+.role-faction + .role-faction { border-top: 1px solid var(--line); padding-top: 18px; }
+.role-faction h4 { margin: 0; }
+.role-faction .faction-toggle { width: 100%; text-align: left; display: flex; gap: 10px; align-items: center; margin: 0; padding: 10px 0; border: 0; border-radius: 0; background: transparent; color: var(--faction-color); font-size: 16px; font-weight: 750; letter-spacing: 0; }
+.role-faction .faction-toggle::before { content: ''; width: 7px; height: 7px; flex-shrink: 0; border-radius: 50%; background: var(--faction-color); }
+.role-faction .faction-toggle:hover:enabled { background: transparent; color: var(--ink); }
+.role-faction h4 span { font-size: 12px; font-weight: 500; color: var(--muted); white-space: nowrap; }
+.role-faction .role-rows, .role-faction .deck { margin: 6px 0 0 17px; }
+.role-faction .role-row { color: var(--ink); font-size: 14px; font-weight: 450; border: 0; padding: 10px 8px; border-radius: 6px; }
+.role-faction .role-row .icon { width: 14px; color: var(--muted); opacity: .6; }
+.role-faction .role-row b { color: var(--faction-color); }
+.role-faction .deck label { padding: 7px 8px; border: 0; border-radius: 6px; font-size: 14px; min-height: 48px; }
+.role-faction .deck label.deck-selected { color: var(--ink); font-weight: 650; background: color-mix(in srgb, var(--faction-color) 6%, transparent); }
+.role-faction .deck input { width: 58px; min-height: 36px; padding: 6px; background: #ffffff04; border-color: #ffffff12; border-radius: 6px; }
+.role-faction .deck-selected input { color: var(--faction-color); border-color: color-mix(in srgb, var(--faction-color) 25%, transparent); }
+.modal.role-browser { background: #171f1f; border: 0; border-radius: 14px; box-shadow: 0 20px 70px #0006; }
+
 .library-missing { margin: 8px 0 0; display: flex; flex-wrap: wrap; gap: 6px; }
 .library-role { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; font-size: 12px; border: 1px solid #ffffff14; border-radius: 8px; color: var(--muted); }
 .library-role em { font-style: normal; font-size: 10px; color: var(--muted); border: 1px solid #ffffff14; border-radius: 6px; padding: 1px 5px; }
@@ -533,6 +552,49 @@ button.primary[aria-busy="true"]::after { border-color: #17231d35; border-top-co
 .room-tool-menu { display: grid; gap: 8px; }
 .room-tool-menu button { width: 100%; justify-content: flex-start; gap: 12px; margin: 0; padding: 14px; }
 
+/* The native viewport includes the sensor housing and home indicator. Keep
+   overlays inside that space too; only their content is allowed to scroll. */
+.native-app {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  -webkit-text-size-adjust: 100%;
+}
+.native-app #app {
+  padding-top: var(--safe-top);
+  padding-bottom: max(24px, var(--safe-bottom));
+  padding-left: max(16px, var(--safe-left));
+  padding-right: max(16px, var(--safe-right));
+}
+.native-app body { overscroll-behavior-y: none; }
+.native-app button, .native-app a, .native-app select {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.native-app button { -webkit-user-select: none; user-select: none; }
+.native-app button:active:enabled { transition-duration: 0s; background-color: #36443f; }
+.native-app button.primary:active:enabled { background-color: #f0dbb1; }
+.native-app .modal-back, .native-app .overlay {
+  padding: max(12px, var(--safe-top)) max(12px, var(--safe-right)) max(12px, var(--safe-bottom)) max(12px, var(--safe-left));
+}
+.native-app .modal-back { backdrop-filter: none; }
+.native-app .modal, .native-app .overlay-card {
+  max-height: calc(100dvh - max(12px, var(--safe-top)) - max(12px, var(--safe-bottom)));
+}
+.native-app .modal.role-detail, .native-app .overlay-card {
+  height: calc(100dvh - max(12px, var(--safe-top)) - max(12px, var(--safe-bottom)));
+}
+.native-app .table-fullscreen {
+  padding: max(12px, var(--safe-top)) max(12px, var(--safe-right)) max(12px, var(--safe-bottom)) max(12px, var(--safe-left));
+}
+@media (hover: none) {
+  .native-app button:hover:enabled { background: var(--surface-2); }
+  .native-app button.primary:hover:enabled { background: #e3c995; }
+  .native-app button:active:enabled { background: #36443f; }
+  .native-app button.primary:active:enabled { background: #f0dbb1; }
+}
+
 .join-code-row { display: flex; align-items: center; gap: 8px; }
 .join-code-row input { min-width: 0; flex: 1; }
 .join-code-row button { flex-shrink: 0; white-space: nowrap; }
@@ -540,3 +602,8 @@ button.primary[aria-busy="true"]::after { border-color: #17231d35; border-top-co
 .qr-scanner::backdrop { background: #000b; }
 .qr-scanner > button { float: right; }
 .qr-scanner video { display: block; width: 100%; max-height: 55svh; object-fit: cover; border-radius: 12px; background: #000; }
+
+.role-faction .faction-toggle > span { margin-left: auto; }
+.faction-toggle .icon { flex-shrink: 0; transform: rotate(90deg); transition: transform .15s; }
+.faction-toggle[aria-expanded="false"] .icon { transform: rotate(0); }
+.role-faction > [hidden] { display: none; }

@@ -33,10 +33,14 @@ for (const mode of ['development', 'debug']) {
 test('Mọi build, kể cả --mode debug, chỉ xuất sản phẩm', async () => {
   const temp = await mkdtemp(join(tmpdir(), 'ma-soi-build-'));
   try {
-    for (const mode of ['production', 'debug']) {
+    for (const mode of ['production', 'debug', 'ios']) {
       const outDir = join(temp, mode);
       await build({ mode, logLevel: 'silent', build: { outDir } });
       const files = await readdir(outDir, { recursive: true });
+      if (mode === 'ios') {
+        assert.ok(!files.includes('sw.js'), 'Native uses bundled assets, not a service worker');
+        assert.equal(files.filter(f => f.startsWith('offline-cards/') && f.endsWith('.webp')).length, 64);
+      }
       assert.deepEqual(files.filter(f => f.endsWith('.html')), ['index.html']);
       const content = (await Promise.all(files.filter(f => /\.(?:html|js|css)$/.test(f)).map(f => readFile(join(outDir, f), 'utf8')))).join('\n');
       for (const forbidden of ['sandbox', 'join-test', 'test-switch', 'test-add', 'test-bar', 'ma-soi:test:v1', 'Chế độ thử 1 tab', 'BÀN THỬ', 'Chuyện trong làng', 'Ai còn thức?']) {

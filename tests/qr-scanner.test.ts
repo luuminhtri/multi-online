@@ -13,6 +13,16 @@ test('QR phòng nhận đúng URL cùng app hoặc mã sáu số, từ chối li
   }
 });
 
+test('QR tên miền riêng và Vercel được nhận chéo, không mở rộng sang tên miền giả hoặc server local', () => {
+  const vercel = 'https://multi-online.vercel.app', custom = 'https://masoi.yennhi.tech';
+  assert.equal(roomCodeFromQr(`${custom}/?room=012345`, vercel), '012345');
+  assert.equal(roomCodeFromQr(`${vercel}/?room=012345`, custom), '012345');
+  for (const url of ['https://masoi.yennhi.tech.evil.example/?room=012345', 'http://masoi.yennhi.tech/?room=012345', 'https://user@masoi.yennhi.tech/?room=012345', 'http://192.168.1.2:5174/?room=012345']) {
+    assert.equal(roomCodeFromQr(url, vercel), null);
+  }
+  assert.equal(roomCodeFromQr(`${custom}/?room=012345`, 'http://127.0.0.1:5174'), null);
+});
+
 test('decoder đọc được QR do quản trò tạo', () => {
   const text = 'https://multi-online.vercel.app/?room=012345';
   const qr = QRCode.create(text, { errorCorrectionLevel: 'M' });

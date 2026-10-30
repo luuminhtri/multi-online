@@ -107,7 +107,7 @@ try {
       if (result.exceptionDetails) throw new Error('Thao tác trong tab thất bại.');
       return result.result.value;
     };
-    const wait = expression => until(() => evaluate(expression), 'giao diện phòng');
+    const wait = expression => until(() => evaluate(expression), `giao diện phòng: ${expression}`);
     return { send, evaluate, wait, targetId };
   }
   const host = await page(initial.id);

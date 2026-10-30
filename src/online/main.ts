@@ -1,4 +1,6 @@
 import QRCode from 'qrcode';
+import { native, isNativeApp, deviceStorage, flushDeviceStorage, publicOrigin, copyText } from '../platform/runtime.ts';
+import { roomInvite, roomRequestPath } from '../platform/urls.ts';
 import { patchHtml } from './dom.ts';
 import { ROLE_IMAGES } from '../catalog/images.ts';
 import { pickTarget, visiblePackIds, type TargetSlot } from './target-picker.ts';
@@ -8,6 +10,7 @@ import type { Game, Action, Command, DayTimers, GameEvent, Role } from '../engin
 import { LocalTable, localCatalog, type LocalMutation } from '../offline/table.ts';
 import { actors, RuleError } from '../engine/engine.ts';
 import { playerView } from '../engine/views.ts';
+import { baseTeam } from '../engine/role-policy.ts';
 import { MODERATOR_SCRIPTS } from '../engine/rules.ts';
 import './style.css';
 import { ROLE_CATALOG } from '../catalog/roles.ts';
@@ -22,7 +25,7 @@ const app = document.querySelector<HTMLDivElement>('#app')!;
 const esc = (v: unknown) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 const random = () => [...crypto.getRandomValues(new Uint8Array(32))].map(n => n.toString(16).padStart(2, '0')).join('');
 // Debug tabs represent separate devices; production keeps persistent device sessions.
-const sessionStore = import.meta.env.DEBUG_TOOLS ? sessionStorage : localStorage;
+const sessionStore = import.meta.env.DEBUG_TOOLS ? sessionStorage : deviceStorage;
 function load<T>(key: string, fallback: T): T { try { return JSON.parse(sessionStore.getItem(key) ?? 'null') ?? fallback; } catch { return fallback; } }
 // Vite loại bỏ import này khỏi mọi bản build, kể cả build --mode debug.
 const debug = import.meta.env.DEBUG_TOOLS
@@ -30,8 +33,8 @@ const debug = import.meta.env.DEBUG_TOOLS
 let sessions = load<Record<string, Session>>('ma-soi:sessions:v1', {});
 const capabilityFor = (c: string) => localMode ? 'local' : debug?.capability(c) ?? sessions[c]?.token;
 let pending = load<Pending | null>('ma-soi:pending:v1', null);
-const localTable = new LocalTable(localStorage);
-let localMode = new URL(location.href).searchParams.has('local');
+const localTable = new LocalTable(deviceStorage);
+let localMode = native && pending ? load<boolean>('ma-soi:pending-local:v1', false) : new URL(location.href).searchParams.has('local');
 let localSimplified = true;
 let code = (new URL(location.href).searchParams.get('local') ?? new URL(location.href).searchParams.get('room'))?.toUpperCase() ?? '';
 let entryMode: 'create' | 'join' = 'join';
@@ -44,12 +47,14 @@ function setProxy(id: string | null) {
   try { id ? sessionStorage.setItem(`ma-soi:offline:${code}`, id) : sessionStorage.removeItem(`ma-soi:offline:${code}`); } catch {}
 }
 let snapshot: Snapshot | null = null;
-let catalog: Snapshot['catalog'] = [];
+let catalog: Snapshot['catalog'] = localCatalog();
 let storage = 'local';
 let status = 'Đang kết nối…', notice = '', busy = false, fetching = false;
 let busyAction: string | null = null;
 let lastAction: string | null = null;
 let poll: ReturnType<typeof setTimeout> | undefined;
+let appActive = !isNativeApp || !document.hidden;
+let reconnectAfterWrite = false;
 let deck: Record<string, number> = {};
 let deckDirty = false;
 let failed = false;
@@ -59,9 +64,13 @@ const formMemory = new Map<string, string | boolean>();
 let savedPlayerName = '';
 try { savedPlayerName = sessionStore.getItem('ma-soi:player-name:v1') ?? ''; } catch {}
 let inviteQr = '', inviteQrUrl = '';
-const inviteUrl = () => `${location.origin}/?room=${encodeURIComponent(code)}`;
+const inviteUrl = () => roomInvite(publicOrigin, code);
 
-function persist() { sessionStore.setItem('ma-soi:sessions:v1', JSON.stringify(sessions)); if (pending) sessionStore.setItem('ma-soi:pending:v1', JSON.stringify(pending)); else sessionStore.removeItem('ma-soi:pending:v1'); }
+function persist() { sessionStore.setItem('ma-soi:sessions:v1', JSON.stringify(sessions)); if (pending) sessionStore.setItem('ma-soi:pending:v1', JSON.stringify(pending)); else sessionStore.removeItem('ma-soi:pending:v1'); if (native) sessionStore.setItem('ma-soi:pending-local:v1', JSON.stringify(localMode)); }
+async function goHome() {
+  if (native) { deviceStorage.removeItem('ma-soi:resume-route:v1'); await flushDeviceStorage(); }
+  location.assign('/');
+}
 const name = (id: unknown) => snapshot?.room.members.find(m => m.id === id)?.name ?? String(id ?? 'không ai');
 const roleName = (id: unknown) => catalog.find(r => r.id === id)?.name ?? String(id);
 const roleLibraryMissing = () => missingLibraryRoles(catalog.map(r => r.id), ROLE_CATALOG);
@@ -297,6 +306,23 @@ function roundTable(players: { id: string; name: string; alive: boolean }[], opt
 }
 // Pop-up: các mục cài đặt/mở rộng ẩn mặc định, bấm mới mở; ESC hoặc bấm nền để đóng.
 let modal: string | null = null;
+const collapsedFactions = new Set<string>();
+function factionRoleRows(rows: { id: string; count: number; html: string }[], unit: string, picker = false): string {
+  const factions = [ ['village', 'Phe dân'], ['wolves', 'Phe sói'], ['third', 'Phe thứ ba'] ] as const;
+  return factions.map(([faction, label]) => {
+    const members = rows.filter(row => {
+      const team = baseTeam(row.id as Role);
+      return (team === 'wolves' || team === 'village' ? team : 'third') === faction;
+    });
+    if (!members.length) return '';
+    if (picker) members.sort((a, b) => Number(b.count > 0) - Number(a.count > 0));
+    const total = members.reduce((sum, row) => sum + row.count, 0);
+    const key = `${modal}:${faction}`;
+    const collapsed = collapsedFactions.has(key);
+    return `<section class="role-faction role-faction-${faction}" aria-label="${label}"><h4><button type="button" class="faction-toggle" data-action="toggle-faction" data-faction-key="${key}" aria-expanded="${!collapsed}" aria-controls="faction-${faction}">${label}<span>${total} ${unit}</span>${icon('chevron')}</button></h4><div id="faction-${faction}" class="${picker ? 'deck' : 'role-rows'}" ${collapsed ? 'hidden' : ''}>${members.map(row => row.html).join('')}</div></section>`;
+  }).join('');
+}
+
 let roleListParent: 'catalog' | 'allroles' | null = null;
 let tableFullscreen = false;
 const NOTEBOOK_TABS = { players: 'Người chơi', chat: 'Chat Sói', history: 'Nhật ký' } as const;
@@ -337,7 +363,7 @@ function modalShell(inner: string) {
     return `<div class="modal-back" data-action="modal-close"><div class="modal secret-notebook" role="dialog" aria-modal="true" aria-labelledby="notebook-title"><button type="button" class="modal-close" data-action="modal-open" data-modal="__close" aria-label="Đóng">${icon('close')}</button><h3 id="notebook-title">Sổ tay bí mật</h3><nav class="notebook-tabs" role="tablist" aria-label="Mục sổ tay">${tabs}</nav><div class="modal-body" id="notebook-panel" role="tabpanel" aria-labelledby="notebook-tab-${notebookTab}" tabindex="0">${inner}</div></div></div>`;
   }
   const roleDetail = modal === 'packchat' ? ' chat-fullscreen' : modal?.startsWith('role:') || modal === 'rolepeek' ? ' role-detail' : '';
-  return `<div class="modal-back" data-action="modal-close"><div class="modal${roleDetail}" role="dialog" aria-modal="true" aria-label="${modal === 'exit-room' ? 'Thoát phòng' : modal === 'settings' || modal === 'tools' ? 'Cài đặt' : modal === 'deck' ? 'Bộ vai' : modal === 'catalog' || modal === 'allroles' ? 'Danh sách vai' : modal?.startsWith('role:') ? esc(roleName(modal.slice(5))) : 'Thông tin ván'}"><button type="button" class="modal-close" data-action="modal-open" data-modal="__close" aria-label="Đóng">${icon('close')}</button><div class="modal-body">${inner}</div>${modal === 'deck' ? button('save-deck', 'Lưu bộ vai', false, 'class="primary wide modal-footer"') : modal === 'offline-add' ? button('add-offline', 'Thêm người chơi', false, 'class="primary wide modal-footer"') : ''}</div></div>`;
+  return `<div class="modal-back" data-action="modal-close"><div class="modal${roleDetail}${['deck', 'catalog', 'allroles'].includes(modal ?? '') ? ' role-browser' : ''}" role="dialog" aria-modal="true" aria-label="${modal === 'exit-room' ? 'Thoát phòng' : modal === 'settings' || modal === 'tools' ? 'Cài đặt' : modal === 'deck' ? 'Bộ vai' : modal === 'catalog' || modal === 'allroles' ? 'Danh sách vai' : modal?.startsWith('role:') ? esc(roleName(modal.slice(5))) : 'Thông tin ván'}"><button type="button" class="modal-close" data-action="modal-open" data-modal="__close" aria-label="Đóng">${icon('close')}</button><div class="modal-body">${inner}</div>${modal === 'deck' ? button('save-deck', 'Lưu bộ vai', false, 'class="primary wide modal-footer"') : modal === 'offline-add' ? button('add-offline', 'Thêm người chơi', false, 'class="primary wide modal-footer"') : ''}</div></div>`;
 }
 function modalHtml() {
   if (!modal) return '';
@@ -345,7 +371,7 @@ function modalHtml() {
   const gm = snapshot?.viewer === 'moderator' ? snapshot.game : null;
   let inner = '';
   if (modal === 'tools' && snapshot) {
-    inner = `<h3>Cài đặt</h3><div class="room-tool-menu">${button('browser-fullscreen', icon(document.fullscreenElement ? 'window-restore' : 'window-fullscreen') + `<span>${document.fullscreenElement ? 'Thu nhỏ' : 'Toàn màn hình'}</span>`, false, 'class="secondary"')}${localMode ? '' : button('copy', icon('copy') + '<span>Sao chép link mời</span>', false, 'class="secondary"')}${button('refresh', icon('refresh') + '<span>Làm mới</span>', false, 'class="secondary"')}${snapshot.viewer === 'moderator' && !snapshot.game ? button('modal-open', icon('settings') + '<span>Cài đặt ván chơi</span>', false, 'class="secondary" data-modal="settings"') : ''}${snapshot.controller ? button('return-moderator', icon('close') + '<span>Về quản trò</span>', false, 'class="secondary"') : button('exit-room', icon('exit') + `<span>${snapshot.viewer === 'moderator' ? 'Thoát phòng' : 'Rời phòng'}</span>`, false, 'class="danger"')}</div>`;
+    inner = `<h3>Cài đặt</h3><div class="room-tool-menu">${isNativeApp ? '' : button('browser-fullscreen', icon(document.fullscreenElement ? 'window-restore' : 'window-fullscreen') + `<span>${document.fullscreenElement ? 'Thu nhỏ' : 'Toàn màn hình'}</span>`, false, 'class="secondary"')}${localMode ? '' : button('copy', icon('copy') + '<span>Sao chép link mời</span>', false, 'class="secondary"')}${button('refresh', icon('refresh') + '<span>Làm mới</span>', false, 'class="secondary"')}${snapshot.viewer === 'moderator' && !snapshot.game ? button('modal-open', icon('settings') + '<span>Cài đặt ván chơi</span>', false, 'class="secondary" data-modal="settings"') : ''}${snapshot.controller ? button('return-moderator', icon('close') + '<span>Về quản trò</span>', false, 'class="secondary"') : button('exit-room', icon('exit') + `<span>${snapshot.viewer === 'moderator' ? 'Thoát phòng' : 'Rời phòng'}</span>`, false, 'class="danger"')}</div>`;
   } else if (modal === 'browser-fullscreen-help') {
     inner = '<h3>Mở toàn màn hình</h3><p>Trình duyệt này chưa cho phép trang web bật toàn màn hình.</p><p>Trên iPhone: mở menu Chia sẻ trong Safari hoặc Chrome → Thêm vào Màn hình chính → mở Ma Sói từ biểu tượng vừa thêm. Nếu có tùy chọn Mở dưới dạng ứng dụng web, hãy bật.</p><p class="muted">Bạn vẫn có thể dùng icon ở góc bàn để chỉ xem bàn chơi trong cửa sổ hiện tại.</p>';
   } else if (modal === 'invite-qr' && snapshot?.viewer === 'moderator' && !localMode) {
@@ -359,7 +385,7 @@ function modalHtml() {
   } else if (modal === 'offline-add' && snapshot?.viewer === 'moderator' && !snapshot.game) {
     inner = '<h3>Dùng máy quản trò</h3><p class="muted">Thêm người không có điện thoại. Vai và lượt của họ sẽ hiện lần lượt trên máy này.</p><label>Tên người chơi<input id="offline-name" maxlength="40" autocomplete="off" placeholder="Tên người chơi"></label>';
   } else if (modal === 'deck') {
-    inner = `<div class="modal-title"><h3>Bộ vai</h3>${button('preset', icon('shuffle') + ' Gợi ý', false, 'class="text-button"')}</div><p class="muted">Số thẻ cần bằng số người chơi.</p><div class="deck">${catalog.map(r => `<label>${esc(r.name)}<input id="deck-${r.id}" data-role="${r.id}" ${busy || pending ? 'disabled' : ''} type="number" min="0" max="30" value="${deck[r.id] ?? 0}" inputmode="numeric"></label>`).join('')}</div>`;
+    inner = `<div class="modal-title"><h3>Bộ vai</h3>${button('preset', icon('shuffle') + ' Gợi ý', false, 'class="text-button"')}</div><p class="muted">Số thẻ cần bằng số người chơi.</p>${factionRoleRows(catalog.map(r => ({ id: r.id, count: deck[r.id] ?? 0, html: `<label data-ui-key="deck-row-${r.id}" class="${deck[r.id] > 0 ? 'deck-selected' : ''}">${esc(r.name)}<input id="deck-${r.id}" data-role="${r.id}" ${busy || pending ? 'disabled' : ''} type="number" min="0" max="30" value="${deck[r.id] ?? 0}" inputmode="numeric"></label>` })), 'thẻ đã chọn', true)}`;
   } else if (modal === 'settings' && snapshot?.viewer === 'moderator' && !snapshot.game) {
     inner = `<h3>Cài đặt</h3>${localMode ? `<label class="check"><input id="local-simplified" type="checkbox" ${localSimplified ? 'checked' : ''}><span>Tối giản thao tác ban đêm<small>Quản trò nhập trực tiếp. Một lựa chọn chung cho bầy Sói.</small></span></label>` : ''}<label class="check"><input id="witch-sees-bite" type="checkbox" ${lobbySettings.witchSeesBite ? 'checked' : ''}><span>Phù thủy thấy nạn nhân<small>Tắt: Phù thủy chỉ chọn dùng/giữ thuốc, máy chủ cứu không lộ tên. Người Bảo vệ chặn cắn luôn được giấu.</small></span></label><label class="check"><input id="hunter-active-shot" type="checkbox" ${lobbySettings.hunterActiveShot ? 'checked' : ''}><span>Thợ săn bắn chủ động<small>Tắt: ghim mỗi đêm, chết đêm thì kéo mục tiêu chết theo. Bật: một phát cả ván; trúng phe Sói thì sống, bắn sai thì cả hai chết.</small></span></label><h4>Đồng hồ ban ngày</h4><div class="timer-fields">${DAY_PHASES.map(p => `<label>${DAY_PHASE_NAMES[p]} (giây)<input id="day-${p}" type="number" min="5" max="3600" value="${lobbySettings.dayTimers[p]}" inputmode="numeric"></label>`).join('')}</div><h4>Bỏ phiếu trắng</h4><label>Số ngày được không loại ai (0–30)<input id="skip-vote-days" type="number" min="0" max="30" value="${lobbySettings.skipVoteDays}" inputmode="numeric"></label><p class="muted">0 = sáng nào cũng phải vote loại một người. Hết lượt bỏ qua, mỗi sáng phải chọn một người để vote.</p>`;
   } else if (modal === 'rolepeek' && g) {
@@ -397,12 +423,12 @@ function modalHtml() {
     const selected = snapshot?.viewer === 'moderator' && !snapshot.game ? deck : snapshot?.deck ?? {};
     const rows = Object.entries(selected).filter(([, count]) => count > 0)
       .sort((a, b) => b[1] - a[1] || roleName(a[0]).localeCompare(roleName(b[0]), 'vi'))
-      .map(([id, count]) => `<button type="button" class="role-row" data-action="modal-open" data-modal="role:${esc(id)}"><span>${esc(roleName(id))}</span><b>×${count}</b></button>`);
-    inner = `<h3>Vai trong ván này</h3>${rows.length ? `<p class="muted">Bấm vào vai để xem ảnh và mô tả.</p><div class="role-rows">${rows.join('')}</div>` : '<p class="empty">Quản trò chưa chọn bộ vai.</p>'}${button('modal-open', `Vai đã hỗ trợ (${catalog.length}/${ROLE_CATALOG.length}) ` + icon('chevron'), false, 'class="secondary wide" data-modal="allroles"')}`;
+      .map(([id, count]) => ({ id, count, html: `<button type="button" class="role-row" data-action="modal-open" data-modal="role:${esc(id)}"><span>${esc(roleName(id))}</span><b>×${count}</b></button>` }));
+    inner = `<h3>Vai trong ván này</h3>${rows.length ? `<p class="muted">Bấm vào vai để xem ảnh và mô tả.</p>${factionRoleRows(rows, 'thẻ')}` : '<p class="empty">Quản trò chưa chọn bộ vai.</p>'}${button('modal-open', `Vai đã hỗ trợ (${catalog.length}/${ROLE_CATALOG.length}) ` + icon('chevron'), false, 'class="secondary wide" data-modal="allroles"')}`;
   } else if (modal === 'allroles') {
     const roles = [...catalog].sort((a, b) => (libraryRoleRank.get(a.id) ?? Infinity) - (libraryRoleRank.get(b.id) ?? Infinity) || a.name.localeCompare(b.name, 'vi'));
     const missing = roleLibraryMissing();
-    inner = `<h3>Vai đã hỗ trợ (${roles.length}/${ROLE_CATALOG.length})</h3><p class="muted">Các vai quen thuộc được xếp trước, tiếp đến là các vai mở rộng.</p><div class="role-rows">${roles.map(r => `<button type="button" class="role-row" data-action="modal-open" data-modal="role:${esc(r.id)}"><span>${esc(r.name)}</span>${icon('chevron')}</button>`).join('')}</div>${missing.length ? `<h3>Thư viện nguồn — chưa hỗ trợ (${missing.length})</h3><p class="muted">Có trong dữ liệu nguồn nhưng chưa thể chơi.</p><p class="library-missing">${missing.map(r => `<span class="library-role"><span>${esc(r.displayName)}</span><em>Chưa hỗ trợ</em></span>`).join('')}</p>` : ''}`;
+    inner = `<h3>Vai đã hỗ trợ (${roles.length}/${ROLE_CATALOG.length})</h3><p class="muted">Trong mỗi phe, các vai quen thuộc được xếp trước.</p>${factionRoleRows(roles.map(r => ({ id: r.id, count: 1, html: `<button type="button" class="role-row" data-action="modal-open" data-modal="role:${esc(r.id)}"><span>${esc(r.name)}</span>${icon('chevron')}</button>` })), 'vai')}${missing.length ? `<h3>Thư viện nguồn — chưa hỗ trợ (${missing.length})</h3><p class="muted">Có trong dữ liệu nguồn nhưng chưa thể chơi.</p><p class="library-missing">${missing.map(r => `<span class="library-role"><span>${esc(r.displayName)}</span><em>Chưa hỗ trợ</em></span>`).join('')}</p>` : ''}`;
   } else if (modal.startsWith('role:')) {
     const id = modal.slice(5);
     const r = roleById(id);
@@ -682,7 +708,14 @@ function dropTarget(px: number, py: number): HTMLElement | null {
 async function request(body?: LocalMutation, capability?: string, room?: string) {
   if (localMode) {
     try {
-      if (body) return localTable.mutate(body, proxyPlayerId);
+      if (body) {
+        const checkpoint = native?.storage.checkpoint();
+        try {
+          const result = localTable.mutate(body, proxyPlayerId);
+          await flushDeviceStorage();
+          return result;
+        } catch (error) { if (checkpoint) native!.storage.restore(checkpoint); throw error; }
+      }
       if (room) return localTable.read(room, proxyPlayerId);
       return { storage: 'local', catalog: localCatalog() };
     } catch (e) {
@@ -697,11 +730,22 @@ async function request(body?: LocalMutation, capability?: string, room?: string)
   // it lost before the server has had time to return its acknowledgement.
   const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), 12000);
   try {
-    const response = await fetch(`/api/room${body ? '' : room ? `?code=${encodeURIComponent(room)}${proxyPlayerId ? `&offlinePlayerId=${encodeURIComponent(proxyPlayerId)}` : ''}` : '?config=1'}`, {
-      method: body ? 'POST' : 'GET', headers: { ...(capability ? { Authorization: `Bearer ${capability}` } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}) },
-      body: body ? JSON.stringify(body) : undefined, signal: controller.signal, cache: 'no-store',
-    });
-    const data = await response.json(); if (!response.ok) { const error = new Error(data.error?.message ?? 'Không thực hiện được thao tác.') as Error & { status: number; code?: string }; error.status = response.status; error.code = data.error?.code; throw error; }
+    const path = body ? '/api/room' : roomRequestPath(room, proxyPlayerId);
+    const headers = { ...(capability ? { Authorization: `Bearer ${capability}` } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}) };
+    let httpStatus: number, data;
+    if (native) {
+      const response = await native.request(publicOrigin + path, body, headers);
+      httpStatus = response.status; data = response.data;
+    } else {
+      const response = await fetch(path, {
+        method: body ? 'POST' : 'GET', headers,
+        body: body ? JSON.stringify(body) : undefined, signal: controller.signal, cache: 'no-store',
+      });
+      httpStatus = response.status; data = await response.json();
+    }
+    if (httpStatus < 200 || httpStatus >= 300) {
+      throw Object.assign(new Error(data?.error?.message ?? 'Không thực hiện được thao tác.'), { status: httpStatus, code: data?.error?.code });
+    }
     return data;
   } finally { clearTimeout(timeout); }
 }
@@ -715,7 +759,13 @@ function accepted(s: Snapshot) {
   snapshot = s; code = s.room.code; catalog = s.catalog; storage = s.storage;
   serverOffset = Date.now() - Date.parse(s.serverTime);
   if (!s.room.local) debug?.watch(s, capabilityFor(code));
-  history.replaceState(null, '', `/?${localMode ? 'local' : 'room'}=${code}`); status = localMode ? 'Đã lưu trên máy' : 'Đã đồng bộ'; failed = false;
+  const route = `/?${localMode ? 'local' : 'room'}=${code}`;
+  history.replaceState(null, '', route);
+  if (native && (changed || deviceStorage.getItem('ma-soi:resume-route:v1') !== route)) {
+    deviceStorage.setItem('ma-soi:resume-route:v1', route);
+    void flushDeviceStorage().catch(() => {});
+  }
+  status = localMode ? 'Đã lưu trên máy' : 'Đã đồng bộ'; failed = false;
   if (s.viewer === 'moderator' && !s.game && !deckDirty) {
     deck = { ...(s.deck ?? {}) };
     if (!Object.keys(deck).length && s.room.members.filter(m => !m.left).length >= 3) preset();
@@ -730,7 +780,7 @@ function accepted(s: Snapshot) {
 }
 async function refresh(force = false) {
   const capability = capabilityFor(code);
-  if (!code || !capability || sessionMoved || !force && (fetching || busy)) return;
+  if (!code || !capability || sessionMoved || !force && (!appActive || fetching || busy)) return;
   const sequence = ++readSequence;
   fetching = true;
   try { const result = await request(undefined, capability, code); if (sequence === readSequence) accepted(result); }
@@ -758,7 +808,7 @@ async function returnModerator(skip = true) {
   if (skip && snapshot?.viewer === 'player') offlineAutoSkip = snapshot.game?.turn?.stepId ?? null;
   setProxy(null); modal = null; switchingView = true; snapshot = null; render(); await refresh(true);
 }
-function schedule() { clearTimeout(poll); if (sessionMoved || localMode) return; poll = setTimeout(() => { if (!document.hidden) void refresh(); else schedule(); }, failed ? 5000 : snapshot?.room.phase === 'playing' && (snapshot.viewer === 'moderator' ? snapshot.game?.step !== 'day' : snapshot.game?.phase !== 'day') ? 750 : 1500); }
+function schedule() { clearTimeout(poll); if (sessionMoved || localMode || !appActive) return; poll = setTimeout(() => { if (!document.hidden) void refresh(); else schedule(); }, failed ? 5000 : snapshot?.room.phase === 'playing' && (snapshot.viewer === 'moderator' ? snapshot.game?.step !== 'day' : snapshot.game?.phase !== 'day') ? 750 : 1500); }
 async function sendPending() {
   if (!pending || busy) return false;
   let success = false;
@@ -767,15 +817,21 @@ async function sendPending() {
   busyAction = lastAction === 'retry' || !lastAction ? (pending.operation.type === 'command' || pending.operation.type === 'offlineCommand' ? pending.operation.command.type === 'act' ? 'submit' : pending.operation.command.type : pending.operation.type) : lastAction;
   busy = true; notice = ''; render();
   try {
+    // Persist the request ID before sending: termination/retry must not duplicate a turn.
+    await flushDeviceStorage();
     const leaving = pending.operation.type === 'leave' ? pending.operation.code : null;
     const s = await request(pending.operation, pending.token);
     if (leaving) {
       if (s.left !== true || s.code !== leaving) throw new Error('Không xác nhận được việc rời phòng.');
       delete sessions[s.code]; pending = null; persist(); setProxy(null); clearTimeout(poll); sessionMoved = true;
-      location.assign('/'); success = true; return true;
+      await goHome(); success = true; return true;
     }
     if (pending.operation.type === 'setDeck') deckDirty = false;
+    const sending = pending, previousSessions = { ...sessions }, checkpoint = native?.storage.checkpoint();
     if (!debug?.owns(s.room.code)) sessions[s.room.code] = { token: pending.token }; pending = null; persist();
+    try { await flushDeviceStorage(); } catch (error) {
+      sessions = previousSessions; pending = sending; if (checkpoint) native!.storage.restore(checkpoint); throw error;
+    }
     accepted(s); notice = ''; failed = false; success = true;
   } catch (e) {
     const statusCode = (e as Error & { status?: number }).status;
@@ -783,11 +839,16 @@ async function sendPending() {
     notice = statusCode ? (e as Error).message : 'Chưa nhận được xác nhận từ máy chủ. Giữ thao tác và thử gửi lại.';
     failed = !statusCode || statusCode >= 500;
     if (failed) status = 'Chờ gửi lại';
+    if (native) await flushDeviceStorage().catch(() => {});
   } finally {
     busy = false; busyAction = null; render(); schedule();
     // Successful writes already return the authoritative snapshot. An extra
     // immediate GET doubles storage work without making that ACK more current.
-    if (!success && !pending) void refresh();
+    // A foreground/network event can arrive while this request is still busy.
+    // Consume it after settling: retry the persisted ID on a lost ACK, or read
+    // current state if the room advanced while this device was away.
+    if (reconnectAfterWrite && appActive) queueMicrotask(reconnect);
+    else if (!success && !pending) void refresh();
   }
   return success;
 }
@@ -823,6 +884,9 @@ app.addEventListener('change', e => {
   const input = e.target as HTMLSelectElement;
   if (input.id === 'notebook-night') { notebookNight = input.value; notebookScroll.chat = notebookScroll.history = 0; render(); }
 });
+app.addEventListener('change', e => {
+  if ((e.target as HTMLInputElement).dataset.role) render();
+});
 app.addEventListener('input', e => { const input = e.target as HTMLInputElement;
   if (input.id === 'heal' || input.id === 'sacrifice' || input.id === 'ability-pass') updateTargetPicker();
   if (input.id === 'local-simplified') localSimplified = input.checked;
@@ -835,6 +899,12 @@ app.addEventListener('input', e => { const input = e.target as HTMLInputElement;
 app.addEventListener('click', async e => {
   const el = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-action]'); if (!el || el.disabled) return;
   const action = el.dataset.action!;
+  if (action === 'toggle-faction') {
+    const key = el.dataset.factionKey!;
+    if (collapsedFactions.has(key)) collapsedFactions.delete(key); else collapsedFactions.add(key);
+    render(); return;
+  }
+  if (['pick-target', 'target-clear', 'toggle-mode', 'notebook-tab'].includes(action)) native?.feedback();
   if (!busy) lastAction = action;
   try {
     if (action === 'scan-qr') {
@@ -844,7 +914,7 @@ app.addEventListener('click', async e => {
         scanRoomQr(scanned => {
           const input = document.querySelector<HTMLInputElement>('#join-code');
           if (input) { input.value = scanned; input.dispatchEvent(new Event('input', { bubbles: true })); input.focus(); }
-        });
+        }, publicOrigin);
       } finally { el.disabled = false; }
       return;
     }
@@ -888,7 +958,7 @@ app.addEventListener('click', async e => {
       app.querySelector<HTMLButtonElement>('[data-action="cancel-exit"]')?.focus(); return;
     }
     if (action === 'cancel-exit') { modal = null; render(); app.querySelector<HTMLButtonElement>('[data-action="exit-room"]')?.focus(); return; }
-    if (action === 'confirm-exit' && snapshot?.viewer === 'moderator') { setProxy(null); location.assign('/'); return; }
+    if (action === 'confirm-exit' && snapshot?.viewer === 'moderator') { setProxy(null); await goHome(); return; }
     if (action === 'notebook-tab' && modal === 'secret' && snapshot?.viewer === 'moderator') {
       const tab = el.dataset.tab as NotebookTab;
       if (!Object.hasOwn(NOTEBOOK_TABS, tab)) return;
@@ -924,8 +994,8 @@ app.addEventListener('click', async e => {
     if (action === 'add-offline' && snapshot) { if (await mutate({ type: 'addOffline', code, requestId: random(), expectedRevision: snapshot.room.revision!, name: value('offline-name') })) { modal = null; render(); } return; }
     if (action === 'entry-create' || action === 'entry-join') { entryMode = action === 'entry-create' ? 'create' : 'join'; render(); return; }
     if (action === 'retry') { await sendPending(); return; }
-    if (action === 'refresh') { await refresh(); return; }
-    if (action === 'copy') { await navigator.clipboard.writeText(`${location.origin}/?room=${code}`); notice = 'Đã sao chép link vào phòng.'; render(); return; }
+    if (action === 'refresh') { await refresh(true); return; }
+    if (action === 'copy') { await copyText(inviteUrl()); notice = 'Đã sao chép link vào phòng.'; modal = null; render(); return; }
     if (action === 'role-read' && snapshot?.room.phase === 'ready') { const proxy = proxyPlayerId; const ok = await mutate(proxy ? { type: 'offlineReady', code, requestId: random(), playerId: proxy } : { type: 'ready', code, requestId: random() }); if (ok && proxy) await returnModerator(false); return; }
     if (action === 'role-read') { if (snapshot?.viewer === 'player' && snapshot.game) { try { sessionStorage.setItem(sessionStorageKey(snapshot.game.gameId), '1'); } catch {} } render(); return; }
     if (action === 'inspect-ack' && snapshot?.viewer === 'player') { markInspectionSeen(snapshot.game); modal = null; if (proxyPlayerId) await returnModerator(false); else render(); return; }
@@ -938,7 +1008,15 @@ app.addEventListener('click', async e => {
       chatDraftCleared = true; render(); chatDraftCleared = false;
       return;
     }
-    if (action === 'preset') { preset(); render(); return; }
+    if (action === 'preset') {
+      if ((snapshot?.room.members.filter(m => !m.left).length ?? 0) < 3) {
+        notice = 'Cần ít nhất 3 người chơi để gợi ý bộ vai.'; modal = null; render(); return;
+      }
+      preset(); render();
+      // Inputs edited by the user have a dirty value; changing the HTML attribute alone does not reset it.
+      app.querySelectorAll<HTMLInputElement>('[data-role]').forEach(input => { input.value = String(deck[input.dataset.role!] ?? 0); });
+      return;
+    }
     if (action === 'resume-local') { notice = ''; localMode = true; code = localTable.lastCode(); setProxy(null); modal = null; await refresh(true); return; }
     if (action === 'toggle-mode') {
       localMode = !localMode;
@@ -990,11 +1068,30 @@ app.addEventListener('click', async e => {
     }
     const ok = await mutate({ type: 'command', code, requestId: random(), stepId: step, command });
     if (ok && proxy && command.type === 'act' && modal !== 'inspect-result') await returnModerator(false);
-  } catch (e) { notice = action === 'copy' ? `Link vào phòng: ${location.origin}/?room=${code}` : (e as Error).message; render(); }
+  } catch (e) { if (action === 'copy') modal = null; notice = action === 'copy' ? `Không thể tự sao chép. Hãy sao chép link này: ${inviteUrl()}` : (e as Error).message; render(); }
 });
 document.addEventListener('fullscreenchange', () => render());
-window.addEventListener('online', () => { if (pending) void sendPending(); else void refresh(); });
-document.addEventListener('visibilitychange', () => { if (!document.hidden) { if (pending) void sendPending(); else void refresh(); } });
+function reconnect() {
+  if (!appActive) return;
+  if (busy) { reconnectAfterWrite = true; return; }
+  reconnectAfterWrite = false;
+  if (pending) void sendPending(); else void refresh(true);
+}
+function setAppActive(active: boolean) {
+  if (appActive === active) return;
+  appActive = active;
+  clearTimeout(poll);
+  if (!active) { readSequence++; fetching = false; }
+  else reconnect();
+}
+window.addEventListener('online', reconnect);
+document.addEventListener('visibilitychange', () => { if (native) setAppActive(!document.hidden); else if (!document.hidden) reconnect(); });
+if (native) {
+  void native.listen(setAppActive, reconnect).catch(() => {});
+  app.addEventListener('click', e => {
+    if ((e.target as HTMLElement).closest('a.brand')) { e.preventDefault(); void goHome(); }
+  });
+}
 document.addEventListener('click', e => {
   if (memberMenu && !(e.target as HTMLElement).closest('.member-menu, [data-action="seat-menu"]')) { memberMenu = null; render(); }
 });
@@ -1036,21 +1133,33 @@ document.addEventListener('keydown', e => {
   }
 });
 render();
+native?.ready();
 (async () => {
-  try { const config = await request(); storage = config.storage; catalog = config.catalog; status = 'Máy chủ sẵn sàng'; render();
-    if (pending) await sendPending(); else if (code && (localMode || sessions[code])) await refresh();
-  } catch (e) { catalog = localCatalog(); failed = true; status = 'Chưa kết nối'; notice = 'Chưa kết nối được máy chủ. Bạn vẫn có thể tạo bàn một máy hoặc tiếp tục bàn đã lưu.'; render(); }
+  // Restore a local table immediately; do not wait for the network configuration.
+  if (pending) { await sendPending(); return; }
+  if (code && (localMode || sessions[code])) { await refresh(true); return; }
+  try {
+    const config = await request();
+    // A slow startup request must not overwrite a table created in the meantime.
+    if (!snapshot && !busy && !pending && !localMode) { storage = config.storage; catalog = config.catalog; status = 'Máy chủ sẵn sàng'; render(); }
+  } catch {
+    if (!snapshot && !busy && !pending && !localMode) { failed = true; status = 'Chưa kết nối'; notice = 'Chưa kết nối được máy chủ. Bạn vẫn có thể tạo bàn một máy hoặc tiếp tục bàn đã lưu.'; render(); }
+  }
 })();
 
 window.addEventListener('storage', e => { if (localMode && e.key === `ma-soi:local-table:v1:${code}`) void refresh(true); });
-if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+if (import.meta.env.PROD && !isNativeApp && 'serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => { /* Online rooms remain usable if browser blocks caching. */ });
 }
 
 const warmedImages = new Map<string, HTMLImageElement>();
 async function warmCards() {
-  const urls = localCatalog().map(r => ROLE_IMAGES[r.id]);
+  // Bundled native assets need no network prefetch. Keep only a few common
+  // cards decoded instead of retaining ~88 MB of decoded images for all 64.
+  const urls = isNativeApp ? ['villager', 'wolf', 'seer', 'guard'].map(id => ROLE_IMAGES[id]) : localCatalog().map(r => ROLE_IMAGES[r.id]);
   for (let offset = 0; offset < urls.length; offset += 2) {
+    if (!appActive) break;
+    await new Promise<void>(resolve => setTimeout(resolve, 0));
     await Promise.all(urls.slice(offset, offset + 2).map(async url => {
       if (warmedImages.has(url)) return;
       const image = new Image(); image.decoding = 'async'; image.fetchPriority = 'low'; image.src = url;
@@ -1059,5 +1168,11 @@ async function warmCards() {
     }));
   }
 }
-if (document.readyState === 'complete') void warmCards();
-else window.addEventListener('load', () => void warmCards(), { once: true });
+// Decode visible cards on demand. Warm the remaining cards only while idle,
+// yielding between pairs so startup and taps retain the main thread.
+function scheduleCardWarmup() {
+  if ('requestIdleCallback' in window) window.requestIdleCallback(() => void warmCards(), { timeout: 3000 });
+  else setTimeout(() => void warmCards(), 800);
+}
+if (document.readyState === 'complete') scheduleCardWarmup();
+else window.addEventListener('load', scheduleCardWarmup, { once: true });

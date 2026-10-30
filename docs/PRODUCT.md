@@ -167,3 +167,5 @@ Người dùng yêu cầu bắt đầu bản iPhone bằng Capacitor, giữ cả
 ## QR tên miền riêng, logo và toàn màn hình iPhone — D77 (2026-10-28)
 
 Theo người dùng, QR do masoi.yennhi.tech tạo phải được app iPhone nhận và điền mã. Hai origin production masoi.yennhi.tech/multi-online.vercel.app được nhận chéo; không tự chọn máy chủ từ QR. Giữ nhập/xác nhận tên trước khi vào phòng. Thiết kế logo app riêng theo Sói/trăng, màu nền/vàng hiện tại. iPhone ẩn status bar (giờ, sóng, pin), Home indicator tự ẩn, nền phủ màn hình; tai thỏ/Dynamic Island vật lý vẫn tồn tại và vùng thao tác phải tránh nó. App cần đủ tài nguyên để tạo bàn offline ngay lần mở đầu không có mạng, không yêu cầu tải chuẩn bị trước.
+
+- Quản trò có thể làm mới ván từ Cài đặt (có xác nhận), trở về chia vai, giữ người còn trong phòng, thứ tự ghế, mã phòng và bộ vai; xóa trạng thái ván cũ. Dùng cả online/offline.

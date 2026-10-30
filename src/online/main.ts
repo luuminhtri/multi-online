@@ -371,7 +371,7 @@ function modalHtml() {
   const gm = snapshot?.viewer === 'moderator' ? snapshot.game : null;
   let inner = '';
   if (modal === 'tools' && snapshot) {
-    inner = `<h3>Cài đặt</h3><div class="room-tool-menu">${isNativeApp ? '' : button('browser-fullscreen', icon(document.fullscreenElement ? 'window-restore' : 'window-fullscreen') + `<span>${document.fullscreenElement ? 'Thu nhỏ' : 'Toàn màn hình'}</span>`, false, 'class="secondary"')}${localMode ? '' : button('copy', icon('copy') + '<span>Sao chép link mời</span>', false, 'class="secondary"')}${button('refresh', icon('refresh') + '<span>Làm mới</span>', false, 'class="secondary"')}${snapshot.viewer === 'moderator' && !snapshot.game ? button('modal-open', icon('settings') + '<span>Cài đặt ván chơi</span>', false, 'class="secondary" data-modal="settings"') : ''}${snapshot.controller ? button('return-moderator', icon('close') + '<span>Về quản trò</span>', false, 'class="secondary"') : button('exit-room', icon('exit') + `<span>${snapshot.viewer === 'moderator' ? 'Thoát phòng' : 'Rời phòng'}</span>`, false, 'class="danger"')}</div>`;
+    inner = `<h3>Cài đặt</h3><div class="room-tool-menu">${isNativeApp ? '' : button('browser-fullscreen', icon(document.fullscreenElement ? 'window-restore' : 'window-fullscreen') + `<span>${document.fullscreenElement ? 'Thu nhỏ' : 'Toàn màn hình'}</span>`, false, 'class="secondary"')}${localMode ? '' : button('copy', icon('copy') + '<span>Sao chép link mời</span>', false, 'class="secondary"')}${button('refresh', icon('refresh') + '<span>Đồng bộ lại</span>', false, 'class="secondary"')}${snapshot.viewer === 'moderator' && !snapshot.game ? button('modal-open', icon('settings') + '<span>Cài đặt ván chơi</span>', false, 'class="secondary" data-modal="settings"') : ''}${snapshot.viewer === 'moderator' && snapshot.game ? button('modal-open', icon('refresh') + '<span>Làm mới ván</span>', false, 'class="secondary" data-modal="reset-game"') : ''}${snapshot.controller ? button('return-moderator', icon('close') + '<span>Về quản trò</span>', false, 'class="secondary"') : button('exit-room', icon('exit') + `<span>${snapshot.viewer === 'moderator' ? 'Thoát phòng' : 'Rời phòng'}</span>`, false, 'class="danger"')}</div>`;
   } else if (modal === 'browser-fullscreen-help') {
     inner = '<h3>Mở toàn màn hình</h3><p>Trình duyệt này chưa cho phép trang web bật toàn màn hình.</p><p>Trên iPhone: mở menu Chia sẻ trong Safari hoặc Chrome → Thêm vào Màn hình chính → mở Ma Sói từ biểu tượng vừa thêm. Nếu có tùy chọn Mở dưới dạng ứng dụng web, hãy bật.</p><p class="muted">Bạn vẫn có thể dùng icon ở góc bàn để chỉ xem bàn chơi trong cửa sổ hiện tại.</p>';
   } else if (modal === 'invite-qr' && snapshot?.viewer === 'moderator' && !localMode) {
@@ -386,6 +386,8 @@ function modalHtml() {
     inner = '<h3>Dùng máy quản trò</h3><p class="muted">Thêm người không có điện thoại. Vai và lượt của họ sẽ hiện lần lượt trên máy này.</p><label>Tên người chơi<input id="offline-name" maxlength="40" autocomplete="off" placeholder="Tên người chơi"></label>';
   } else if (modal === 'deck') {
     inner = `<div class="modal-title"><h3>Bộ vai</h3>${button('preset', icon('shuffle') + ' Gợi ý', false, 'class="text-button"')}</div><p class="muted">Số thẻ cần bằng số người chơi.</p>${factionRoleRows(catalog.map(r => ({ id: r.id, count: deck[r.id] ?? 0, html: `<label data-ui-key="deck-row-${r.id}" class="${deck[r.id] > 0 ? 'deck-selected' : ''}">${esc(r.name)}<input id="deck-${r.id}" data-role="${r.id}" ${busy || pending ? 'disabled' : ''} type="number" min="0" max="30" value="${deck[r.id] ?? 0}" inputmode="numeric"></label>` })), 'thẻ đã chọn', true)}`;
+  } else if (modal === 'reset-game' && snapshot?.viewer === 'moderator' && snapshot.game) {
+    inner = `<h3>Làm mới ván chơi?</h3><p>Giữ nguyên người chơi, thứ tự chỗ ngồi và bộ vai. Xóa vai đã chia, diễn biến và kết quả để chuẩn bị chia lại. Người đã rời được bỏ khỏi bàn.</p><div class="exit-actions">${button('modal-open', 'Hủy', false, 'class="secondary" data-modal="tools"')}${button('confirm-reset', 'Làm mới ván', false, 'class="danger"')}</div>`;
   } else if (modal === 'settings' && snapshot?.viewer === 'moderator' && !snapshot.game) {
     inner = `<h3>Cài đặt</h3>${localMode ? `<label class="check"><input id="local-simplified" type="checkbox" ${localSimplified ? 'checked' : ''}><span>Tối giản thao tác ban đêm<small>Quản trò nhập trực tiếp. Một lựa chọn chung cho bầy Sói.</small></span></label>` : ''}<label class="check"><input id="witch-sees-bite" type="checkbox" ${lobbySettings.witchSeesBite ? 'checked' : ''}><span>Phù thủy thấy nạn nhân<small>Tắt: Phù thủy chỉ chọn dùng/giữ thuốc, máy chủ cứu không lộ tên. Người Bảo vệ chặn cắn luôn được giấu.</small></span></label><label class="check"><input id="hunter-active-shot" type="checkbox" ${lobbySettings.hunterActiveShot ? 'checked' : ''}><span>Thợ săn bắn chủ động<small>Tắt: ghim mỗi đêm, chết đêm thì kéo mục tiêu chết theo. Bật: một phát cả ván; trúng phe Sói thì sống, bắn sai thì cả hai chết.</small></span></label><h4>Đồng hồ ban ngày</h4><div class="timer-fields">${DAY_PHASES.map(p => `<label>${DAY_PHASE_NAMES[p]} (giây)<input id="day-${p}" type="number" min="5" max="3600" value="${lobbySettings.dayTimers[p]}" inputmode="numeric"></label>`).join('')}</div><h4>Bỏ phiếu trắng</h4><label>Số ngày được không loại ai (0–30)<input id="skip-vote-days" type="number" min="0" max="30" value="${lobbySettings.skipVoteDays}" inputmode="numeric"></label><p class="muted">0 = sáng nào cũng phải vote loại một người. Hết lượt bỏ qua, mỗi sáng phải chọn một người để vote.</p>`;
   } else if (modal === 'rolepeek' && g) {
@@ -751,6 +753,7 @@ async function request(body?: LocalMutation, capability?: string, room?: string)
 }
 function accepted(s: Snapshot) {
   const previousModal = modal;
+  if (snapshot?.game && !s.game) { modal = null; deckDirty = false; memberMenu = null; }
   const changed = snapshot?.viewVersion !== s.viewVersion;
   if (snapshot?.room.code !== s.room.code) { deckDirty = false; deck = {}; notebookTab = 'players'; notebookNight = 'all'; notebookScroll.players = notebookScroll.chat = notebookScroll.history = 0; }
   switchingView = false; sessionMoved = false;
@@ -951,6 +954,11 @@ app.addEventListener('click', async e => {
       const url = inviteUrl();
       if (inviteQrUrl !== url) { inviteQr = await QRCode.toString(url, { type: 'svg', errorCorrectionLevel: 'M', margin: 4 }); inviteQrUrl = url; }
       modal = 'invite-qr'; modalReturnTarget = null; render(); return;
+    }
+    if (action === 'confirm-reset' && snapshot?.viewer === 'moderator' && snapshot.game) {
+      const ok = await mutate({ type: 'reset', code, requestId: random(), expectedRevision: snapshot.room.revision! });
+      if (ok) { deckDirty = false; deck = { ...(snapshot.deck ?? {}) }; modal = null; memberMenu = null; render(); }
+      return;
     }
     if (action === 'confirm-leave' && snapshot?.viewer === 'player' && !snapshot.controller) { await mutate({ type: 'leave', code, requestId: random() }); return; }
     if (action === 'exit-room' && snapshot && !snapshot.controller) {

@@ -83,7 +83,12 @@ export class LocalTable {
     const fingerprint = JSON.stringify(operation);
     if (r.receipts[operation.requestId]) { ensure(r.receipts[operation.requestId] === fingerprint, 'Mã thao tác đã được dùng.'); return this.project(saved, proxy); }
     if ('expectedRevision' in operation) ensure(operation.expectedRevision === r.revision, 'Bàn chơi vừa thay đổi. Hãy làm mới.');
-    if (operation.type === 'simpleAct' || operation.type === 'simpleAck') {
+    if (operation.type === 'reset') {
+      ensure(r.game, 'Bàn chưa chia vai.');
+      r.game = null; r.gameStarted = false; r.readyPlayerIds = [];
+      r.members = r.members.filter(m => !m.left); saved.inspection = null;
+      delete r.requestWindow;
+    } else if (operation.type === 'simpleAct' || operation.type === 'simpleAck') {
       ensure(saved.simplified && r.gameStarted && r.game && operation.stepId === stepId(r.game), 'Lượt đã thay đổi. Hãy làm mới.');
       let g = r.game!;
       if (operation.type === 'simpleAck') {

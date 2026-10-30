@@ -1,3 +1,10 @@
+## 2026-10-30 — Làm mới ván giữ ghế
+
+- Quản trò mở Cài đặt → Làm mới ván → xác nhận, online/offline; về lobby giữ mã phòng, danh tính, thứ tự người còn trong phòng và bộ vai. Người đã rời được bỏ khỏi bàn. Chia lại để nhận vai mới; xóa game, sẵn sàng, kết quả soi local và cửa sổ giới hạn lệnh cũ. Không đổi schema.
+- Máy chủ kiểm quyền quản trò/current revision; receipt giữ retry không làm mới nhầm ván sau. Client đóng popup cũ khi nhận lobby. Nút tải lại dữ liệu đổi nhãn Đồng bộ lại.
+- Kiểm: build/typecheck đạt; 16/16 tests offline và online service RAM đạt (quyền, stale, bí mật, ghế, lưu lại, retry sau chia mới). HTTP suite bị Node 26.5.0 assertion InternalCallbackScope dừng; chưa xác minh HTTP/browser thật.
+- OpenAPI và collection Reset game contract đã thêm. Postman skills status/lint đều không chạy được: `ERROR: SecItemCopyMatching failed -50` (exit 139); chưa chạy collection. Chưa deploy/cập nhật iPhone.
+
 ## 2026-10-30 — Làm gọn giao diện danh sách vai
 
 - Bỏ dải nền đậm/in hoa/viền dày của tiêu đề phe; dùng chấm màu, chữ đậm và số lượng nhẹ hơn, giữ nút thu gọn.

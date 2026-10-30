@@ -436,3 +436,25 @@ for (const started of [false, true]) test(`self leave ${started ? 'game' : 'lobb
   } else assert(!before.room.members.some(m=>m.id===players[0].me.id));
   assert(!before.room.members.find(m=>m.id===players[1].me.id)?.left);
 });
+
+test('reset preserves seats and sessions, clears secrets, checks authority/revision and retries safely', async t => {
+  const f = await fixture(t, false), owner = credential(), guest = credential();
+  let s = await f.post(owner, { type: 'create', name: 'Quản trò' }); const code = s.room.code;
+  await f.post(guest, { type: 'join', code, name: 'A' });
+  for (const name of ['B', 'C']) { s = await f.read(code, owner); await f.post(owner, { type: 'addOffline', code, name, expectedRevision: s.room.revision }); }
+  s = await f.read(code, owner);
+  s = await f.post(owner, { type: 'start', code, expectedRevision: s.room.revision, roles: ['wolf', 'seer', 'villager'] });
+  const members = s.room.members, oldStep = s.game.stepId;
+  const reset = { type: 'reset', code, expectedRevision: s.room.revision, requestId: 'reset-once' };
+  await f.post(guest, reset, 403);
+  await f.post(owner, { ...reset, expectedRevision: 0 }, 409);
+  s = await f.post(owner, reset);
+  assert.equal(s.room.phase, 'lobby'); assert.equal(s.game, null); assert.deepEqual(s.room.members, members);
+  assert.deepEqual(s.room.readyPlayerIds, []); assert.deepEqual(s.deck, { wolf: 1, seer: 1, villager: 1 });
+  assert.equal((await f.post(owner, reset)).room.revision, s.room.revision);
+  assert.equal((await f.read(code, guest)).game, null);
+  s = await f.post(owner, { type: 'start', code, expectedRevision: s.room.revision, roles: ['wolf', 'seer', 'villager'] });
+  assert.notEqual(s.game.stepId, oldStep);
+  const retry = await f.post(owner, reset); assert.equal(retry.room.phase, 'ready');
+  await f.post(owner, { type: 'command', code, stepId: oldStep, command: { type: 'advance' } }, 409);
+});

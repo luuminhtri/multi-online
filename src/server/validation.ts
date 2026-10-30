@@ -68,6 +68,7 @@ export function parseMutation(v: unknown): Mutation {
   const expectedRevision = o.expectedRevision as number;
   if (o.type === 'setOffline' || o.type === 'removeMember') { keys(o, ['type', 'requestId', 'code', 'expectedRevision', 'playerId']); return { type: o.type, requestId, code, expectedRevision, playerId: text(o.playerId, 80) }; }
   if (o.type === 'addOffline') { keys(o, ['type', 'requestId', 'code', 'expectedRevision', 'name']); return { type: 'addOffline', requestId, code, expectedRevision, name: cleanName(o.name) }; }
+  if (o.type === 'reset') { keys(o, ['type', 'requestId', 'code', 'expectedRevision']); return { type: 'reset', requestId, code, expectedRevision }; }
   if (o.type === 'begin') { keys(o, ['type', 'requestId', 'code', 'expectedRevision']); return { type: 'begin', requestId, code, expectedRevision }; }
   if (o.type === 'reorder') {
     keys(o, ['type', 'requestId', 'code', 'expectedRevision', 'playerIds']);

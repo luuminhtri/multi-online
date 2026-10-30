@@ -1,0 +1,24 @@
+$kind: http-request
+name: Reset game
+method: POST
+url: "{{baseUrl}}/api/room"
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Authorization
+    value: "Bearer {{ownerToken}}"
+body:
+  type: json
+  content: |-
+    {"type":"reset","requestId":"{{resetRequestId}}","code":"{{roomCode}}","expectedRevision":{{roomRevision}}}
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Reset to lobby without secrets', () => {
+        pm.response.to.have.status(200);
+        const s = pm.response.json();
+        pm.expect(s.room.phase).to.eql('lobby');
+        pm.expect(s.game).to.eql(null);
+        pm.expect(s.room.readyPlayerIds).to.eql([]);
+      });

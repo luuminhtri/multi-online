@@ -211,6 +211,9 @@
                   },
                   {
                     "$ref": "#/components/schemas/Leave"
+                  },
+                  {
+                    "$ref": "#/components/schemas/Reset"
                   }
                 ]
               }
@@ -975,6 +978,33 @@
             "type": "string"
           }
         }
+      },
+      "Reset": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "const": "reset"
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^(?:[0-9]{6}|[A-Z2-9]{6})$"
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "expectedRevision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "type",
+          "code",
+          "requestId",
+          "expectedRevision"
+        ],
+        "additionalProperties": false,
+        "description": "Moderator resets a dealt game to lobby, retaining room, member identities, relative seat order of remaining players, and role deck. Clears game secrets, readiness and request window. Requires current revision; same requestId is idempotent. Withdrawn members are removed; their credentials remain invalid."
       }
     }
   }

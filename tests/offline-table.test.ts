@@ -185,3 +185,17 @@ test('expanded offline table handles two Masons separately, persists each result
  f.act({type:'ability',targets:[],text:'rừng'});assert.equal(f.s.game!.step,'review');assert.equal(f.s.game!.events.some(e=>e.type==='ghost-hint'),false);
  f.cmd({type:'reviewNote',actor:f.id('ghost'),approve:true});f.cmd({type:'publish'});assert.equal(f.s.game!.players.find(p=>p.id===victims[1])!.alive,true);f.cmd({type:'verdict',target:victims[2]});assert.equal(f.s.game!.players.find(p=>p.id===victims[1])!.alive,false);
 });
+
+test('local reset keeps seats/deck, persists lobby and permits a fresh deal without replaying reset', () => {
+  const f = fixture(); f.begin();
+  const before = f.s, operation = { type: 'reset', requestId: 'reset-once', code: before.room.code, expectedRevision: before.room.revision! } as const;
+  const lobby = f.table.mutate(operation);
+  assert.equal(lobby.game, null); assert.equal(lobby.room.phase, 'lobby');
+  assert.deepEqual(lobby.room.members, before.room.members); assert.deepEqual(lobby.deck, before.deck);
+  assert.equal(lobby.room.inspection, null); assert.deepEqual(lobby.room.readyPlayerIds, []);
+  assert.equal(new LocalTable(f.storage).read(lobby.room.code).game, null);
+  assert.equal(f.table.mutate(operation).room.revision, lobby.room.revision);
+  const next = f.send({ type: 'localStart', expectedRevision: lobby.room.revision, roles: ['guard', 'seer', 'wolf', 'wolf', 'villager', 'villager', 'villager'], simplified: true });
+  assert.notEqual(next.game!.stepId, before.game!.stepId);
+  assert.equal(f.table.mutate(operation).room.phase, 'ready');
+});

@@ -175,7 +175,14 @@ export class RoomService {
         }
       } else {
         const identity = this.member(room, tokenHash);
-        if (operation.type === 'setOffline' || operation.type === 'removeMember') {
+        if (operation.type === 'reset') {
+          requireApi(identity.moderator, 'MODERATOR_REQUIRED', 403);
+          requireApi(operation.expectedRevision === room.revision, 'STALE_ROOM', 409);
+          requireApi(room.game, 'GAME_NOT_STARTED', 409);
+          room.game = null; room.gameStarted = false; room.readyPlayerIds = [];
+          room.members = room.members.filter(m => !m.left);
+          delete room.requestWindow;
+        } else if (operation.type === 'setOffline' || operation.type === 'removeMember') {
           requireApi(identity.moderator, 'MODERATOR_REQUIRED', 403);
           requireApi(operation.expectedRevision === room.revision, 'STALE_ROOM', 409);
           const selected = room.members.find(m => m.id === operation.playerId);
